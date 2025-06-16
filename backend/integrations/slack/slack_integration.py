@@ -1,774 +1,866 @@
 """
 Sophia AI - Slack Integration
-Team Communication and AI Assistant Interface for Pay Ready
+Team communication and intelligent notification system
 
 This module provides comprehensive Slack integration for Sophia AI,
-enabling team communication, automated notifications, and conversational AI.
+enabling real-time team communication, intelligent notifications, and workflow automation.
 """
 
 import asyncio
 import json
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Callable
+from typing import Dict, List, Optional, Any, Union, Callable
+from dataclasses import dataclass
 import aiohttp
 from slack_sdk.web.async_client import AsyncWebClient
-from slack_sdk.socket_mode.async_client import AsyncSocketModeClient
-from slack_sdk.socket_mode.request import SocketModeRequest
-from slack_sdk.socket_mode.response import SocketModeResponse
-import openai
+from slack_sdk.errors import SlackApiError
+from slack_sdk.webhook.async_client import AsyncWebhookClient
+from slack_sdk.signature import SignatureVerifier
 import os
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-class SlackConfig:
-    def __init__(self):
-        self.bot_token = os.getenv('SLACK_BOT_TOKEN', '')
-        self.app_token = os.getenv('SLACK_APP_TOKEN', '')
-        self.signing_secret = os.getenv('SLACK_SIGNING_SECRET', '')
-        self.openai_api_key = os.getenv('OPENAI_API_KEY', '')
-        self.sophia_channel = os.getenv('SOPHIA_SLACK_CHANNEL', '#sophia-ai')
-        self.alerts_channel = os.getenv('ALERTS_SLACK_CHANNEL', '#alerts')
+class SlackConfig(BaseModel):
+    """Slack integration configuration"""
+    bot_token: str = Field(default_factory=lambda: os.getenv('SLACK_BOT_TOKEN', ''))
+    app_token: str = Field(default_factory=lambda: os.getenv('SLACK_APP_TOKEN', ''))
+    signing_secret: str = Field(default_factory=lambda: os.getenv('SLACK_SIGNING_SECRET', ''))
+    default_channel: str = Field(default='#sophia-notifications')
+    notification_webhook_url: Optional[str] = Field(default_factory=lambda: os.getenv('SLACK_WEBHOOK_URL'))
+    rate_limit_delay: float = 0.5  # 500ms between messages
+    max_retries: int = 3
 
-class SophiaSlackBot:
-    """Sophia AI Slack Bot for team communication and assistance"""
+class SlackMessage(BaseModel):
+    """Structured Slack message"""
+    channel: str
+    text: str
+    blocks: Optional[List[Dict[str, Any]]] = None
+    thread_ts: Optional[str] = None
+    attachments: Optional[List[Dict[str, Any]]] = None
+    ephemeral_user: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+class SlackNotification(BaseModel):
+    """Notification configuration"""
+    type: str  # 'call_completed', 'deal_update', 'task_reminder', etc.
+    priority: str  # 'low', 'medium', 'high', 'urgent'
+    channel: Optional[str] = None
+    mentions: List[str] = []
+    data: Dict[str, Any]
+
+class SlackIntegration:
+    """Comprehensive Slack integration for Sophia AI"""
     
     def __init__(self, config: SlackConfig = None):
         self.config = config or SlackConfig()
-        self.web_client = AsyncWebClient(token=self.config.bot_token)
-        self.socket_client = None
-        self.message_handlers = {}
-        self.command_handlers = {}
-        self.is_running = False
+        self.client = AsyncWebClient(token=self.config.bot_token)
+        self.webhook_client = AsyncWebhookClient(self.config.notification_webhook_url) if self.config.notification_webhook_url else None
+        self.signature_verifier = SignatureVerifier(self.config.signing_secret)
+        self.last_message_time = datetime.now()
+        self.notification_handlers: Dict[str, Callable] = {}
+        self._channel_cache: Dict[str, str] = {}
+        self._user_cache: Dict[str, Dict[str, Any]] = {}
         
-        # Initialize OpenAI for conversational AI
-        if self.config.openai_api_key:
-            openai.api_key = self.config.openai_api_key
-        
-        # Register default handlers
-        self._register_default_handlers()
-    
-    def _register_default_handlers(self):
-        """Register default message and command handlers"""
-        self.register_command('help', self._handle_help_command)
-        self.register_command('status', self._handle_status_command)
-        self.register_command('analytics', self._handle_analytics_command)
-        self.register_command('call-summary', self._handle_call_summary_command)
-        self.register_command('deal-update', self._handle_deal_update_command)
-        self.register_command('insights', self._handle_insights_command)
-        
-        self.register_message_handler('mention', self._handle_mention)
-        self.register_message_handler('dm', self._handle_direct_message)
-    
-    def register_command(self, command: str, handler: Callable):
-        """Register slash command handler"""
-        self.command_handlers[command] = handler
-    
-    def register_message_handler(self, event_type: str, handler: Callable):
-        """Register message event handler"""
-        self.message_handlers[event_type] = handler
-    
-    async def start(self):
-        """Start the Slack bot"""
+    async def initialize(self):
+        """Initialize Slack integration and test connection"""
         try:
-            self.socket_client = AsyncSocketModeClient(
-                app_token=self.config.app_token,
-                web_client=self.web_client
-            )
+            # Test authentication
+            response = await self.client.auth_test()
+            logger.info(f"Slack connection successful. Bot name: {response['user']}")
             
-            # Register socket mode handlers
-            self.socket_client.socket_mode_request_listeners.append(self._handle_socket_mode_request)
+            # Cache channel list
+            await self._cache_channels()
             
-            # Start socket mode client
-            await self.socket_client.connect()
-            self.is_running = True
+            return True
             
-            # Send startup message
-            await self.send_message(
-                channel=self.config.sophia_channel,
-                text="🤖 Sophia AI is now online and ready to assist the Pay Ready team!"
-            )
-            
-            logger.info("Sophia Slack bot started successfully")
-            
-        except Exception as e:
-            logger.error(f"Failed to start Slack bot: {str(e)}")
-            raise
+        except SlackApiError as e:
+            logger.error(f"Failed to initialize Slack integration: {e.response['error']}")
+            return False
     
-    async def stop(self):
-        """Stop the Slack bot"""
+    async def _cache_channels(self):
+        """Cache channel list for quick lookups"""
         try:
-            self.is_running = False
+            response = await self.client.conversations_list(types="public_channel,private_channel")
             
-            if self.socket_client:
-                await self.socket_client.disconnect()
+            for channel in response['channels']:
+                self._channel_cache[channel['name']] = channel['id']
+                self._channel_cache[channel['id']] = channel['name']
             
-            # Send shutdown message
-            await self.send_message(
-                channel=self.config.sophia_channel,
-                text="🤖 Sophia AI is going offline. See you soon!"
-            )
+            logger.info(f"Cached {len(self._channel_cache) // 2} Slack channels")
             
-            logger.info("Sophia Slack bot stopped")
-            
-        except Exception as e:
-            logger.error(f"Error stopping Slack bot: {str(e)}")
-    
-    async def _handle_socket_mode_request(self, client: AsyncSocketModeClient, req: SocketModeRequest):
-        """Handle incoming socket mode requests"""
-        try:
-            # Acknowledge the request
-            response = SocketModeResponse(envelope_id=req.envelope_id)
-            await client.send_socket_mode_response(response)
-            
-            # Process the event
-            if req.type == "events_api":
-                event = req.payload.get("event", {})
-                await self._handle_event(event)
-            
-            elif req.type == "slash_commands":
-                command_data = req.payload
-                await self._handle_slash_command(command_data)
-            
-        except Exception as e:
-            logger.error(f"Error handling socket mode request: {str(e)}")
-    
-    async def _handle_event(self, event: Dict[str, Any]):
-        """Handle Slack events"""
-        try:
-            event_type = event.get("type")
-            
-            if event_type == "message":
-                await self._handle_message_event(event)
-            elif event_type == "app_mention":
-                await self._handle_mention_event(event)
-            
-        except Exception as e:
-            logger.error(f"Error handling event: {str(e)}")
-    
-    async def _handle_message_event(self, event: Dict[str, Any]):
-        """Handle message events"""
-        try:
-            # Skip bot messages
-            if event.get("bot_id"):
-                return
-            
-            channel = event.get("channel")
-            user = event.get("user")
-            text = event.get("text", "")
-            
-            # Check if it's a DM
-            if channel.startswith("D"):
-                if 'dm' in self.message_handlers:
-                    await self.message_handlers['dm'](event)
-            
-            # Check for mentions
-            elif f"<@{await self._get_bot_user_id()}>" in text:
-                if 'mention' in self.message_handlers:
-                    await self.message_handlers['mention'](event)
-            
-        except Exception as e:
-            logger.error(f"Error handling message event: {str(e)}")
-    
-    async def _handle_mention_event(self, event: Dict[str, Any]):
-        """Handle app mention events"""
-        try:
-            if 'mention' in self.message_handlers:
-                await self.message_handlers['mention'](event)
-        except Exception as e:
-            logger.error(f"Error handling mention event: {str(e)}")
-    
-    async def _handle_slash_command(self, command_data: Dict[str, Any]):
-        """Handle slash commands"""
-        try:
-            command = command_data.get("command", "").lstrip("/")
-            
-            if command in self.command_handlers:
-                await self.command_handlers[command](command_data)
-            else:
-                # Unknown command
-                await self.send_message(
-                    channel=command_data.get("channel_id"),
-                    text=f"Unknown command: /{command}. Type `/help` for available commands."
-                )
-        except Exception as e:
-            logger.error(f"Error handling slash command: {str(e)}")
-    
-    async def _get_bot_user_id(self) -> str:
-        """Get bot user ID"""
-        try:
-            response = await self.web_client.auth_test()
-            return response["user_id"]
-        except Exception as e:
-            logger.error(f"Failed to get bot user ID: {str(e)}")
-            return ""
+        except SlackApiError as e:
+            logger.error(f"Failed to cache channels: {e.response['error']}")
     
     # Message Sending
-    async def send_message(self, channel: str, text: str = None, blocks: List[Dict] = None, 
-                          thread_ts: str = None, attachments: List[Dict] = None) -> Optional[Dict]:
+    async def send_message(self, message: SlackMessage) -> Optional[Dict[str, Any]]:
         """Send message to Slack channel"""
         try:
-            response = await self.web_client.chat_postMessage(
-                channel=channel,
-                text=text,
-                blocks=blocks,
-                thread_ts=thread_ts,
-                attachments=attachments
-            )
+            # Rate limiting
+            await self._rate_limit()
+            
+            # Resolve channel name to ID if needed
+            channel_id = await self._resolve_channel(message.channel)
+            
+            # Send message
+            kwargs = {
+                'channel': channel_id,
+                'text': message.text
+            }
+            
+            if message.blocks:
+                kwargs['blocks'] = message.blocks
+            if message.thread_ts:
+                kwargs['thread_ts'] = message.thread_ts
+            if message.attachments:
+                kwargs['attachments'] = message.attachments
+            if message.metadata:
+                kwargs['metadata'] = message.metadata
+            
+            response = await self.client.chat_postMessage(**kwargs)
+            
+            logger.info(f"Sent message to {message.channel}")
             return response.data
-        except Exception as e:
-            logger.error(f"Failed to send message: {str(e)}")
+            
+        except SlackApiError as e:
+            logger.error(f"Failed to send message: {e.response['error']}")
             return None
     
-    async def send_ephemeral_message(self, channel: str, user: str, text: str = None, blocks: List[Dict] = None) -> Optional[Dict]:
-        """Send ephemeral message (only visible to specific user)"""
+    async def send_ephemeral_message(
+        self, 
+        channel: str, 
+        user: str, 
+        text: str,
+        blocks: Optional[List[Dict[str, Any]]] = None
+    ) -> bool:
+        """Send ephemeral message visible only to specific user"""
         try:
-            response = await self.web_client.chat_postEphemeral(
-                channel=channel,
-                user=user,
-                text=text,
-                blocks=blocks
-            )
-            return response.data
-        except Exception as e:
-            logger.error(f"Failed to send ephemeral message: {str(e)}")
-            return None
+            await self._rate_limit()
+            
+            channel_id = await self._resolve_channel(channel)
+            user_id = await self._resolve_user(user)
+            
+            kwargs = {
+                'channel': channel_id,
+                'user': user_id,
+                'text': text
+            }
+            
+            if blocks:
+                kwargs['blocks'] = blocks
+            
+            await self.client.chat_postEphemeral(**kwargs)
+            return True
+            
+        except SlackApiError as e:
+            logger.error(f"Failed to send ephemeral message: {e.response['error']}")
+            return False
     
-    async def update_message(self, channel: str, ts: str, text: str = None, blocks: List[Dict] = None) -> Optional[Dict]:
+    async def update_message(
+        self,
+        channel: str,
+        ts: str,
+        text: str,
+        blocks: Optional[List[Dict[str, Any]]] = None
+    ) -> bool:
         """Update existing message"""
         try:
-            response = await self.web_client.chat_update(
-                channel=channel,
-                ts=ts,
-                text=text,
-                blocks=blocks
-            )
-            return response.data
-        except Exception as e:
-            logger.error(f"Failed to update message: {str(e)}")
-            return None
+            channel_id = await self._resolve_channel(channel)
+            
+            kwargs = {
+                'channel': channel_id,
+                'ts': ts,
+                'text': text
+            }
+            
+            if blocks:
+                kwargs['blocks'] = blocks
+            
+            await self.client.chat_update(**kwargs)
+            return True
+            
+        except SlackApiError as e:
+            logger.error(f"Failed to update message: {e.response['error']}")
+            return False
     
-    # Default Command Handlers
-    async def _handle_help_command(self, command_data: Dict[str, Any]):
-        """Handle /help command"""
-        help_text = """
-🤖 *Sophia AI Commands*
-
-*Available Commands:*
-• `/help` - Show this help message
-• `/status` - Check Sophia AI system status
-• `/analytics` - Get business analytics summary
-• `/call-summary [call_id]` - Get summary of a specific call
-• `/deal-update [deal_id]` - Get deal status update
-• `/insights` - Get latest business insights
-
-*Conversational AI:*
-• Mention @Sophia AI in any channel to ask questions
-• Send direct messages for private assistance
-• Ask about customers, deals, calls, or business metrics
-
-*Examples:*
-• "What's our revenue this month?"
-• "Show me recent calls with high-value prospects"
-• "Any deals closing this week?"
-• "Summarize yesterday's sales calls"
-        """
-        
-        await self.send_ephemeral_message(
-            channel=command_data.get("channel_id"),
-            user=command_data.get("user_id"),
-            text=help_text
-        )
-    
-    async def _handle_status_command(self, command_data: Dict[str, Any]):
-        """Handle /status command"""
+    # Notification System
+    async def send_notification(self, notification: SlackNotification) -> bool:
+        """Send intelligent notification based on type and priority"""
         try:
-            # Get system status (this would integrate with monitoring)
-            status_blocks = [
-                {
+            # Determine channel
+            channel = notification.channel or self._get_channel_for_notification(notification)
+            
+            # Format message based on notification type
+            message_data = await self._format_notification(notification)
+            
+            # Add mentions if needed
+            if notification.mentions:
+                mentions = ' '.join([f"<@{await self._resolve_user(user)}>" for user in notification.mentions])
+                message_data['text'] = f"{mentions} {message_data['text']}"
+            
+            # Send via webhook for urgent notifications
+            if notification.priority == 'urgent' and self.webhook_client:
+                await self.webhook_client.send(**message_data)
+            else:
+                # Send via API
+                message = SlackMessage(
+                    channel=channel,
+                    text=message_data['text'],
+                    blocks=message_data.get('blocks'),
+                    attachments=message_data.get('attachments')
+                )
+                await self.send_message(message)
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to send notification: {str(e)}")
+            return False
+    
+    async def _format_notification(self, notification: SlackNotification) -> Dict[str, Any]:
+        """Format notification based on type"""
+        formatters = {
+            'call_completed': self._format_call_notification,
+            'deal_update': self._format_deal_notification,
+            'task_reminder': self._format_task_notification,
+            'insight_alert': self._format_insight_notification,
+            'system_alert': self._format_system_notification
+        }
+        
+        formatter = formatters.get(notification.type, self._format_generic_notification)
+        return await formatter(notification)
+    
+    async def _format_call_notification(self, notification: SlackNotification) -> Dict[str, Any]:
+        """Format call completion notification"""
+        data = notification.data
+        
+        blocks = [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "📞 Call Analysis Complete"
+                }
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Participants:*\n{data.get('participants', 'Unknown')}"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Duration:*\n{data.get('duration', 0)} minutes"
+                    }
+                ]
+            }
+        ]
+        
+        # Add insights if available
+        if data.get('insights'):
+            insights = data['insights']
+            
+            if insights.get('key_topics'):
+                blocks.append({
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "🤖 *Sophia AI System Status*"
+                        "text": f"*Key Topics:*\n• " + "\n• ".join(insights['key_topics'][:3])
                     }
-                },
-                {
-                    "type": "section",
-                    "fields": [
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Core System:* ✅ Online"
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": "*HubSpot Integration:* ✅ Connected"
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Gong.io Integration:* ✅ Connected"
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Vector Database:* ✅ Operational"
-                        }
-                    ]
-                },
-                {
+                })
+            
+            if insights.get('next_steps'):
+                blocks.append({
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": f"*Last Updated:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                        "text": f"*Next Steps:*\n• " + "\n• ".join(insights['next_steps'][:3])
                     }
+                })
+            
+            if insights.get('success_probability'):
+                emoji = "🟢" if insights['success_probability'] > 70 else "🟡" if insights['success_probability'] > 40 else "🔴"
+                blocks.append({
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"{emoji} *Success Probability:* {insights['success_probability']}%"
+                    }
+                })
+        
+        # Add action buttons
+        blocks.append({
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "View in CRM"},
+                    "url": data.get('crm_link', '#'),
+                    "style": "primary"
+                },
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "View Transcript"},
+                    "url": data.get('transcript_link', '#')
                 }
             ]
-            
-            await self.send_ephemeral_message(
-                channel=command_data.get("channel_id"),
-                user=command_data.get("user_id"),
-                blocks=status_blocks
-            )
-            
-        except Exception as e:
-            await self.send_ephemeral_message(
-                channel=command_data.get("channel_id"),
-                user=command_data.get("user_id"),
-                text=f"Error getting status: {str(e)}"
-            )
+        })
+        
+        return {
+            'text': f"Call analysis complete: {data.get('call_title', 'Sales Call')}",
+            'blocks': blocks
+        }
     
-    async def _handle_analytics_command(self, command_data: Dict[str, Any]):
-        """Handle /analytics command"""
-        try:
-            # This would integrate with actual analytics
-            analytics_blocks = [
+    async def _format_deal_notification(self, notification: SlackNotification) -> Dict[str, Any]:
+        """Format deal update notification"""
+        data = notification.data
+        
+        # Determine emoji based on update type
+        emoji_map = {
+            'stage_advanced': '🎯',
+            'deal_won': '🎉',
+            'deal_lost': '😔',
+            'amount_updated': '💰',
+            'at_risk': '⚠️'
+        }
+        emoji = emoji_map.get(data.get('update_type', ''), '📊')
+        
+        blocks = [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": f"{emoji} Deal Update: {data.get('deal_name', 'Unknown Deal')}"
+                }
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Company:*\n{data.get('company', 'Unknown')}"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Amount:*\n${data.get('amount', 0):,.2f}"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Stage:*\n{data.get('current_stage', 'Unknown')}"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Close Date:*\n{data.get('close_date', 'TBD')}"
+                    }
+                ]
+            }
+        ]
+        
+        # Add context based on update type
+        if data.get('update_details'):
+            blocks.append({
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Update:* {data['update_details']}"
+                }
+            })
+        
+        return {
+            'text': f"Deal update: {data.get('deal_name')} - {data.get('update_type', 'updated')}",
+            'blocks': blocks
+        }
+    
+    async def _format_task_notification(self, notification: SlackNotification) -> Dict[str, Any]:
+        """Format task reminder notification"""
+        data = notification.data
+        
+        urgency_emoji = {
+            'overdue': '🚨',
+            'today': '⏰',
+            'upcoming': '📅'
+        }
+        emoji = urgency_emoji.get(data.get('urgency', ''), '📌')
+        
+        return {
+            'text': f"{emoji} Task Reminder: {data.get('task_title', 'Task')}",
+            'blocks': [
                 {
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "📊 *Pay Ready Analytics Summary*"
+                        "text": f"{emoji} *Task:* {data.get('task_title', 'Task')}\n"
+                                f"*Due:* {data.get('due_date', 'No due date')}\n"
+                                f"*Related to:* {data.get('related_to', 'N/A')}"
                     }
-                },
-                {
-                    "type": "section",
-                    "fields": [
-                        {
-                            "type": "mrkdwn",
-                            "text": "*This Month Revenue:* $125,000"
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Active Deals:* 23"
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Calls This Week:* 47"
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Win Rate:* 68%"
-                        }
-                    ]
                 },
                 {
                     "type": "actions",
                     "elements": [
                         {
                             "type": "button",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "View Full Dashboard"
-                            },
-                            "url": "https://sophia-dashboard.payready.com"
+                            "text": {"type": "plain_text", "text": "Mark Complete"},
+                            "action_id": f"complete_task_{data.get('task_id', '')}",
+                            "style": "primary"
+                        },
+                        {
+                            "type": "button",
+                            "text": {"type": "plain_text", "text": "Snooze"},
+                            "action_id": f"snooze_task_{data.get('task_id', '')}"
                         }
                     ]
                 }
             ]
-            
-            await self.send_ephemeral_message(
-                channel=command_data.get("channel_id"),
-                user=command_data.get("user_id"),
-                blocks=analytics_blocks
-            )
-            
-        except Exception as e:
-            await self.send_ephemeral_message(
-                channel=command_data.get("channel_id"),
-                user=command_data.get("user_id"),
-                text=f"Error getting analytics: {str(e)}"
-            )
+        }
     
-    async def _handle_call_summary_command(self, command_data: Dict[str, Any]):
-        """Handle /call-summary command"""
-        try:
-            text = command_data.get("text", "").strip()
-            if not text:
-                await self.send_ephemeral_message(
-                    channel=command_data.get("channel_id"),
-                    user=command_data.get("user_id"),
-                    text="Please provide a call ID: `/call-summary [call_id]`"
-                )
-                return
-            
-            # This would integrate with Gong.io to get actual call summary
-            summary_text = f"""
-📞 *Call Summary for {text}*
-
-*Participants:* John Smith (Pay Ready), Sarah Johnson (Prospect)
-*Duration:* 45 minutes
-*Date:* {datetime.now().strftime('%Y-%m-%d')}
-
-*Key Points:*
-• Prospect interested in enterprise solution
-• Budget confirmed: $50K annually
-• Decision timeline: End of quarter
-• Next step: Technical demo scheduled
-
-*Sentiment:* Positive
-*Deal Stage:* Demo Scheduled
-*Follow-up Required:* Technical demo preparation
-            """
-            
-            await self.send_ephemeral_message(
-                channel=command_data.get("channel_id"),
-                user=command_data.get("user_id"),
-                text=summary_text
-            )
-            
-        except Exception as e:
-            await self.send_ephemeral_message(
-                channel=command_data.get("channel_id"),
-                user=command_data.get("user_id"),
-                text=f"Error getting call summary: {str(e)}"
-            )
-    
-    async def _handle_deal_update_command(self, command_data: Dict[str, Any]):
-        """Handle /deal-update command"""
-        try:
-            text = command_data.get("text", "").strip()
-            if not text:
-                await self.send_ephemeral_message(
-                    channel=command_data.get("channel_id"),
-                    user=command_data.get("user_id"),
-                    text="Please provide a deal ID: `/deal-update [deal_id]`"
-                )
-                return
-            
-            # This would integrate with HubSpot to get actual deal data
-            deal_blocks = [
+    async def _format_insight_notification(self, notification: SlackNotification) -> Dict[str, Any]:
+        """Format business insight notification"""
+        data = notification.data
+        
+        return {
+            'text': f"💡 Business Insight: {data.get('title', 'New Insight')}",
+            'blocks': [
                 {
-                    "type": "section",
+                    "type": "header",
                     "text": {
-                        "type": "mrkdwn",
-                        "text": f"💼 *Deal Update: {text}*"
+                        "type": "plain_text",
+                        "text": "💡 Business Insight Alert"
                     }
-                },
-                {
-                    "type": "section",
-                    "fields": [
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Company:* Acme Corp"
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Value:* $75,000"
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Stage:* Proposal Sent"
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Close Date:* 2024-02-15"
-                        }
-                    ]
                 },
                 {
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*Recent Activity:* Proposal sent yesterday, follow-up call scheduled for tomorrow"
+                        "text": f"*{data.get('title', 'Insight')}*\n\n{data.get('description', '')}"
+                    }
+                },
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"*Impact:* {data.get('impact', 'Unknown')}\n"
+                                f"*Recommendation:* {data.get('recommendation', 'Review needed')}"
                     }
                 }
             ]
+        }
+    
+    async def _format_system_notification(self, notification: SlackNotification) -> Dict[str, Any]:
+        """Format system alert notification"""
+        data = notification.data
+        
+        severity_emoji = {
+            'info': 'ℹ️',
+            'warning': '⚠️',
+            'error': '❌',
+            'success': '✅'
+        }
+        emoji = severity_emoji.get(data.get('severity', 'info'), 'ℹ️')
+        
+        return {
+            'text': f"{emoji} System Alert: {data.get('message', 'System notification')}",
+            'attachments': [{
+                'color': {
+                    'info': '#36a64f',
+                    'warning': '#ff9900',
+                    'error': '#ff0000',
+                    'success': '#36a64f'
+                }.get(data.get('severity', 'info'), '#808080'),
+                'text': data.get('details', '')
+            }]
+        }
+    
+    async def _format_generic_notification(self, notification: SlackNotification) -> Dict[str, Any]:
+        """Format generic notification"""
+        return {
+            'text': notification.data.get('message', 'Sophia AI Notification'),
+            'blocks': [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": notification.data.get('message', 'Notification from Sophia AI')
+                    }
+                }
+            ]
+        }
+    
+    def _get_channel_for_notification(self, notification: SlackNotification) -> str:
+        """Determine appropriate channel based on notification type and priority"""
+        channel_map = {
+            'urgent': '#sophia-urgent',
+            'deal_update': '#sales-updates',
+            'call_completed': '#call-insights',
+            'task_reminder': '#task-reminders',
+            'system_alert': '#sophia-system'
+        }
+        
+        # Check priority first
+        if notification.priority == 'urgent':
+            return channel_map.get('urgent', self.config.default_channel)
+        
+        # Then check type
+        return channel_map.get(notification.type, self.config.default_channel)
+    
+    # Channel and User Management
+    async def _resolve_channel(self, channel: str) -> str:
+        """Resolve channel name to ID"""
+        if channel.startswith('C') or channel.startswith('D'):
+            return channel  # Already an ID
+        
+        channel_name = channel.lstrip('#')
+        
+        # Check cache first
+        if channel_name in self._channel_cache:
+            return self._channel_cache[channel_name]
+        
+        # Refresh cache and try again
+        await self._cache_channels()
+        return self._channel_cache.get(channel_name, channel)
+    
+    async def _resolve_user(self, user: str) -> str:
+        """Resolve user email or name to ID"""
+        if user.startswith('U'):
+            return user  # Already an ID
+        
+        # Check cache first
+        if user in self._user_cache:
+            return self._user_cache[user]['id']
+        
+        try:
+            # Look up by email
+            response = await self.client.users_lookupByEmail(email=user)
+            user_info = response['user']
+            self._user_cache[user] = user_info
+            return user_info['id']
+        except:
+            # Try to find by display name
+            try:
+                response = await self.client.users_list()
+                for u in response['members']:
+                    if u.get('real_name') == user or u.get('name') == user:
+                        self._user_cache[user] = u
+                        return u['id']
+            except:
+                pass
+        
+        return user  # Return as-is if can't resolve
+    
+    async def get_user_info(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get detailed user information"""
+        try:
+            response = await self.client.users_info(user=user_id)
+            return response['user']
+        except SlackApiError as e:
+            logger.error(f"Failed to get user info: {e.response['error']}")
+            return None
+    
+    async def get_channel_info(self, channel_id: str) -> Optional[Dict[str, Any]]:
+        """Get detailed channel information"""
+        try:
+            response = await self.client.conversations_info(channel=channel_id)
+            return response['channel']
+        except SlackApiError as e:
+            logger.error(f"Failed to get channel info: {e.response['error']}")
+            return None
+    
+    # Thread Management
+    async def reply_to_thread(
+        self,
+        channel: str,
+        thread_ts: str,
+        text: str,
+        blocks: Optional[List[Dict[str, Any]]] = None
+    ) -> Optional[Dict[str, Any]]:
+        """Reply to existing thread"""
+        message = SlackMessage(
+            channel=channel,
+            text=text,
+            thread_ts=thread_ts,
+            blocks=blocks
+        )
+        return await self.send_message(message)
+    
+    async def create_thread_with_replies(
+        self,
+        channel: str,
+        initial_message: str,
+        replies: List[str]
+    ) -> Optional[str]:
+        """Create thread with multiple replies"""
+        try:
+            # Send initial message
+            message = SlackMessage(channel=channel, text=initial_message)
+            response = await self.send_message(message)
             
-            await self.send_ephemeral_message(
-                channel=command_data.get("channel_id"),
-                user=command_data.get("user_id"),
-                blocks=deal_blocks
-            )
+            if not response:
+                return None
+            
+            thread_ts = response['ts']
+            
+            # Send replies
+            for reply in replies:
+                await self.reply_to_thread(channel, thread_ts, reply)
+                await asyncio.sleep(0.5)  # Small delay between replies
+            
+            return thread_ts
             
         except Exception as e:
-            await self.send_ephemeral_message(
-                channel=command_data.get("channel_id"),
-                user=command_data.get("user_id"),
-                text=f"Error getting deal update: {str(e)}"
-            )
+            logger.error(f"Failed to create thread: {str(e)}")
+            return None
     
-    async def _handle_insights_command(self, command_data: Dict[str, Any]):
-        """Handle /insights command"""
+    # Interactive Components
+    async def handle_interaction(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle interactive component interactions (buttons, select menus, etc.)"""
         try:
-            insights_text = """
-🧠 *Latest Business Insights*
-
-*🔥 Hot Opportunities:*
-• Acme Corp deal (75K) - High engagement, proposal under review
-• TechStart Inc (120K) - Decision maker engaged, budget confirmed
-
-*⚠️ At-Risk Deals:*
-• Global Solutions (90K) - No response to last 3 follow-ups
-• StartupXYZ (45K) - Competitor mentioned in last call
-
-*📈 Trending Topics:*
-• AI automation solutions (+40% mentions this week)
-• Integration capabilities (top concern in 60% of calls)
-• ROI calculations (requested in 8 recent demos)
-
-*🎯 Recommended Actions:*
-• Follow up with Global Solutions urgently
-• Prepare competitive analysis for StartupXYZ
-• Create AI automation case studies for prospects
-            """
+            action_type = payload.get('type')
             
-            await self.send_ephemeral_message(
-                channel=command_data.get("channel_id"),
-                user=command_data.get("user_id"),
-                text=insights_text
-            )
-            
+            if action_type == 'block_actions':
+                return await self._handle_block_action(payload)
+            elif action_type == 'view_submission':
+                return await self._handle_view_submission(payload)
+            elif action_type == 'shortcut':
+                return await self._handle_shortcut(payload)
+            else:
+                logger.warning(f"Unknown interaction type: {action_type}")
+                return {'response_action': 'clear'}
+                
         except Exception as e:
-            await self.send_ephemeral_message(
-                channel=command_data.get("channel_id"),
-                user=command_data.get("user_id"),
-                text=f"Error getting insights: {str(e)}"
-            )
+            logger.error(f"Failed to handle interaction: {str(e)}")
+            return {'response_action': 'clear'}
     
-    # Default Message Handlers
-    async def _handle_mention(self, event: Dict[str, Any]):
-        """Handle mentions of Sophia AI"""
-        try:
-            channel = event.get("channel")
-            user = event.get("user")
-            text = event.get("text", "")
-            ts = event.get("ts")
+    async def _handle_block_action(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle block action (button click, etc.)"""
+        actions = payload.get('actions', [])
+        
+        for action in actions:
+            action_id = action.get('action_id', '')
             
-            # Remove mention from text
-            bot_user_id = await self._get_bot_user_id()
-            clean_text = text.replace(f"<@{bot_user_id}>", "").strip()
-            
-            if not clean_text:
-                await self.send_message(
-                    channel=channel,
-                    text="Hi! I'm Sophia AI, your Pay Ready assistant. How can I help you today?",
-                    thread_ts=ts
-                )
-                return
-            
-            # Generate AI response
-            response = await self._generate_ai_response(clean_text, user)
-            
-            await self.send_message(
-                channel=channel,
-                text=response,
-                thread_ts=ts
-            )
-            
-        except Exception as e:
-            logger.error(f"Error handling mention: {str(e)}")
+            if action_id.startswith('complete_task_'):
+                task_id = action_id.replace('complete_task_', '')
+                await self._complete_task(task_id, payload)
+            elif action_id.startswith('snooze_task_'):
+                task_id = action_id.replace('snooze_task_', '')
+                await self._snooze_task(task_id, payload)
+        
+        return {'response_action': 'update'}
     
-    async def _handle_direct_message(self, event: Dict[str, Any]):
-        """Handle direct messages to Sophia AI"""
-        try:
-            channel = event.get("channel")
-            user = event.get("user")
-            text = event.get("text", "")
-            
-            if not text:
-                return
-            
-            # Generate AI response
-            response = await self._generate_ai_response(text, user)
-            
-            await self.send_message(
-                channel=channel,
-                text=response
-            )
-            
-        except Exception as e:
-            logger.error(f"Error handling direct message: {str(e)}")
+    async def _complete_task(self, task_id: str, payload: Dict[str, Any]):
+        """Handle task completion"""
+        user = payload['user']['id']
+        channel = payload['channel']['id']
+        
+        # Update message to show task completed
+        await self.update_message(
+            channel=channel,
+            ts=payload['message']['ts'],
+            text="✅ Task completed!",
+            blocks=[{
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"✅ Task completed by <@{user}>"
+                }
+            }]
+        )
     
-    async def _generate_ai_response(self, text: str, user_id: str) -> str:
-        """Generate AI response using OpenAI"""
-        try:
-            if not self.config.openai_api_key:
-                return "I'm sorry, but my AI capabilities are currently unavailable. Please try again later."
-            
-            # Get user info
-            user_info = await self.web_client.users_info(user=user_id)
-            user_name = user_info.data.get("user", {}).get("real_name", "there")
-            
-            # Create context-aware prompt
-            system_prompt = f"""
-You are Sophia AI, the intelligent assistant for Pay Ready, a business services company. 
-You help the team with:
-- Business analytics and insights
-- Customer relationship management
-- Sales call analysis and coaching
-- Deal pipeline management
-- Revenue forecasting
-- Team productivity optimization
-
-You have access to:
-- HubSpot CRM data
-- Gong.io call recordings and analysis
-- Business intelligence dashboards
-- Customer interaction history
-
-Be helpful, professional, and concise. Provide actionable insights when possible.
-The user's name is {user_name}.
-"""
-            
-            response = await openai.ChatCompletion.acreate(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": text}
+    async def _snooze_task(self, task_id: str, payload: Dict[str, Any]):
+        """Handle task snooze"""
+        # Open modal for snooze duration selection
+        await self.client.views_open(
+            trigger_id=payload['trigger_id'],
+            view={
+                "type": "modal",
+                "callback_id": f"snooze_task_modal_{task_id}",
+                "title": {"type": "plain_text", "text": "Snooze Task"},
+                "blocks": [
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": "How long would you like to snooze this task?"},
+                        "accessory": {
+                            "type": "static_select",
+                            "action_id": "snooze_duration",
+                            "options": [
+                                {"text": {"type": "plain_text", "text": "1 hour"}, "value": "1h"},
+                                {"text": {"type": "plain_text", "text": "4 hours"}, "value": "4h"},
+                                {"text": {"type": "plain_text", "text": "1 day"}, "value": "1d"},
+                                {"text": {"type": "plain_text", "text": "3 days"}, "value": "3d"}
+                            ]
+                        }
+                    }
                 ],
-                max_tokens=500,
-                temperature=0.7
-            )
-            
-            return response.choices[0].message.content
-            
-        except Exception as e:
-            logger.error(f"Error generating AI response: {str(e)}")
-            return "I'm sorry, I encountered an error processing your request. Please try again or contact support if the issue persists."
+                "submit": {"type": "plain_text", "text": "Snooze"}
+            }
+        )
     
-    # Notification Methods
-    async def send_deal_alert(self, deal_data: Dict[str, Any]):
-        """Send deal-related alert to team"""
-        try:
-            alert_text = f"""
-🚨 *Deal Alert*
-
-*Company:* {deal_data.get('company', 'Unknown')}
-*Value:* ${deal_data.get('value', 0):,}
-*Stage:* {deal_data.get('stage', 'Unknown')}
-*Alert Type:* {deal_data.get('alert_type', 'Update')}
-
-*Details:* {deal_data.get('details', 'No additional details')}
-            """
-            
-            await self.send_message(
-                channel=self.config.alerts_channel,
-                text=alert_text
-            )
-            
-        except Exception as e:
-            logger.error(f"Error sending deal alert: {str(e)}")
+    # Slash Commands
+    async def handle_slash_command(self, command: str, text: str, user_id: str, channel_id: str) -> Dict[str, Any]:
+        """Handle slash commands"""
+        handlers = {
+            '/sophia': self._handle_sophia_command,
+            '/sophia-search': self._handle_search_command,
+            '/sophia-insight': self._handle_insight_command,
+            '/sophia-report': self._handle_report_command
+        }
+        
+        handler = handlers.get(command)
+        if handler:
+            return await handler(text, user_id, channel_id)
+        else:
+            return {
+                'response_type': 'ephemeral',
+                'text': f"Unknown command: {command}"
+            }
     
-    async def send_call_summary(self, call_data: Dict[str, Any]):
-        """Send call summary to team"""
-        try:
-            summary_blocks = [
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"📞 *Call Summary: {call_data.get('title', 'Unknown Call')}*"
-                    }
-                },
-                {
-                    "type": "section",
-                    "fields": [
-                        {
-                            "type": "mrkdwn",
-                            "text": f"*Duration:* {call_data.get('duration', 0)} minutes"
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": f"*Sentiment:* {call_data.get('sentiment', 'Neutral')}"
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": f"*Participants:* {len(call_data.get('participants', []))}"
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": f"*Outcome:* {call_data.get('outcome', 'Unknown')}"
-                        }
-                    ]
-                }
-            ]
-            
-            if call_data.get('key_insights'):
-                summary_blocks.append({
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"*Key Insights:*\n{call_data['key_insights']}"
-                    }
-                })
-            
-            await self.send_message(
-                channel=self.config.sophia_channel,
-                blocks=summary_blocks
-            )
-            
-        except Exception as e:
-            logger.error(f"Error sending call summary: {str(e)}")
+    async def _handle_sophia_command(self, text: str, user_id: str, channel_id: str) -> Dict[str, Any]:
+        """Handle main /sophia command"""
+        if not text:
+            return {
+                'response_type': 'ephemeral',
+                'text': "Hi! I'm Sophia, your AI assistant. Try:\n"
+                        "• `/sophia help` - Show available commands\n"
+                        "• `/sophia status` - Check system status\n"
+                        "• `/sophia analyze [topic]` - Get insights on a topic"
+            }
+        
+        parts = text.split()
+        subcommand = parts[0].lower()
+        
+        if subcommand == 'help':
+            return await self._show_help()
+        elif subcommand == 'status':
+            return await self._show_status()
+        elif subcommand == 'analyze':
+            topic = ' '.join(parts[1:]) if len(parts) > 1 else 'general'
+            return await self._analyze_topic(topic, user_id)
+        else:
+            return {
+                'response_type': 'ephemeral',
+                'text': f"Unknown subcommand: {subcommand}. Try `/sophia help`"
+            }
     
-    async def send_daily_digest(self):
-        """Send daily business digest"""
-        try:
-            digest_text = f"""
-📊 *Daily Business Digest - {datetime.now().strftime('%Y-%m-%d')}*
-
-*Today's Highlights:*
-• 12 calls completed
-• 3 new deals created
-• $45,000 in new pipeline value
-• 2 deals moved to proposal stage
-
-*Top Performers:*
-• Sarah J. - 5 calls, 2 new opportunities
-• Mike R. - 3 demos, 1 deal closed
-
-*Action Items:*
-• Follow up with Acme Corp (proposal sent yesterday)
-• Prepare demo for TechStart Inc (scheduled tomorrow)
-• Review pricing for Global Solutions deal
-
-*Tomorrow's Schedule:*
-• 9 AM - Demo with TechStart Inc
-• 2 PM - Proposal review with Acme Corp
-• 4 PM - Team standup meeting
-            """
-            
-            await self.send_message(
-                channel=self.config.sophia_channel,
-                text=digest_text
+    # Rate Limiting
+    async def _rate_limit(self):
+        """Implement rate limiting for Slack API"""
+        elapsed = (datetime.now() - self.last_message_time).total_seconds()
+        if elapsed < self.config.rate_limit_delay:
+            await asyncio.sleep(self.config.rate_limit_delay - elapsed)
+        self.last_message_time = datetime.now()
+    
+    # Webhook Verification
+    def verify_webhook(self, timestamp: str, signature: str, body: str) -> bool:
+        """Verify Slack webhook signature"""
+        return self.signature_verifier.is_valid(
+            body=body,
+            timestamp=timestamp,
+            signature=signature
+        )
+    
+    # Event Handling
+    async def handle_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle Slack events"""
+        event_type = event.get('type')
+        
+        handlers = {
+            'message': self._handle_message_event,
+            'app_mention': self._handle_mention_event,
+            'reaction_added': self._handle_reaction_event
+        }
+        
+        handler = handlers.get(event_type)
+        if handler:
+            return await handler(event)
+        
+        return {'status': 'ok'}
+    
+    async def _handle_message_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle message events"""
+        # Skip bot messages to avoid loops
+        if event.get('bot_id'):
+            return {'status': 'ok'}
+        
+        text = event.get('text', '').lower()
+        channel = event.get('channel')
+        user = event.get('user')
+        
+        # Check for keywords that might need Sophia's attention
+        keywords = ['sophia', 'help', 'analyze', 'insight', 'report']
+        
+        if any(keyword in text for keyword in keywords):
+            # Respond to relevant messages
+            await self.send_ephemeral_message(
+                channel=channel,
+                user=user,
+                text="Hi! Did you need help? Try mentioning me directly with @Sophia or use `/sophia help`"
             )
-            
-        except Exception as e:
-            logger.error(f"Error sending daily digest: {str(e)}")
+        
+        return {'status': 'ok'}
+    
+    async def _handle_mention_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle app mentions"""
+        text = event.get('text', '')
+        channel = event.get('channel')
+        user = event.get('user')
+        thread_ts = event.get('thread_ts') or event.get('ts')
+        
+        # Remove mention to get actual message
+        import re
+        clean_text = re.sub(r'<@[A-Z0-9]+>', '', text).strip()
+        
+        # Process the request
+        response = await self._process_mention_request(clean_text, user)
+        
+        # Reply in thread
+        await self.reply_to_thread(
+            channel=channel,
+            thread_ts=thread_ts,
+            text=response
+        )
+        
+        return {'status': 'ok'}
+    
+    async def _process_mention_request(self, text: str, user_id: str) -> str:
+        """Process request from mention"""
+        # This would integrate with Sophia's AI capabilities
+        # For now, return a helpful response
+        
+        if 'report' in text.lower():
+            return "I can help you generate reports! Try `/sophia-report sales` for a sales report."
+        elif 'insight' in text.lower():
+            return "Looking for insights? Use `/sophia-insight [topic]` to get AI-powered analysis."
+        elif 'help' in text.lower():
+            return "Here's what I can do:\n• Generate reports\n• Provide insights\n• Analyze calls\n• Track deals\n\nTry `/sophia help` for more details!"
+        else:
+            return f"Hi <@{user_id}>! I'm processing your request. For specific commands, try `/sophia help`"
 
 # Example usage
 if __name__ == "__main__":
     async def main():
         config = SlackConfig()
-        bot = SophiaSlackBot(config)
+        slack = SlackIntegration(config)
         
-        try:
-            await bot.start()
+        # Initialize
+        if await slack.initialize():
+            print("Slack integration initialized successfully")
             
-            # Keep the bot running
-            while bot.is_running:
-                await asyncio.sleep(1)
-                
-        except KeyboardInterrupt:
-            logger.info("Shutting down bot...")
-        finally:
-            await bot.stop()
+            # Test sending a message
+            message = SlackMessage(
+                channel="#general",
+                text="Hello from Sophia AI!",
+                blocks=[{
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "👋 *Sophia AI is online!*\n\nI'm here to help with:\n• Call analysis\n• Deal tracking\n• Business insights"
+                    }
+                }]
+            )
+            
+            result = await slack.send_message(message)
+            if result:
+                print(f"Message sent: {result['ts']}")
     
     asyncio.run(main())
 

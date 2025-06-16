@@ -19,7 +19,7 @@ import aiohttp
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
-import aioredis
+import redis.asyncio as redis
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ class SophiaMonitoringSystem:
         """Start the monitoring system"""
         try:
             # Connect to Redis
-            self.redis_client = await aioredis.from_url(self.config.redis_url)
+            self.redis_client = redis.from_url(self.config.redis_url)
             
             # Start monitoring tasks
             self.is_running = True
