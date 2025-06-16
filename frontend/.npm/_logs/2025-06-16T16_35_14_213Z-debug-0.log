@@ -1,0 +1,19 @@
+0 verbose cli /home/ubuntu/.nvm/versions/node/v22.13.0/bin/node /home/ubuntu/.nvm/versions/node/v22.13.0/bin/npm
+1 info using npm@10.9.2
+2 info using node@v22.13.0
+3 silly config load:file:/home/ubuntu/.nvm/versions/node/v22.13.0/lib/node_modules/npm/npmrc
+4 silly config load:file:/home/ubuntu/sophia-main/frontend/.npmrc
+5 silly config load:file:/home/ubuntu/.npmrc
+6 silly config load:file:/home/ubuntu/.nvm/versions/node/v22.13.0/etc/npmrc
+7 verbose title npm run dev --host --port 5175
+8 verbose argv "run" "dev" "--" "--host" "--port" "5175"
+9 verbose logfile logs-max:10 dir:/home/ubuntu/.npm/_logs/2025-06-16T16_35_14_213Z-
+10 verbose logfile /home/ubuntu/.npm/_logs/2025-06-16T16_35_14_213Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly logfile done cleaning log files
+13 verbose cwd /home/ubuntu/sophia-main/frontend
+14 verbose os Linux 6.1.102
+15 verbose node v22.13.0
+16 verbose npm  v10.9.2
+17 verbose exit 1
+18 verbose code 1
