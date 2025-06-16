@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "sophia-payready": {
+      "command": "python",
+      "args": ["/home/ubuntu/sophia-main/backend/mcp/sophia_mcp_server.py"],
+      "env": {
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
+      }
+    }
+  }
+}
+
