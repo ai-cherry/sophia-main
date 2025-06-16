@@ -21,7 +21,7 @@ from typing import Dict, List, Optional, Any, Tuple
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import aioredis
+import redis.asyncio as redis
 import os
 
 logger = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ class SophiaSecurityManager:
         """Start the security manager"""
         try:
             # Connect to Redis for session and key storage
-            self.redis_client = await aioredis.from_url(self.config.redis_url)
+            self.redis_client = redis.from_url(self.config.redis_url)
             
             # Initialize security monitoring
             await self._initialize_security_monitoring()

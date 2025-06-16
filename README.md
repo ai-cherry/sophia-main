@@ -1,254 +1,283 @@
-# Sophia AI Pay Ready Platform
-## AI Assistant Orchestrator Implementation Plan
+# Sophia AI - Pay Ready Assistant Orchestrator
 
-### 🎯 Project Vision
-Transform Sophia AI from a business intelligence platform into a sophisticated AI assistant orchestrator for Pay Ready, with specialized agents managing HubSpot, Gong.io, and Slack integrations for comprehensive business intelligence and automation.
-
----
-
-## 📋 Implementation Documentation
-
-### **Strategic Planning Documents**
-- **[Implementation Plan](docs/implementation/sophia_implementation_plan.md)** - Comprehensive roadmap based on strategic decisions
-- **[Technical Architecture](docs/implementation/sophia_technical_architecture.md)** - Detailed system design and component specifications  
-- **[Development Timeline](docs/implementation/sophia_development_timeline.md)** - 18-week milestone-driven development schedule
-
-### **Key Strategic Decisions**
-1. **Architecture:** Start flat, evolve to hierarchical as complexity grows
-2. **Interface Priority:** Simultaneous Slack + Admin interface development
-3. **CRM Strategy:** HubSpot primary, selective Salesforce data, Gong.io critical
-4. **First Test:** Gong.io + Slack + HubSpot interplay demonstration
-5. **Agent Specialization:** Highly specialized agents from the start
-6. **Learning:** Hybrid automatic + manual refinement approach
+<div align="center">
+  <h1>🧠 Sophia AI</h1>
+  <p><strong>The Intelligent AI Assistant Orchestrator for Pay Ready</strong></p>
+  <p>Transform your business operations with AI-powered intelligence</p>
+</div>
 
 ---
 
-## 🚀 Quick Start Implementation
+## 🚀 Overview
 
-### **Phase 1: Foundation (Weeks 1-6)**
-**Priority:** Critical | **Goal:** First working integration
+Sophia AI is an enterprise-grade AI assistant orchestrator designed to serve as the central "Pay Ready Brain" for business operations. It orchestrates multiple specialized AI agents, integrates with business systems, and provides intelligent, contextualized responses to drive business growth and efficiency.
 
-#### **Week 1-2: Core Infrastructure**
+### Key Features
+
+- **🤖 Multi-Agent Orchestration**: Coordinate specialized AI agents for different business functions
+- **🔗 Business System Integration**: Seamless integration with HubSpot, Gong.io, Slack, and more
+- **📊 Business Intelligence**: Real-time analytics and insights for data-driven decisions
+- **🔒 Enterprise Security**: Bank-grade security with encrypted API management
+- **📈 Scalable Architecture**: Built for growth with Lambda Labs GPU infrastructure
+- **🎯 Custom Workflows**: Support for N8N workflows and domain-specific agents
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Frontend (React)                        │
+├─────────────────────────────────────────────────────────────┤
+│                    API Gateway (Flask)                       │
+├─────────────────────────────────────────────────────────────┤
+│                  Orchestrator (Sophia Core)                  │
+├──────────────┬──────────────┬──────────────┬───────────────┤
+│ Call Analysis│  CRM Sync    │ Notification │  Custom       │
+│    Agent     │   Agent      │    Agent     │  Agents       │
+├──────────────┴──────────────┴──────────────┴───────────────┤
+│                    Integration Layer                         │
+├────────┬──────────┬──────────┬──────────┬─────────────────┤
+│HubSpot │ Gong.io  │  Slack   │PostgreSQL│ Vector DBs      │
+└────────┴──────────┴──────────┴──────────┴─────────────────┘
+```
+
+## 🚦 Quick Start
+
+### Prerequisites
+
+- Python 3.11+
+- Node.js 18+ and pnpm
+- PostgreSQL 15+
+- Redis 7+
+- Docker & Docker Compose (optional)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/payready/sophia-ai.git
+   cd sophia-ai
+   ```
+
+2. **Set up environment**
+   ```bash
+   cp env.example .env
+   # Edit .env with your configuration
+   ```
+
+3. **Install dependencies**
+   ```bash
+   make install
+   ```
+
+4. **Run database migrations**
+   ```bash
+   make db-migrate
+   ```
+
+5. **Start development servers**
+   ```bash
+   make dev
+   ```
+
+6. **Access the application**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:5000
+   - API Documentation: http://localhost:5000/docs
+
+## 🔧 Configuration
+
+### Environment Variables
+
+Key environment variables (see `env.example` for full list):
+
+- `SOPHIA_ENV`: Environment (development/production)
+- `OPENAI_API_KEY`: OpenAI API key for AI capabilities
+- `HUBSPOT_API_KEY`: HubSpot CRM integration
+- `GONG_API_KEY`: Gong.io call analysis
+- `SLACK_BOT_TOKEN`: Slack integration
+
+### Database Configuration
+
+PostgreSQL and Redis connection settings are configured in `.env`:
+
+```env
+POSTGRES_HOST=your-postgres-host
+POSTGRES_PORT=5432
+POSTGRES_USER=sophia
+POSTGRES_PASSWORD=your-password
+POSTGRES_DB=sophia_payready
+
+REDIS_HOST=your-redis-host
+REDIS_PORT=6379
+```
+
+## 📚 Documentation
+
+- [Technical Architecture](docs/implementation/sophia_technical_architecture.md)
+- [Implementation Plan](docs/implementation/sophia_implementation_plan.md)
+- [Development Timeline](docs/implementation/sophia_development_timeline.md)
+- [API Documentation](docs/sophia_api_authentication_report.md)
+- [MCP Server Documentation](docs/mcp_server_documentation.md)
+
+## 🧪 Testing
+
+Run the test suite:
+
 ```bash
-# Set up agent architecture
-cd sophia-main/backend
-mkdir -p agents/{core,specialized,interfaces}
-mkdir -p integrations/{gong,hubspot,slack}
+# Run all tests
+make test
 
-# Install dependencies
-pip install fastapi uvicorn redis celery openai slack-bolt hubspot-api-client
+# Run specific test file
+pytest tests/test_auth.py -v
+
+# Run with coverage
+pytest --cov=backend --cov-report=html
 ```
 
-#### **Week 3-4: First Integration**
-- Gong.io call analysis → HubSpot CRM updates → Slack notifications
-- End-to-end workflow demonstration
-- Admin interface for monitoring
+## 🚀 Deployment
 
-#### **Week 5-6: Enhanced Capabilities**
-- Natural language Slack interface
-- Performance optimization
-- Comprehensive testing
+### Docker Deployment
 
-### **Phase 2: Specialized Agents (Weeks 7-12)**
-**Priority:** High | **Goal:** Highly specialized agent suite
+```bash
+# Build and start containers
+make docker-build
+make docker-up
 
-- **Prospecting Agents:** Lead discovery, scoring, outreach, qualification
-- **Sales Coaching Agents:** Call analysis, objection handling, performance tracking
-- **Client Health Agents:** Usage monitoring, churn prediction, expansion opportunities
-- **Marketing Agents:** Campaign analysis, content optimization, attribution
-
-### **Phase 3: Advanced Intelligence (Weeks 13-16)**
-**Priority:** Medium-High | **Goal:** Learning and predictive analytics
-
-- **Hybrid Learning System:** Pattern recognition + manual refinement
-- **Predictive Analytics:** Deal prediction, churn forecasting, performance modeling
-- **Enhanced Knowledge Base:** Dynamic business context and memory
-
-### **Phase 4: Workflow Automation (Weeks 17-18)**
-**Priority:** Medium | **Goal:** N8N integration and scaling
-
-- **N8N Workflow Integration:** Business process automation
-- **Hierarchical Evolution:** Domain supervisors for agent coordination
-- **Production Deployment:** Full production environment with monitoring
-
----
-
-## 🏗️ Technical Architecture Overview
-
-### **Core Components**
-```
-Sophia Core Orchestrator
-├── Agent Registry & Discovery
-├── Redis Message Bus
-├── Context Management
-└── Task Routing
-
-Specialized Agents
-├── Call Analysis Agent (Gong.io)
-├── CRM Sync Agent (HubSpot)
-├── Slack Interface Agent
-├── Prospecting Agents
-├── Sales Coaching Agents
-├── Client Health Agents
-└── Marketing Agents
-
-Integration Layer
-├── HubSpot API Integration
-├── Gong.io API Integration
-├── Slack Bot Framework
-├── Salesforce Selective Data
-└── N8N Workflow Engine
-
-Data Architecture
-├── PostgreSQL (Structured Data)
-├── Redis (Caching & Real-time)
-├── Pinecone (Vector Search)
-├── Weaviate (Contextual Search)
-└── Prometheus (Monitoring)
+# Stop containers
+make docker-down
 ```
 
-### **Technology Stack**
-- **Backend:** Python 3.11+, FastAPI, asyncio
-- **Message Bus:** Redis Pub/Sub
-- **Database:** PostgreSQL + Redis + Pinecone + Weaviate
-- **AI/ML:** OpenAI GPT-4, scikit-learn
-- **Integrations:** HubSpot API v3, Gong.io API, Slack Bolt SDK
-- **Frontend:** React (existing components)
-- **Infrastructure:** Lambda Labs, Vercel, Docker
-- **Monitoring:** Prometheus, Grafana
+### Production Deployment (Lambda Labs)
 
----
-
-## 📊 Success Metrics & KPIs
-
-### **Technical Performance**
-- Agent response time: < 2 seconds
-- System uptime: > 99.9%
-- Data sync accuracy: > 99%
-- Workflow success rate: > 95%
-
-### **Business Impact**
-- Call analysis time reduction: > 80%
-- CRM data accuracy improvement: > 50%
-- Follow-up automation coverage: > 70%
-- Team productivity improvement: > 30%
-
-### **User Experience**
-- Slack interaction satisfaction: > 4.5/5
-- Admin interface usability: > 4.0/5
-- Response relevance: > 90%
-- Learning curve: < 1 week for basic proficiency
-
----
-
-## 💰 Resource Requirements
-
-### **Development Timeline:** 18 weeks (510 hours total)
-### **Infrastructure Costs:** $3,150 over 18 weeks
-### **Technology Licenses:** $675 over 18 weeks
-### **Total Project Investment:** $3,825
-
----
-
-## 🔄 Current Status
-
-### **✅ Completed Infrastructure**
-- Production-ready Pulumi infrastructure deployment
-- Multi-database architecture (PostgreSQL + Redis + Vector DBs)
-- Monitoring system with Prometheus metrics
-- GitHub Actions CI/CD pipeline
-- Security and key management system
-
-### **🚧 Next Immediate Steps**
-1. **Week 1:** Implement agent registry and message bus
-2. **Week 2:** Create core specialized agents (Call Analysis, CRM Sync, Slack Interface)
-3. **Week 3:** Build first integration workflow (Gong.io → HubSpot → Slack)
-4. **Week 4:** Develop admin interface for agent management
-
----
-
-## 📞 Integration Focus: Gong.io + HubSpot + Slack
-
-### **Primary Workflow**
-```
-Gong.io Call Recording
-    ↓
-Call Analysis Agent (AI-powered insights)
-    ↓
-CRM Sync Agent (Update HubSpot with insights)
-    ↓
-Slack Interface Agent (Notify team with actionable insights)
-    ↓
-Follow-up Agent (Schedule appropriate next steps)
+```bash
+# Deploy to production
+make deploy
 ```
 
-### **Business Value**
-- **Automated Call Analysis:** Reduce manual call review time by 80%
-- **Real-time CRM Updates:** Ensure 100% data accuracy and completeness
-- **Proactive Team Notifications:** Keep team informed with relevant insights
-- **Intelligent Follow-up:** Automate 70% of routine follow-up tasks
+The deployment uses Pulumi for infrastructure as code. Configure your Lambda Labs credentials in the Pulumi configuration.
 
----
+## 🛠️ Development
 
-## 🔗 Related Projects
+### Common Commands
 
-### **Orchestra AI Integration**
-- **Relationship:** Independent with API connections for data sharing
-- **Data Flow:** Sophia → Orchestra for high-level insights and reporting
-- **Shared Resources:** Vector databases, monitoring infrastructure
+```bash
+# Format code
+make format
 
-### **Pay Ready Focus**
-- **Specialization:** Business intelligence and sales process automation
-- **Team Integration:** Slack as primary communication interface
-- **Business Systems:** Deep integration with all Pay Ready tools and processes
+# Run linting
+make lint
 
----
+# Security check
+make security-check
 
-## 📚 Documentation Structure
+# View logs
+make logs
 
-```
-docs/
-├── implementation/
-│   ├── sophia_implementation_plan.md
-│   ├── sophia_technical_architecture.md
-│   └── sophia_development_timeline.md
-├── api/
-│   ├── agent_api_reference.md
-│   ├── integration_endpoints.md
-│   └── webhook_documentation.md
-├── user_guides/
-│   ├── slack_interface_guide.md
-│   ├── admin_interface_guide.md
-│   └── workflow_configuration.md
-└── development/
-    ├── setup_instructions.md
-    ├── testing_guidelines.md
-    └── deployment_procedures.md
+# Database shell
+make db-shell
+
+# Python shell with context
+make shell
 ```
 
+### Creating New Agents
+
+```bash
+# Create a new specialized agent
+make new-agent
+# Enter agent name when prompted
+```
+
+### Project Structure
+
+```
+sophia-ai/
+├── backend/               # Python backend
+│   ├── agents/           # AI agents
+│   ├── app/              # Flask application
+│   ├── integrations/     # External integrations
+│   ├── monitoring/       # System monitoring
+│   └── security/         # Security management
+├── frontend/             # React frontend
+│   ├── src/
+│   │   ├── components/   # UI components
+│   │   └── pages/        # Page components
+├── infrastructure/       # IaC (Pulumi)
+├── tests/               # Test suite
+└── docs/                # Documentation
+```
+
+## 📊 Monitoring
+
+Access monitoring dashboards:
+
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3000 (default: admin/admin)
+
+```bash
+# Open monitoring dashboards
+make monitor
+```
+
+## 🔒 Security
+
+Sophia AI implements enterprise-grade security:
+
+- **Encrypted API Keys**: All sensitive credentials are encrypted at rest
+- **JWT Authentication**: Secure token-based authentication
+- **Rate Limiting**: Protection against abuse
+- **Audit Logging**: Comprehensive security event logging
+- **Session Management**: Secure session handling
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Code Style
+
+- Python: Black formatter with 88-character line limit
+- TypeScript/React: ESLint + Prettier
+- Commit messages: Conventional Commits
+
+## 📝 License
+
+This project is proprietary software owned by Pay Ready. All rights reserved.
+
+## 🆘 Support
+
+For support and questions:
+- Internal Slack: #sophia-support
+- Email: sophia-team@payready.com
+- Documentation: [Internal Wiki](https://wiki.payready.com/sophia)
+
+## 🎯 Roadmap
+
+### Phase 1 (Current)
+- ✅ Core orchestrator framework
+- ✅ HubSpot and Gong.io integration
+- ✅ Basic agent implementation
+- ✅ Security and monitoring
+
+### Phase 2 (Q1 2024)
+- 🔄 Hierarchical agent architecture
+- 🔄 Advanced analytics dashboard
+- 🔄 N8N workflow integration
+- 🔄 Mobile application
+
+### Phase 3 (Q2 2024)
+- 📋 Multi-tenant support
+- 📋 Advanced ML capabilities
+- 📋 Voice interface
+- 📋 International expansion
+
 ---
 
-## 🎯 Getting Started
-
-### **For Developers**
-1. Review implementation plan and technical architecture
-2. Set up development environment with API keys
-3. Start with Week 1 tasks: agent registry and message bus
-4. Follow milestone-driven development approach
-
-### **For Business Users**
-1. Prepare HubSpot and Gong.io API access
-2. Set up Slack workspace for testing
-3. Review expected workflows and business impact
-4. Plan team training and rollout strategy
-
-### **For System Administrators**
-1. Verify Lambda Labs server configuration
-2. Ensure all API keys and secrets are properly configured
-3. Set up monitoring and alerting systems
-4. Plan production deployment and backup strategies
-
----
-
-**Sophia AI is ready to become your company's intelligent assistant orchestrator, transforming how Pay Ready manages sales, marketing, and customer success through AI-powered automation and insights.**
+<div align="center">
+  <p>Built with ❤️ by the Pay Ready Team</p>
+  <p>Making business intelligence accessible to everyone</p>
+</div>
 

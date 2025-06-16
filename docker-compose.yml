@@ -1,4 +1,4 @@
-version: '3.8'
+# Docker Compose configuration for Sophia AI
 
 services:
   # Sophia AI Application
@@ -6,23 +6,33 @@ services:
     build: .
     container_name: sophia-payready
     ports:
-      - "5000:5000"
+      - "5001:5000"
     environment:
-      - DATABASE_URL=postgresql://sophia:sophia_pass@postgres:5432/sophia_payready
+      - DATABASE_URL=postgresql://sophia:sophia_pass@sophia-postgres:5432/sophia_payready
+      - REDIS_URL=redis://sophia-redis:6379
       - SECRET_KEY=${SECRET_KEY:-sophia-secret-key-change-in-production}
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - HUBSPOT_API_KEY=${HUBSPOT_API_KEY}
+      - GONG_API_KEY=${GONG_API_KEY}
+      - GONG_API_SECRET=${GONG_API_SECRET}
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
+      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - WEAVIATE_API_KEY=${WEAVIATE_API_KEY}
+      - WEAVIATE_URL=${WEAVIATE_URL}
     depends_on:
-      - postgres
-      - redis
+      - sophia-postgres
+      - sophia-redis
     restart: unless-stopped
     networks:
       - sophia-network
 
   # PostgreSQL Database
-  postgres:
+  sophia-postgres:
     image: postgres:15-alpine
     container_name: sophia-postgres
     environment:
@@ -30,33 +40,33 @@ services:
       - POSTGRES_USER=sophia
       - POSTGRES_PASSWORD=sophia_pass
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - sophia_postgres_data:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d
     ports:
-      - "5432:5432"
+      - "5433:5432"
     restart: unless-stopped
     networks:
       - sophia-network
 
   # Redis Cache
-  redis:
+  sophia-redis:
     image: redis:7-alpine
     container_name: sophia-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
-      - redis_data:/data
+      - sophia_redis_data:/data
     restart: unless-stopped
     networks:
       - sophia-network
 
   # Nginx Reverse Proxy
-  nginx:
+  sophia-nginx:
     image: nginx:alpine
     container_name: sophia-nginx
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
+      - "8443:443"
     volumes:
       - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./infrastructure/nginx/ssl:/etc/nginx/ssl
@@ -67,14 +77,14 @@ services:
       - sophia-network
 
   # Prometheus Monitoring
-  prometheus:
+  sophia-prometheus:
     image: prom/prometheus:latest
     container_name: sophia-prometheus
     ports:
-      - "9090:9090"
+      - "9091:9090"
     volumes:
       - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
+      - sophia_prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -85,24 +95,24 @@ services:
       - sophia-network
 
   # Grafana Dashboard
-  grafana:
+  sophia-grafana:
     image: grafana/grafana:latest
     container_name: sophia-grafana
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
     volumes:
-      - grafana_data:/var/lib/grafana
+      - sophia_grafana_data:/var/lib/grafana
     restart: unless-stopped
     networks:
       - sophia-network
 
 volumes:
-  postgres_data:
-  redis_data:
-  prometheus_data:
-  grafana_data:
+  sophia_postgres_data:
+  sophia_redis_data:
+  sophia_prometheus_data:
+  sophia_grafana_data:
 
 networks:
   sophia-network:
