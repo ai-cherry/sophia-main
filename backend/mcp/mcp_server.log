@@ -1,0 +1,32 @@
+nohup: ignoring input
+2025-06-16 18:08:59,907 - __main__ - ERROR - Failed to initialize connections: connection to server at "150.230.47.71", port 5432 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+
+2025-06-16 18:08:59,907 - asyncio - ERROR - Task exception was never retrieved
+future: <Task finished name='Task-2' coro=<SophiaPayReadyMCPServer.initialize_connections() done, defined at /home/ubuntu/sophia-main/backend/mcp/sophia_mcp_server.py:101> exception=OperationalError('connection to server at "150.230.47.71", port 5432 failed: Connection timed out\n\tIs the server running on that host and accepting TCP/IP connections?\n')>
+Traceback (most recent call last):
+  File "/home/ubuntu/sophia-main/backend/mcp/sophia_mcp_server.py", line 105, in initialize_connections
+    self.db_connection = psycopg2.connect(self.config.database_url)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/dist-packages/psycopg2/__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: connection to server at "150.230.47.71", port 5432 failed: Connection timed out
+	Is the server running on that host and accepting TCP/IP connections?
+
+Traceback (most recent call last):
+  File "/home/ubuntu/sophia-main/backend/mcp/sophia_mcp_server.py", line 928, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.11/asyncio/runners.py", line 188, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/runners.py", line 120, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/base_events.py", line 650, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/ubuntu/sophia-main/backend/mcp/sophia_mcp_server.py", line 916, in main
+    async with mcp_server.server.stdio_server() as (read_stream, write_stream):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Server' object has no attribute 'stdio_server'
