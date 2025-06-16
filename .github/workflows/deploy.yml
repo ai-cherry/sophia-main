@@ -4,23 +4,48 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - development
+        - staging
+        - production
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  deploy:
+  setup-and-test:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
     
     - name: Create .env from GitHub Secrets
       run: |
+        echo "Creating .env file from GitHub Secrets..."
         cat > .env << EOF
-        # Core Configuration
-        SOPHIA_ENV=production
-        SECRET_KEY=${{ secrets.SECRET_KEY }}
-        ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+        # Environment
+        SOPHIA_ENV=${{ github.event.inputs.environment || 'production' }}
         
-        # Database (from GitHub Secrets)
+        # Core Security
+        SECRET_KEY=${{ secrets.SECRET_KEY }}
+        ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}
+        ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+        SOPHIA_MASTER_KEY=${{ secrets.SOPHIA_MASTER_KEY }}
+        
+        # Database Configuration
         POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
         POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
         POSTGRES_USER=${{ secrets.POSTGRES_USER }}
@@ -31,27 +56,125 @@ jobs:
         REDIS_PORT=${{ secrets.REDIS_PORT }}
         REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
         
-        # LLM Gateway (Portkey or OpenRouter)
-        LLM_GATEWAY=${{ secrets.LLM_GATEWAY }}  # portkey or openrouter
-        LLM_GATEWAY_API_KEY=${{ secrets.LLM_GATEWAY_API_KEY }}
+        # LLM Gateway Configuration
+        LLM_GATEWAY=portkey
+        PORTKEY_API_KEY=${{ secrets.PORTKEY_API_KEY }}
+        OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
         
-        # Optional Integrations (if configured in GitHub Secrets)
+        # Direct LLM APIs (fallback)
+        OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+        ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+        
+        # Business Integrations
         HUBSPOT_API_KEY=${{ secrets.HUBSPOT_API_KEY }}
         GONG_API_KEY=${{ secrets.GONG_API_KEY }}
         GONG_API_SECRET=${{ secrets.GONG_API_SECRET }}
+        
+        # Slack Configuration
         SLACK_BOT_TOKEN=${{ secrets.SLACK_BOT_TOKEN }}
+        SLACK_APP_TOKEN=${{ secrets.SLACK_APP_TOKEN }}
         SLACK_SIGNING_SECRET=${{ secrets.SLACK_SIGNING_SECRET }}
+        SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
+        
+        # Vector Databases
+        PINECONE_API_KEY=${{ secrets.PINECONE_API_KEY }}
+        WEAVIATE_URL=${{ secrets.WEAVIATE_URL }}
+        WEAVIATE_API_KEY=${{ secrets.WEAVIATE_API_KEY }}
+        
+        # Monitoring
+        GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+        
+        # Deployment Keys
+        LAMBDA_LABS_API_KEY=${{ secrets.LAMBDA_LABS_API_KEY }}
+        PULUMI_ACCESS_TOKEN=${{ secrets.PULUMI_ACCESS_TOKEN }}
+        
+        # Server Configuration
+        HOST=0.0.0.0
+        PORT=5000
         EOF
+        
+        echo "✅ .env file created with $(grep -c '=' .env) variables"
+    
+    - name: Validate Configuration
+      run: |
+        python -c "
+        from backend.config.settings import settings
+        print('Configuration loaded successfully!')
+        print(f'Environment: {settings.environment}')
+        print(f'LLM Gateway: {settings.api_keys.llm_gateway}')
+        features = settings.get_enabled_features()
+        print(f'Enabled features: {[k for k,v in features.items() if v]}')
+        "
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        
+    - name: Run tests
+      run: |
+        pytest tests/ -v
+        
+  deploy-backend:
+    needs: setup-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
     
     - name: Deploy to Lambda Labs
       if: ${{ secrets.LAMBDA_LABS_API_KEY }}
+      env:
+        LAMBDA_LABS_API_KEY: ${{ secrets.LAMBDA_LABS_API_KEY }}
       run: |
-        # Deploy using Lambda Labs API
-        echo "Deploying to Lambda Labs..."
-        # Add deployment commands here
+        echo "🚀 Deploying to Lambda Labs..."
+        # Add Lambda Labs deployment script here
+        # ./scripts/deploy_lambda_labs.sh
+        
+  deploy-frontend:
+    needs: setup-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install pnpm
+      run: npm install -g pnpm
+      
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: pnpm install
+      
+    - name: Build frontend
+      working-directory: ./frontend
+      run: pnpm build
+      
     - name: Deploy to Vercel
       if: ${{ secrets.VERCEL_TOKEN }}
       run: |
-        # Deploy frontend to Vercel
-        npx vercel --prod --token=${{ secrets.VERCEL_TOKEN }} 
+        npm i -g vercel
+        vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --yes 
