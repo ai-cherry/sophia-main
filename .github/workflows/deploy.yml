@@ -1,0 +1,57 @@
+name: Deploy Sophia AI
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Create .env from GitHub Secrets
+      run: |
+        cat > .env << EOF
+        # Core Configuration
+        SOPHIA_ENV=production
+        SECRET_KEY=${{ secrets.SECRET_KEY }}
+        ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+        
+        # Database (from GitHub Secrets)
+        POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
+        POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+        POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+        POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+        
+        REDIS_HOST=${{ secrets.REDIS_HOST }}
+        REDIS_PORT=${{ secrets.REDIS_PORT }}
+        REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+        
+        # LLM Gateway (Portkey or OpenRouter)
+        LLM_GATEWAY=${{ secrets.LLM_GATEWAY }}  # portkey or openrouter
+        LLM_GATEWAY_API_KEY=${{ secrets.LLM_GATEWAY_API_KEY }}
+        
+        # Optional Integrations (if configured in GitHub Secrets)
+        HUBSPOT_API_KEY=${{ secrets.HUBSPOT_API_KEY }}
+        GONG_API_KEY=${{ secrets.GONG_API_KEY }}
+        GONG_API_SECRET=${{ secrets.GONG_API_SECRET }}
+        SLACK_BOT_TOKEN=${{ secrets.SLACK_BOT_TOKEN }}
+        SLACK_SIGNING_SECRET=${{ secrets.SLACK_SIGNING_SECRET }}
+        EOF
+    
+    - name: Deploy to Lambda Labs
+      if: ${{ secrets.LAMBDA_LABS_API_KEY }}
+      run: |
+        # Deploy using Lambda Labs API
+        echo "Deploying to Lambda Labs..."
+        # Add deployment commands here
+    
+    - name: Deploy to Vercel
+      if: ${{ secrets.VERCEL_TOKEN }}
+      run: |
+        # Deploy frontend to Vercel
+        npx vercel --prod --token=${{ secrets.VERCEL_TOKEN }} 
