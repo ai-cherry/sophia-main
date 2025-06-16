@@ -1,0 +1,174 @@
+# Sophia AI Pay Ready Platform - Cursor AI Rules
+
+## Project Overview
+You are working on Sophia AI, an AI assistant orchestrator for Pay Ready company. Sophia serves as the central "Pay Ready Brain" that orchestrates multiple AI agents and integrates with business systems.
+
+## Architecture Context
+- **Type:** Multi-agent AI orchestrator with flat-to-hierarchical evolution
+- **Primary Role:** Business intelligence and automation for Pay Ready
+- **Core Integrations:** HubSpot CRM, Gong.io call analysis, Slack communication
+- **Data Stack:** PostgreSQL, Redis, Pinecone, Weaviate
+- **Infrastructure:** Lambda Labs servers, Vercel frontend deployment
+
+## Development Standards
+
+### Python Code Style
+- Use Python 3.11+ with type hints for all functions
+- Follow PEP 8 with 88-character line limit (Black formatter)
+- Use async/await for I/O operations
+- Implement comprehensive error handling with logging
+- Include detailed docstrings for all classes and methods
+
+### Agent Development Pattern
+```python
+from backend.agents.core.base_agent import BaseAgent
+
+class YourAgent(BaseAgent):
+    def __init__(self, config: AgentConfig):
+        super().__init__(config)
+        # Agent-specific initialization
+    
+    async def execute_task(self, task: Task) -> TaskResult:
+        # Implementation with error handling
+        pass
+```
+
+### Integration Pattern
+```python
+class ServiceIntegration:
+    def __init__(self, config: ServiceConfig):
+        self.config = config
+        self.client = self._create_client()
+    
+    async def _make_request(self, method: str, endpoint: str, **kwargs):
+        # Standardized request handling with rate limiting
+        pass
+```
+
+### Business Intelligence Focus
+- Always consider Pay Ready business context
+- Implement metrics for revenue, customer health, sales performance
+- Focus on actionable insights for sales coaching and client monitoring
+- Prioritize real-time data processing and notifications
+
+### Security Requirements
+- Use encrypted storage for all API keys
+- Implement proper authentication and authorization
+- Log all security-relevant events
+- Follow principle of least privilege
+
+### Testing Strategy
+- Write unit tests for all business logic
+- Include integration tests for external APIs
+- Implement performance tests for critical paths
+- Use pytest with async support
+
+### Error Handling Pattern
+```python
+try:
+    result = await some_operation()
+    return result
+except SpecificException as e:
+    logger.error(f"Operation failed: {e}")
+    raise BusinessLogicError(f"Failed to process: {e}")
+except Exception as e:
+    logger.exception("Unexpected error")
+    raise SystemError("Internal system error")
+```
+
+## Business Domain Knowledge
+
+### Pay Ready Context
+- Company focus: Business intelligence and automation
+- Key metrics: Revenue growth, customer satisfaction, sales efficiency
+- Team communication: Primarily through Slack
+- CRM system: HubSpot for contact and deal management
+- Call analysis: Gong.io for sales call insights
+
+### Agent Specializations
+- **Call Analysis Agent:** Process Gong.io recordings for insights
+- **CRM Sync Agent:** Maintain HubSpot data quality and synchronization
+- **Notification Agent:** Send intelligent Slack updates
+- **Business Intelligence Agent:** Generate revenue and performance reports
+
+### Integration Priorities
+1. **HubSpot:** Primary CRM for contact/deal management
+2. **Gong.io:** Critical for call analysis and sales coaching
+3. **Slack:** Main communication channel for team updates
+4. **Vector Databases:** For semantic search and AI capabilities
+
+## File Organization
+```
+backend/
+├── agents/
+│   ├── core/           # Base agent classes
+│   └── specialized/    # Domain-specific agents
+├── integrations/       # External service integrations
+├── database/          # Data layer and migrations
+├── monitoring/        # Performance and health monitoring
+└── security/          # Authentication and encryption
+
+frontend/
+├── src/
+│   ├── components/    # React components
+│   ├── pages/         # Page components
+│   └── services/      # API clients
+```
+
+## Common Patterns
+
+### API Client Implementation
+- Use aiohttp for async HTTP requests
+- Implement exponential backoff for retries
+- Respect rate limits with proper throttling
+- Include comprehensive error handling
+
+### Database Operations
+- Use SQLAlchemy with async support
+- Implement proper connection pooling
+- Use transactions for data consistency
+- Include migration scripts for schema changes
+
+### Monitoring and Logging
+- Use structured logging with JSON format
+- Include correlation IDs for request tracing
+- Monitor performance metrics and business KPIs
+- Implement health checks for all services
+
+## AI and ML Guidelines
+- Use OpenAI API for language processing
+- Implement vector search with Pinecone/Weaviate
+- Cache embeddings for performance
+- Include confidence scores in AI responses
+
+## Deployment Considerations
+- Target Lambda Labs for production deployment
+- Use Docker for containerization
+- Implement zero-downtime deployment strategies
+- Include environment-specific configurations
+
+## Performance Requirements
+- API response times < 200ms for critical paths
+- Database queries < 100ms average
+- Vector searches < 50ms average
+- Support for 1000+ concurrent users
+
+## When suggesting code:
+1. Always include proper error handling
+2. Add type hints and docstrings
+3. Consider business context and Pay Ready needs
+4. Implement monitoring and logging
+5. Follow the established patterns in the codebase
+6. Prioritize performance and scalability
+7. Include relevant tests
+
+## Avoid:
+- Hardcoded values (use configuration)
+- Synchronous I/O in async contexts
+- Missing error handling
+- Unclear variable names
+- Complex nested logic without comments
+- Security vulnerabilities (exposed secrets, etc.)
+
+Remember: You're building an enterprise-grade AI orchestrator that will handle critical business operations for Pay Ready. Code quality, reliability, and performance are paramount.
+
