@@ -93,7 +93,7 @@ Essential environment variables for natural language AI control:
 ```env
 # Core AI Configuration
 OPENAI_API_KEY=your-openai-key
-KONG_ACCESS_TOKEN=kpat_VyxP36wqO3q6wjrlQNLbceQGkGPUXCFUGy2N3e26mSfAz9trQ
+KONG_ACCESS_TOKEN=<KONG_ACCESS_TOKEN>
 
 # Platform Integrations
 GONG_API_KEY=your-gong-key
@@ -103,7 +103,7 @@ ARIZE_API_KEY=your-arize-key
 PULUMI_ACCESS_TOKEN=your-pulumi-token
 
 # Infrastructure
-LAMBDA_LABS_API_KEY=secret_pulumi_87a092f03b5e4896a56542ed6e07d249.bHCTOCe4mkvm9jiT53DWZpnewReAoGic
+LAMBDA_LABS_API_KEY=<LAMBDA_LABS_API_KEY>
 POSTGRES_URL=postgresql://user:pass@host:5432/sophia
 REDIS_URL=redis://host:6379
 ```
@@ -111,10 +111,10 @@ REDIS_URL=redis://host:6379
 ### Lambda Labs Infrastructure
 
 Current production deployment:
-- **Server**: sophia-ai-production (170.9.9.253)
+- **Server**: sophia-ai-production (<PRODUCTION_IP>)
 - **Specs**: 1x A10 GPU, 30 vCPUs, 200GB RAM, 1.4TB storage
 - **Cost**: $2.40/hour
-- **SSH Key**: cherry-ai-collaboration-20250604
+- **SSH Key**: <SSH_KEY_NAME>
 
 ## 🗣️ Natural Language Commands
 
@@ -179,7 +179,7 @@ make test-kong
 The system is currently deployed and operational:
 
 - **Frontend**: https://rctddmaz.manus.space (Live Production)
-- **Backend**: Lambda Labs server at 170.9.9.253
+- **Backend**: Lambda Labs server at <PRODUCTION_IP>
 - **Status**: Fully operational with real-time monitoring
 
 ### Manual Deployment
