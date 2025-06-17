@@ -10,16 +10,11 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
-import sys
-import os
 
-# Add parent directory to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
-from config.settings import settings
-from agents.core.orchestrator import SophiaOrchestrator
-from integrations.hubspot.hubspot_integration import HubSpotIntegration
-from monitoring.enhanced_monitoring import SophiaMonitoringSystem
+from backend.config.settings import settings
+from backend.agents.core.orchestrator import SophiaOrchestrator
+from backend.integrations.hubspot.hubspot_integration import HubSpotIntegration
+from backend.monitoring.enhanced_monitoring import SophiaMonitoringSystem
 
 logger = logging.getLogger(__name__)
 

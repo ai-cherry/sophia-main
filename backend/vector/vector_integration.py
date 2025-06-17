@@ -8,6 +8,9 @@ import numpy as np
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Union
 from dataclasses import dataclass
+import os
+import hashlib
+import openai
 import pinecone
 import weaviate
 from sentence_transformers import SentenceTransformer
@@ -504,11 +507,11 @@ class VectorIntegration:
 
 # Example usage and configuration
 if __name__ == "__main__":
-    # Configuration
+    # Configuration using environment variables
     config = VectorConfig(
-        pinecone_api_key="pcsk_7PHV2G_Mj1rRCwiHZ7YsuuzJcqKch9akzNKXv6mfwDX65DenD8Q72w3Qjh4AmuataTnEDW",
-        weaviate_url="https://w6bigpoxsrwvq7wlgmmdva.c0.us-west3.gcp.weaviate.cloud",
-        weaviate_api_key="VMKjGMQUnXQIDiFOciZZOhr7amBfCHMh7hNf"
+        pinecone_api_key=os.getenv("PINECONE_API_KEY", ""),
+        weaviate_url=os.getenv("WEAVIATE_URL", ""),
+        weaviate_api_key=os.getenv("WEAVIATE_API_KEY", "")
     )
     
     # Initialize vector integration

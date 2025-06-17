@@ -6,6 +6,7 @@ Automatically evolves database tables based on incoming data structures
 import json
 import logging
 import psycopg2
+import os
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
 from typing import Dict, List, Any, Optional
@@ -376,9 +377,9 @@ class SchemaMigrationSystem:
 
 # Example usage and testing
 if __name__ == "__main__":
-    # Example configuration
-    DATABASE_URL = "postgresql://sophia_admin:simple123@150.136.94.139/sophia_payready"
-    
+    # Example configuration from environment
+    DATABASE_URL = os.getenv("POSTGRES_URL", "postgresql://localhost:5432/sophia_payready")
+
     # Initialize migration system
     migration_system = SchemaMigrationSystem(DATABASE_URL)
     
