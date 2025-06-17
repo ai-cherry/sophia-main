@@ -140,13 +140,17 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
     
     - name: Deploy to Lambda Labs
-      if: ${{ secrets.LAMBDA_LABS_API_KEY }}
+      # Always run this step, check for key inside the script
       env:
         LAMBDA_LABS_API_KEY: ${{ secrets.LAMBDA_LABS_API_KEY }}
       run: |
-        echo "🚀 Deploying to Lambda Labs..."
-        # Add Lambda Labs deployment script here
-        # ./scripts/deploy_lambda_labs.sh
+        if [ -n "$LAMBDA_LABS_API_KEY" ]; then
+          echo "🚀 Deploying to Lambda Labs..."
+          # Add Lambda Labs deployment script here
+          # ./scripts/deploy_lambda_labs.sh
+        else
+          echo "⚠️ Skipping Lambda Labs deployment - LAMBDA_LABS_API_KEY not set"
+        fi
         
   deploy-frontend:
     needs: setup-and-test
@@ -174,7 +178,12 @@ jobs:
       run: pnpm build
       
     - name: Deploy to Vercel
-      if: ${{ secrets.VERCEL_TOKEN }}
+      env:
+        VERCEL_ACCESS_TOKEN: ${{ secrets.VERCEL_ACCESS_TOKEN }}
       run: |
-        npm i -g vercel
-        vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --yes 
+        if [ -n "$VERCEL_ACCESS_TOKEN" ]; then
+          npm i -g vercel
+          vercel --prod --token=$VERCEL_ACCESS_TOKEN --yes
+        else
+          echo "⚠️ Skipping Vercel deployment - VERCEL_ACCESS_TOKEN not set"
+        fi 
