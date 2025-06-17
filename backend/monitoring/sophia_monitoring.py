@@ -11,6 +11,7 @@ from datetime import datetime
 from prometheus_client import start_http_server, Counter, Histogram, Gauge
 import requests
 import logging
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -114,22 +115,22 @@ class SophiaMonitoring:
         while self.running:
             try:
                 services = {
-                    'database': 'postgresql://sophia_admin@150.230.47.71:5432/sophia_payready',
-                    'redis': 'redis://150.230.47.71:6379/0',
-                    'pinecone': 'https://api.pinecone.io/indexes',
-                    'weaviate': 'https://w6bigpoxsrwvq7wlgmmdva.c0.us-west3.gcp.weaviate.cloud/v1/meta'
+                    'database': os.getenv('POSTGRES_URL', 'postgresql://localhost:5432/sophia_payready'),
+                    'redis': os.getenv('REDIS_URL', 'redis://localhost:6379/0'),
+                    'pinecone': os.getenv('PINECONE_HEALTH_URL', 'https://api.pinecone.io/indexes'),
+                    'weaviate': os.getenv('WEAVIATE_HEALTH_URL', 'https://localhost/v1/meta')
                 }
                 
                 for service, endpoint in services.items():
                     try:
                         if service == 'pinecone':
                             # Test Pinecone connection
-                            headers = {'Api-Key': 'pcsk_7PHV2G_Mj1rRCwiHZ7YsuuzJcqKch9akzNKXv6mfwDX65DenD8Q72w3Qjh4AmuataTnEDW'}
+                            headers = {'Api-Key': os.getenv('PINECONE_API_KEY', '')}
                             response = requests.get(endpoint, headers=headers, timeout=10)
                             status = "✅" if response.status_code == 200 else "❌"
                         elif service == 'weaviate':
                             # Test Weaviate connection
-                            headers = {'Authorization': 'Bearer VMKjGMQUnXQIDiFOciZZOhr7amBfCHMh7hNf'}
+                            headers = {'Authorization': f"Bearer {os.getenv('WEAVIATE_API_KEY', '')}"}
                             response = requests.get(endpoint, headers=headers, timeout=10)
                             status = "✅" if response.status_code == 200 else "❌"
                         else:

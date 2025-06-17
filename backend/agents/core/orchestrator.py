@@ -12,6 +12,7 @@ import json
 import logging
 import redis
 import uuid
+import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, asdict
@@ -73,7 +74,8 @@ class Task:
 class AgentMessageBus:
     """Redis-based message bus for agent communication"""
     
-    def __init__(self, redis_host: str = "150.230.47.71", redis_port: int = 6379):
+    def __init__(self, redis_host: str = None, redis_port: int = 6379):
+        redis_host = redis_host or os.getenv("REDIS_HOST", "localhost")
         self.redis_client = redis.Redis(
             host=redis_host,
             port=redis_port,
@@ -450,8 +452,11 @@ class TaskRouter:
 
 class SophiaOrchestrator:
     """Main orchestrator class that coordinates all agents and systems"""
-    
-    def __init__(self, redis_host: str = "150.230.47.71", postgres_connection: str = None):
+
+    def __init__(self, redis_host: str = None, postgres_connection: str = None):
+        redis_host = redis_host or os.getenv("REDIS_HOST", "localhost")
+        postgres_connection = postgres_connection or os.getenv("POSTGRES_URL", "postgresql://localhost:5432/sophia_payready")
+
         self.redis_client = redis.Redis(host=redis_host, port=6379, decode_responses=True)
         self.message_bus = AgentMessageBus(redis_host)
         self.agent_registry = AgentRegistry(self.redis_client)
@@ -529,9 +534,8 @@ class SophiaOrchestrator:
 # Example usage and testing
 if __name__ == "__main__":
     async def main():
-        # Initialize orchestrator
-        postgres_conn = "postgresql://sophia_admin:password@150.230.47.71:5432/sophia_payready"
-        orchestrator = SophiaOrchestrator(postgres_connection=postgres_conn)
+        # Initialize orchestrator using environment variables
+        orchestrator = SophiaOrchestrator()
         
         # Start orchestrator
         await orchestrator.start()

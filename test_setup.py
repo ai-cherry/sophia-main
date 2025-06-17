@@ -4,15 +4,12 @@ Quick test script to verify Sophia AI setup
 """
 
 import os
-import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
-# Add backend to path
-sys.path.insert(0, str(Path(__file__).parent / "backend"))
 
 def check_env():
     """Check environment configuration"""

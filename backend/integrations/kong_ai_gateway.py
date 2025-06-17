@@ -56,7 +56,7 @@ class KongAIGateway:
     """Kong AI Gateway integration for unified agent management"""
     
     def __init__(self):
-        self.kong_token = os.getenv('KONG_ACCESS_TOKEN')
+        self.kong_token = os.getenv('KONG_ACCESS_TOKEN', '')
         self.kong_base_url = os.getenv('KONG_BASE_URL', 'https://api.konghq.com')
         self.redis_client = redis.Redis(
             host=os.getenv('REDIS_HOST', 'localhost'),

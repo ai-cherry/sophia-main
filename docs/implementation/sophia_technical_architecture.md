@@ -59,7 +59,7 @@ Based on your strategic decisions, Sophia AI will implement a **flat-to-hierarch
 class AgentMessageBus:
     def __init__(self):
         self.redis_client = redis.Redis(
-            host='150.230.47.71',  # Your Lambda Labs server
+            host=os.getenv('REDIS_HOST', 'localhost'),
             port=6379,
             decode_responses=True
         )
@@ -122,7 +122,7 @@ class AgentRegistry:
 ```python
 class ContextManager:
     def __init__(self):
-        self.redis_client = redis.Redis(host='150.230.47.71', port=6379)
+        self.redis_client = redis.Redis(host=os.getenv('REDIS_HOST', 'localhost'), port=6379)
         self.postgres_client = self.get_postgres_connection()
     
     async def store_conversation_context(self, user_id: str, 
@@ -516,8 +516,8 @@ class VectorDatabaseManager:
     def setup_pinecone(self):
         """Configure Pinecone for business intelligence search"""
         pinecone.init(
-            api_key="pcsk_7PHV2G_Mj1rRCwiHZ7YsuuzJcqKch9akzNKXv6mfwDX65DenD8Q72w3Qjh4AmuataTnEDW",
-            environment="us-west1-gcp"
+            api_key=os.getenv("PINECONE_API_KEY"),
+            environment=os.getenv("PINECONE_ENVIRONMENT", "us-west1-gcp")
         )
         
         # Create indexes for different data types
@@ -543,9 +543,9 @@ class VectorDatabaseManager:
     def setup_weaviate(self):
         """Configure Weaviate for contextual business search"""
         client = weaviate.Client(
-            url="https://w6bigpoxsrwvq7wlgmmdva.c0.us-west3.gcp.weaviate.cloud",
+            url=os.getenv("WEAVIATE_URL"),
             auth_client_secret=weaviate.AuthApiKey(
-                api_key="VMKjGMQUnXQIDiFOciZZOhr7amBfCHMh7hNf"
+                api_key=os.getenv("WEAVIATE_API_KEY")
             )
         )
         
@@ -589,7 +589,7 @@ class VectorDatabaseManager:
 ```python
 class CacheManager:
     def __init__(self):
-        self.redis_client = redis.Redis(host='150.230.47.71', port=6379)
+        self.redis_client = redis.Redis(host=os.getenv('REDIS_HOST', 'localhost'), port=6379)
         self.cache_ttl = {
             'crm_data': 300,      # 5 minutes
             'call_analysis': 3600, # 1 hour
