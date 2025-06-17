@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from contextlib import contextmanager
 from typing import Generator
+import os
 
 import psycopg2
 from psycopg2 import pool
@@ -11,8 +12,8 @@ import redis
 
 logger = logging.getLogger(__name__)
 
-POSTGRES_DSN = "postgresql://sophia_admin:simple123@150.136.94.139/sophia_payready"
-REDIS_URL = "redis://150.136.94.139:6379/0"
+POSTGRES_DSN = os.getenv("POSTGRES_URL", "postgresql://localhost:5432/sophia_payready")
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 
 class DatabaseConfig:

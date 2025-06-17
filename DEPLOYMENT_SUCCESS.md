@@ -17,7 +17,7 @@
 
 ### **Backend Infrastructure**
 - **Server**: Lambda Labs - sophia-ai-production
-- **IP**: 170.9.9.253
+- **IP**: <PRODUCTION_IP>
 - **Specs**: 1x A10 GPU, 30 vCPUs, 200GB RAM, 1.4TB storage
 - **Status**: ✅ **ACTIVE AND OPTIMIZED**
 

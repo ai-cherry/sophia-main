@@ -24,8 +24,8 @@ You need to configure the following API keys in your `.env` file:
 - [ ] Change **ADMIN_PASSWORD** from default 'admin123'
 
 ### 3. Database Setup
-- [ ] Verify PostgreSQL connection (150.230.47.71:5432)
-- [ ] Verify Redis connection (150.230.47.71:6379)
+- [ ] Verify PostgreSQL connection (<POSTGRES_HOST>:5432)
+- [ ] Verify Redis connection (<REDIS_HOST>:6379)
 - [ ] Run database migrations
 
 ## 🚀 Deployment Steps
@@ -58,7 +58,7 @@ make db-migrate
 python -c "
 import psycopg2
 conn = psycopg2.connect(
-    host='150.230.47.71',
+    host='<POSTGRES_HOST>',
     port=5432,
     user='sophia',
     password='sophia_pass',
@@ -215,7 +215,7 @@ If issues occur during deployment:
 2. **Database Rollback**
    ```bash
    # Restore from backup
-   pg_restore -h 150.230.47.71 -U sophia -d sophia_payready backup.sql
+   pg_restore -h <POSTGRES_HOST> -U sophia -d sophia_payready backup.sql
    ```
 
 3. **Communication**
