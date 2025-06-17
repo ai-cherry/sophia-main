@@ -56,7 +56,7 @@ class KongAIGateway:
     """Kong AI Gateway integration for unified agent management"""
     
     def __init__(self):
-        self.kong_token = os.getenv('KONG_ACCESS_TOKEN', 'kpat_VyxP36wqO3q6wjrlQNLbceQGkGPUXCFUGy2N3e26mSfAz9trQ')
+        self.kong_token = os.getenv('KONG_ACCESS_TOKEN')
         self.kong_base_url = os.getenv('KONG_BASE_URL', 'https://api.konghq.com')
         self.redis_client = redis.Redis(
             host=os.getenv('REDIS_HOST', 'localhost'),
@@ -395,7 +395,7 @@ class KongAIGateway:
     async def _handle_arize_request(self, request: AgentRequest) -> AgentResponse:
         """Handle Arize AI evaluation requests"""
         try:
-            arize_api_key = os.getenv('ARIZE_API_KEY', 'ak-0ea39c4f-d87e-492c-afa3-cc34b69dfdba-2cqWixdMIgv9RqR8DWTqkIGugAicXQ0e')
+            arize_api_key = os.getenv('ARIZE_API_KEY')
             
             if request.action == 'evaluate_agent':
                 # Evaluate agent performance
