@@ -1,360 +1,297 @@
 """
 Sophia AI - Infrastructure as Code
-Pulumi configuration for Lambda Labs deployment
+Pulumi configuration for deploying to Lambda Labs and Vercel.
 
-This module defines the infrastructure for deploying Sophia AI to production.
+This script assumes:
+1. A Lambda Labs instance is already provisioned and accessible via SSH.
+2. Secrets are managed via Pulumi ESC and accessed through Pulumi Config.
+3. The project structure includes a 'docker-compose.yml' at the root for backend services
+   and a 'frontend/' directory configured for Vercel deployment.
 """
 
 import pulumi
-import pulumi_aws as aws
-import pulumi_kubernetes as k8s
-from pulumi import Config, Output, export
-import json
+import pulumi_command as command
+import pulumi_vercel as vercel
+from pulumi import Config, Output, asset, export
 
-# Get configuration
+# --- Configuration ---
 config = Config()
-project_name = "sophia-ai"
+
+# Project settings
+project_name = config.get("project_name") or "sophia-ai"
 environment = config.get("environment") or "production"
+app_domain = config.get("app_domain") # e.g., "sophia.payready.com" - used for Vercel and backend API URL
 
-# Get Lambda Labs configuration
-lambda_labs_config = {
-    "instance_type": config.get("instance_type") or "gpu.a100.1x",
-    "region": config.get("region") or "us-west-1",
-    "ssh_key_name": config.get("ssh_key_name") or "sophia-deploy-key"
-}
+# Lambda Labs instance configuration (assumed to be existing)
+lambda_labs_instance_ip = config.require("lambda_labs_instance_ip")
+lambda_labs_ssh_user = config.get("lambda_labs_ssh_user") or "ubuntu"
+lambda_labs_ssh_private_key_path = config.require_secret("lambda_labs_ssh_private_key_path") # Path to local SSH private key
 
-# Tags for all resources
-default_tags = {
-    "Project": project_name,
-    "Environment": environment,
-    "ManagedBy": "Pulumi",
-    "Company": "PayReady"
-}
+# Git repository for the application
+git_repo_url = config.get("git_repo_url") or "https://github.com/ai-cherry/sophia-main.git" # Default to your repo
+git_branch = config.get("git_branch") or "main"
+app_dir_on_instance = f"/home/{lambda_labs_ssh_user}/{project_name}"
 
-# Create VPC for networking isolation
-vpc = aws.ec2.Vpc(
-    f"{project_name}-vpc",
-    cidr_block="10.0.0.0/16",
-    enable_dns_hostnames=True,
-    enable_dns_support=True,
-    tags={**default_tags, "Name": f"{project_name}-vpc"}
+# --- Secrets to be injected into .env on Lambda Labs instance ---
+# These should be configured in Pulumi ESC and mapped in Pulumi.yaml or Pulumi.<stack>.yaml
+db_password = config.get_secret("POSTGRES_PASSWORD") or "sophia_pass_pulumi_default" # Default from docker-compose
+app_secret_key = config.get_secret("SECRET_KEY") or "default_app_secret_key_pulumi"
+admin_username = config.get_secret("ADMIN_USERNAME") or "admin_pulumi"
+admin_password = config.get_secret("ADMIN_PASSWORD") or "admin_pass_pulumi"
+openai_api_key = config.get_secret("OPENAI_API_KEY")
+anthropic_api_key = config.get_secret("ANTHROPIC_API_KEY")
+hubspot_api_key = config.get_secret("HUBSPOT_API_KEY")
+gong_api_key = config.get_secret("GONG_API_KEY")
+gong_api_secret = config.get_secret("GONG_API_SECRET")
+slack_bot_token = config.get_secret("SLACK_BOT_TOKEN")
+slack_app_token = config.get_secret("SLACK_APP_TOKEN")
+slack_signing_secret = config.get_secret("SLACK_SIGNING_SECRET")
+pinecone_api_key = config.get_secret("PINECONE_API_KEY")
+weaviate_api_key = config.get_secret("WEAVIATE_API_KEY")
+weaviate_url = config.get_secret("WEAVIATE_URL")
+grafana_admin_password = config.get_secret("GRAFANA_ADMIN_PASSWORD") or "admin_grafana_pulumi"
+
+# Construct the .env file content
+# Note: Pulumi Outputs are used here to handle secret resolution.
+# The actual writing of the file happens on the remote machine.
+env_file_content = Output.all(
+    db_password=db_password,
+    app_secret_key=app_secret_key,
+    admin_username=admin_username,
+    admin_password=admin_password,
+    openai_api_key=openai_api_key,
+    anthropic_api_key=anthropic_api_key,
+    hubspot_api_key=hubspot_api_key,
+    gong_api_key=gong_api_key,
+    gong_api_secret=gong_api_secret,
+    slack_bot_token=slack_bot_token,
+    slack_app_token=slack_app_token,
+    slack_signing_secret=slack_signing_secret,
+    pinecone_api_key=pinecone_api_key,
+    weaviate_api_key=weaviate_api_key,
+    weaviate_url=weaviate_url,
+    grafana_admin_password=grafana_admin_password,
+    app_domain=app_domain
+).apply(lambda secrets: f"""
+DATABASE_URL=postgresql://sophia:{secrets['db_password']}@sophia-postgres:5432/sophia_payready
+REDIS_URL=redis://sophia-redis:6379
+SECRET_KEY={secrets['app_secret_key']}
+ADMIN_USERNAME={secrets['admin_username']}
+ADMIN_PASSWORD={secrets['admin_password']}
+OPENAI_API_KEY={secrets['openai_api_key']}
+ANTHROPIC_API_KEY={secrets['anthropic_api_key']}
+HUBSPOT_API_KEY={secrets['hubspot_api_key']}
+GONG_API_KEY={secrets['gong_api_key']}
+GONG_API_SECRET={secrets['gong_api_secret']}
+SLACK_BOT_TOKEN={secrets['slack_bot_token']}
+SLACK_APP_TOKEN={secrets['slack_app_token']}
+SLACK_SIGNING_SECRET={secrets['slack_signing_secret']}
+PINECONE_API_KEY={secrets['pinecone_api_key']}
+WEAVIATE_API_KEY={secrets['weaviate_api_key']}
+WEAVIATE_URL={secrets['weaviate_url']}
+GRAFANA_ADMIN_PASSWORD={secrets['grafana_admin_password']}
+# Add any other necessary environment variables here
+# Example: API_URL for frontend, if different from Vercel default
+# VITE_API_URL=https://{secrets['app_domain']}/api 
+# (This is usually set in Vercel's settings, but can be managed here too)
+""")
+
+# --- SSH Connection Details for Lambda Labs Instance ---
+ssh_connection = command.remote.ConnectionArgs(
+    host=lambda_labs_instance_ip,
+    user=lambda_labs_ssh_user,
+    private_key=lambda_labs_ssh_private_key_path.apply(lambda p: open(p).read())
 )
 
-# Create public subnet
-public_subnet = aws.ec2.Subnet(
-    f"{project_name}-public-subnet",
-    vpc_id=vpc.id,
-    cidr_block="10.0.1.0/24",
-    availability_zone="us-west-1a",
-    map_public_ip_on_launch=True,
-    tags={**default_tags, "Name": f"{project_name}-public-subnet"}
-)
-
-# Create private subnet for databases
-private_subnet = aws.ec2.Subnet(
-    f"{project_name}-private-subnet",
-    vpc_id=vpc.id,
-    cidr_block="10.0.2.0/24",
-    availability_zone="us-west-1b",
-    tags={**default_tags, "Name": f"{project_name}-private-subnet"}
-)
-
-# Internet Gateway
-igw = aws.ec2.InternetGateway(
-    f"{project_name}-igw",
-    vpc_id=vpc.id,
-    tags={**default_tags, "Name": f"{project_name}-igw"}
-)
-
-# Route table for public subnet
-public_route_table = aws.ec2.RouteTable(
-    f"{project_name}-public-rt",
-    vpc_id=vpc.id,
-    routes=[{
-        "cidr_block": "0.0.0.0/0",
-        "gateway_id": igw.id
-    }],
-    tags={**default_tags, "Name": f"{project_name}-public-rt"}
-)
-
-# Associate route table with public subnet
-public_route_association = aws.ec2.RouteTableAssociation(
-    f"{project_name}-public-rta",
-    subnet_id=public_subnet.id,
-    route_table_id=public_route_table.id
-)
-
-# Security Groups
-# Application security group
-app_security_group = aws.ec2.SecurityGroup(
-    f"{project_name}-app-sg",
-    vpc_id=vpc.id,
-    description="Security group for Sophia AI application",
-    ingress=[
-        # HTTP
-        {
-            "protocol": "tcp",
-            "from_port": 80,
-            "to_port": 80,
-            "cidr_blocks": ["0.0.0.0/0"]
-        },
-        # HTTPS
-        {
-            "protocol": "tcp",
-            "from_port": 443,
-            "to_port": 443,
-            "cidr_blocks": ["0.0.0.0/0"]
-        },
-        # Flask app
-        {
-            "protocol": "tcp",
-            "from_port": 5000,
-            "to_port": 5000,
-            "cidr_blocks": ["0.0.0.0/0"]
-        },
-        # SSH (restricted)
-        {
-            "protocol": "tcp",
-            "from_port": 22,
-            "to_port": 22,
-            "cidr_blocks": [config.get("admin_cidr") or "0.0.0.0/0"]
-        }
-    ],
-    egress=[{
-        "protocol": "-1",
-        "from_port": 0,
-        "to_port": 0,
-        "cidr_blocks": ["0.0.0.0/0"]
-    }],
-    tags={**default_tags, "Name": f"{project_name}-app-sg"}
-)
-
-# Database security group
-db_security_group = aws.ec2.SecurityGroup(
-    f"{project_name}-db-sg",
-    vpc_id=vpc.id,
-    description="Security group for databases",
-    ingress=[
-        # PostgreSQL
-        {
-            "protocol": "tcp",
-            "from_port": 5432,
-            "to_port": 5432,
-            "security_groups": [app_security_group.id]
-        },
-        # Redis
-        {
-            "protocol": "tcp",
-            "from_port": 6379,
-            "to_port": 6379,
-            "security_groups": [app_security_group.id]
-        }
-    ],
-    egress=[{
-        "protocol": "-1",
-        "from_port": 0,
-        "to_port": 0,
-        "cidr_blocks": ["0.0.0.0/0"]
-    }],
-    tags={**default_tags, "Name": f"{project_name}-db-sg"}
-)
-
-# RDS PostgreSQL Database
-db_subnet_group = aws.rds.SubnetGroup(
-    f"{project_name}-db-subnet-group",
-    subnet_ids=[public_subnet.id, private_subnet.id],
-    tags={**default_tags, "Name": f"{project_name}-db-subnet-group"}
-)
-
-postgres_db = aws.rds.Instance(
-    f"{project_name}-postgres",
-    engine="postgres",
-    engine_version="15",
-    instance_class="db.t3.medium",
-    allocated_storage=100,
-    storage_encrypted=True,
-    db_name="sophia_payready",
-    username="sophia",
-    password=config.get_secret("db_password"),
-    vpc_security_group_ids=[db_security_group.id],
-    db_subnet_group_name=db_subnet_group.name,
-    backup_retention_period=7,
-    backup_window="03:00-04:00",
-    maintenance_window="Mon:04:00-Mon:05:00",
-    skip_final_snapshot=False,
-    final_snapshot_identifier=f"{project_name}-final-snapshot",
-    tags={**default_tags, "Name": f"{project_name}-postgres"}
-)
-
-# ElastiCache Redis
-redis_subnet_group = aws.elasticache.SubnetGroup(
-    f"{project_name}-redis-subnet-group",
-    subnet_ids=[public_subnet.id, private_subnet.id],
-    tags={**default_tags, "Name": f"{project_name}-redis-subnet-group"}
-)
-
-redis_cluster = aws.elasticache.Cluster(
-    f"{project_name}-redis",
-    engine="redis",
-    node_type="cache.t3.micro",
-    num_cache_nodes=1,
-    parameter_group_name="default.redis7",
-    subnet_group_name=redis_subnet_group.name,
-    security_group_ids=[db_security_group.id],
-    tags={**default_tags, "Name": f"{project_name}-redis"}
-)
-
-# Lambda Labs GPU Instance (Main Application Server)
-# User data script for instance initialization
-user_data_script = f"""#!/bin/bash
+# --- Setup Script for Lambda Labs Instance ---
+# This script will be executed on the remote instance.
+# It ensures prerequisites, clones the repo, creates .env, and starts services.
+setup_script = Output.all(env_content=env_file_content, app_dir=app_dir_on_instance, repo_url=git_repo_url, branch=git_branch, ssh_user=lambda_labs_ssh_user).apply(
+    lambda args: f"""
 set -e
+echo "--- Starting Sophia AI Setup on Lambda Labs Instance ---"
 
-# Update system
-apt-get update
-apt-get upgrade -y
+# 0. Update package list and install prerequisites
+sudo apt-get update -y
+sudo apt-get install -y git curl wget
 
-# Install Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sh get-docker.sh
-usermod -aG docker ubuntu
+# 1. Install Docker if not already present
+if ! command -v docker &> /dev/null
+then
+    echo "Docker not found, installing..."
+    curl -fsSL https://get.docker.com -o get-docker.sh
+    sudo sh get-docker.sh
+    sudo usermod -aG docker {args['ssh_user']}
+    echo "Docker installed."
+else
+    echo "Docker already installed."
+fi
 
-# Install Docker Compose
-curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
+# 2. Install Docker Compose if not already present
+if ! command -v docker-compose &> /dev/null
+then
+    echo "Docker Compose not found, installing..."
+    LATEST_COMPOSE=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d\\\" -f4)
+    sudo curl -L "https://github.com/docker/compose/releases/download/${{LATEST_COMPOSE}}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+    echo "Docker Compose installed."
+else
+    echo "Docker Compose already installed."
+fi
 
-# Install monitoring tools
-apt-get install -y htop iotop nethogs
+# 3. Clone or update the application repository
+echo "Cloning/updating application repository from {args['repo_url']} (branch: {args['branch']})..."
+if [ -d "{args['app_dir']}/.git" ]; then
+    cd {args['app_dir']}
+    git fetch origin
+    git reset --hard origin/{args['branch']}
+    git pull origin {args['branch']}
+    echo "Repository updated."
+else
+    git clone --branch {args['branch']} {args['repo_url']} {args['app_dir']}
+    cd {args['app_dir']}
+    echo "Repository cloned."
+fi
 
-# Clone repository (replace with your actual repo)
-cd /home/ubuntu
-git clone https://github.com/payready/sophia-ai.git
-cd sophia-ai
+# 4. Create .env file
+echo "Creating .env file in {args['app_dir']}..."
+cat << EOF_ENV > {args['app_dir']}/.env
+{args['env_content']}
+EOF_ENV
+echo ".env file created."
 
-# Create .env file with configuration
-cat > .env << EOF
-SOPHIA_ENV=production
-POSTGRES_HOST={postgres_db.endpoint}
-POSTGRES_PORT=5432
-POSTGRES_USER=sophia
-POSTGRES_PASSWORD={config.get_secret("db_password") or "change_me_in_production"}
-POSTGRES_DB=sophia_payready
+# 5. Start services using Docker Compose
+echo "Starting services with Docker Compose..."
+cd {args['app_dir']}
+# Ensure docker-compose can be run by current user, or use sudo if needed and configured
+# For non-root user added to docker group, sudo is not needed for docker commands.
+# However, docker-compose might need to be run with sudo if not installed system-wide for all users or if permissions issues arise.
+# Assuming user is in docker group:
+docker-compose down || true # Stop existing services if any
+docker-compose pull # Pull latest images
+docker-compose up -d --build # Start all services in detached mode, build if necessary
+echo "Docker Compose services started."
 
-REDIS_HOST={redis_cluster.cache_nodes[0].address}
-REDIS_PORT=6379
+# 6. (Optional) Setup systemd service for auto-restart (example from original script)
+# This part might need adjustment based on how docker-compose is run (sudo or not)
+# For simplicity, this is commented out. Manual restart or a more robust process manager might be preferred.
+# echo "Setting up systemd service for sophia-ai..."
+# sudo bash -c 'cat > /etc/systemd/system/sophia-ai.service << EOF_SYSTEMD
+# [Unit]
+# Description=Sophia AI Service
+# After=docker.service network-online.target
+# Requires=docker.service network-online.target
+#
+# [Service]
+# Type=simple
+# WorkingDirectory={args['app_dir']}
+# ExecStart=/usr/local/bin/docker-compose up
+# ExecStop=/usr/local/bin/docker-compose down
+# Restart=always
+# User={args['ssh_user']} # Or root if docker-compose requires sudo
+# EnvironmentFile={args['app_dir']}/.env # Make .env available to systemd service
+#
+# [Install]
+# WantedBy=multi-user.target
+# EOF_SYSTEMD'
+#
+# sudo systemctl daemon-reload
+# sudo systemctl enable sophia-ai
+# sudo systemctl restart sophia-ai # Use restart to ensure it picks up changes
+# echo "Systemd service sophia-ai configured and started."
 
-SECRET_KEY={config.get_secret("secret_key") or "generate_a_secure_key"}
-SOPHIA_MASTER_KEY={config.get_secret("master_key") or "generate_a_secure_master_key"}
-
-# Add other environment variables as needed
-EOF
-
-# Start services
-docker-compose up -d
-
-# Setup systemd service
-cat > /etc/systemd/system/sophia-ai.service << EOF
-[Unit]
-Description=Sophia AI Service
-After=docker.service
-Requires=docker.service
-
-[Service]
-Type=simple
-WorkingDirectory=/home/ubuntu/sophia-ai
-ExecStart=/usr/local/bin/docker-compose up
-ExecStop=/usr/local/bin/docker-compose down
-Restart=always
-User=ubuntu
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl enable sophia-ai
-systemctl start sophia-ai
+echo "--- Sophia AI Setup on Lambda Labs Instance Complete ---"
 """
-
-# Create the GPU instance
-gpu_instance = aws.ec2.Instance(
-    f"{project_name}-gpu-instance",
-    instance_type=lambda_labs_config["instance_type"],
-    ami="ami-0c55b159cbfafe1f0",  # Ubuntu 22.04 LTS
-    key_name=lambda_labs_config["ssh_key_name"],
-    vpc_security_group_ids=[app_security_group.id],
-    subnet_id=public_subnet.id,
-    user_data=user_data_script,
-    root_block_device={
-        "volume_size": 200,
-        "volume_type": "gp3",
-        "encrypted": True
-    },
-    tags={**default_tags, "Name": f"{project_name}-gpu-instance"}
 )
 
-# Elastic IP for consistent access
-eip = aws.ec2.Eip(
-    f"{project_name}-eip",
-    instance=gpu_instance.id,
-    tags={**default_tags, "Name": f"{project_name}-eip"}
+# --- Execute Setup Script on Lambda Labs Instance ---
+# This command resource will run the setup_script on the remote instance.
+# It depends on the env_file_content being resolved.
+lambda_setup = command.remote.Command(
+    "lambda-instance-setup",
+    connection=ssh_connection,
+    create=setup_script,
+    # update=setup_script, # Optionally re-run on updates. Be careful with state.
+    opts=pulumi.ResourceOptions(depends_on=[env_file_content.is_secret_sentinel]) # Ensure env_content is ready
 )
 
-# S3 Bucket for backups and artifacts
-backup_bucket = aws.s3.Bucket(
-    f"{project_name}-backups",
-    acl="private",
-    versioning={"enabled": True},
-    server_side_encryption_configuration={
-        "rule": {
-            "apply_server_side_encryption_by_default": {
-                "sse_algorithm": "AES256"
-            }
-        }
-    },
-    lifecycle_rules=[{
-        "id": "expire-old-backups",
-        "enabled": True,
-        "transitions": [{
-            "days": 30,
-            "storage_class": "STANDARD_IA"
-        }],
-        "expiration": {"days": 90}
-    }],
-    tags={**default_tags, "Name": f"{project_name}-backups"}
-)
+# --- Vercel Frontend Deployment ---
+# Assumes 'frontend' directory is at the root of your Git repository.
+# Reads vercel.json for build settings.
+try:
+    with open("../vercel.json") as f: # Adjust path if infrastructure dir is not a direct child of root
+        vercel_config_json = json.load(f)
+except FileNotFoundError:
+    pulumi.log.warn("vercel.json not found at ../vercel.json. Skipping Vercel deployment.")
+    vercel_config_json = None
+    sophia_frontend_project = None
+    frontend_deployment = None
+    frontend_url = Output.secret("Vercel deployment skipped")
 
-# CloudWatch Log Groups
-app_log_group = aws.cloudwatch.LogGroup(
-    f"{project_name}-app-logs",
-    retention_in_days=30,
-    tags={**default_tags, "Name": f"{project_name}-app-logs"}
-)
+if vercel_config_json:
+    # Vercel Project
+    sophia_frontend_project = vercel.Project(f"{project_name}-frontend",
+        name=f"{project_name}-frontend-{environment}",
+        framework=vercel_config_json.get("framework", "vite"),
+        build_command=vercel_config_json.get("buildCommand"),
+        output_directory=vercel_config_json.get("outputDirectory"),
+        root_directory="frontend", # Assuming frontend code is in 'frontend/' directory at repo root
+        environment_variables=[
+            vercel.ProjectEnvironmentArgs(
+                key="VITE_API_URL",
+                value=Output.concat("https://", app_domain, "/api") if app_domain else lambda_labs_instance_ip.apply(lambda ip: f"http://{ip}:5001/api"), # Port 5001 from docker-compose sophia-app
+                target=["production", "preview", "development"]
+            ),
+            # Add other Vercel environment variables here if needed
+        ],
+        git_repository=vercel.ProjectGitRepositoryArgs(
+            type="github",
+            repo=git_repo_url.apply(lambda url: url.replace("https://github.com/", "")), # e.g., "ai-cherry/sophia-main"
+            # production_branch=git_branch # Deploy specific branch to production
+        ),
+        # serverless_function_region="sfo1" # Example, if you have serverless functions
+    )
 
-# CloudWatch Alarms
-cpu_alarm = aws.cloudwatch.MetricAlarm(
-    f"{project_name}-cpu-alarm",
-    comparison_operator="GreaterThanThreshold",
-    evaluation_periods=2,
-    metric_name="CPUUtilization",
-    namespace="AWS/EC2",
-    period=300,
-    statistic="Average",
-    threshold=80,
-    alarm_description="Alarm when CPU exceeds 80%",
-    dimensions={"InstanceId": gpu_instance.id}
-)
+    # Trigger a deployment (optional, Vercel usually deploys on commit to production_branch)
+    # For explicit deployment control:
+    # frontend_deployment = vercel.Deployment(f"{project_name}-frontend-deployment",
+    #     project_id=sophia_frontend_project.id,
+    #     ref=git_branch, # Deploy from this git ref
+    #     production=True, # Mark as production deployment
+    #     opts=pulumi.ResourceOptions(depends_on=[sophia_frontend_project, lambda_setup]) # Deploy after backend is up
+    # )
+    # frontend_url = frontend_deployment.url
 
-# Outputs
-export("vpc_id", vpc.id)
-export("gpu_instance_id", gpu_instance.id)
-export("gpu_instance_public_ip", eip.public_ip)
-export("postgres_endpoint", postgres_db.endpoint)
-export("redis_endpoint", redis_cluster.cache_nodes[0].address)
-export("backup_bucket", backup_bucket.id)
+    # If relying on Vercel's Git integration, the project URL is more relevant
+    # The primary domain will be configured in Vercel UI or via vercel.ProjectDomain
+    if app_domain:
+        project_domain = vercel.ProjectDomain(f"{project_name}-frontend-domain",
+            project_id=sophia_frontend_project.id,
+            domain=app_domain,
+            # redirect_to_www=True # Optional
+        )
+        frontend_url = project_domain.domain.apply(lambda d: f"https://{d}")
+    else:
+        # Vercel assigns a default URL if no custom domain
+        frontend_url = sophia_frontend_project.aliases.apply(
+            lambda aliases: f"https://{aliases[0]}" if aliases and len(aliases) > 0 else "Vercel URL not available yet"
+        )
 
-# Application URLs
-export("app_url", Output.concat("http://", eip.public_ip, ":5000"))
-export("prometheus_url", Output.concat("http://", eip.public_ip, ":9090"))
-export("grafana_url", Output.concat("http://", eip.public_ip, ":3000"))
 
-# SSH command
-export("ssh_command", Output.concat("ssh -i ", lambda_labs_config["ssh_key_name"], ".pem ubuntu@", eip.public_ip)) 
+# --- Outputs ---
+export("lambda_labs_instance_ip", lambda_labs_instance_ip)
+export("lambda_setup_stdout", lambda_setup.stdout) # Output of the setup script
+export("application_backend_base_url", lambda_labs_instance_ip.apply(lambda ip: f"http://{ip}:5001")) # sophia-app port from docker-compose
+export("prometheus_url_on_lambda", lambda_labs_instance_ip.apply(lambda ip: f"http://{ip}:9091")) # Prometheus port from docker-compose
+export("grafana_url_on_lambda", lambda_labs_instance_ip.apply(lambda ip: f"http://{ip}:3001")) # Grafana port from docker-compose
+
+if sophia_frontend_project:
+    export("vercel_frontend_project_id", sophia_frontend_project.id)
+    export("vercel_frontend_url", frontend_url)
+
+pulumi.log.info("To apply these changes, run 'pulumi up'.")
+pulumi.log.info("Ensure your Pulumi stack configuration (Pulumi.<stack>.yaml) has values for:")
+pulumi.log.info("  'lambda_labs_instance_ip'")
+pulumi.log.info("  'lambda_labs_ssh_private_key_path' (secret)")
+pulumi.log.info("  'app_domain' (optional, for Vercel custom domain)")
+pulumi.log.info("And all required application secrets (e.g., POSTGRES_PASSWORD, OPENAI_API_KEY, etc.) are set in Pulumi ESC.")
