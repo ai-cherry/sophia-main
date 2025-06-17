@@ -2,12 +2,40 @@
   "mcpServers": {
     "sophia-payready": {
       "command": "python",
-      "args": ["/home/ubuntu/sophia-main/backend/mcp/sophia_mcp_server.py"],
+      "args": ["-m", "backend.mcp.sophia_mcp_server"],
       "env": {
         "OPENAI_API_KEY": "${OPENAI_API_KEY}",
-        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
-      }
+        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
+        "PINECONE_API_KEY": "${PINECONE_API_KEY}",
+        "WEAVIATE_API_KEY": "${WEAVIATE_API_KEY}",
+        "DATABASE_URL": "${DATABASE_URL}",
+        "REDIS_URL": "${REDIS_URL}"
+      },
+      "description": "Sophia AI MCP Server for Business Intelligence"
+    },
+    "property-management": {
+      "command": "python",
+      "args": ["-m", "backend.mcp.property_management_mcp_server"],
+      "env": {
+        "YARDI_API_KEY": "${YARDI_API_KEY}",
+        "REALPAGE_API_KEY": "${REALPAGE_API_KEY}",
+        "APPFOLIO_API_KEY": "${APPFOLIO_API_KEY}",
+        "ENTRATA_API_KEY": "${ENTRATA_API_KEY}",
+        "REDIS_URL": "${REDIS_URL}"
+      },
+      "description": "Property Management MCP Server for Apartment Industry Integration"
+    },
+    "huggingface": {
+      "command": "python",
+      "args": ["-m", "backend.integrations.huggingface_mcp"],
+      "env": {
+        "HUGGINGFACE_API_KEY": "${HUGGINGFACE_API_KEY}"
+      },
+      "description": "HuggingFace MCP Server for Model and Dataset Access"
     }
-  }
+  },
+  "defaultTimeout": 30000,
+  "retryAttempts": 3,
+  "version": "1.0.0"
 }
 
