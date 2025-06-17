@@ -1,0 +1,34 @@
+{
+  "api_configuration": {
+    "total_apis": 39,
+    "configured": 0,
+    "percentage": 0.0,
+    "critical_apis_ok": false
+  },
+  "gateway_routing": {
+    "configured_routes": {
+      "llm": 0,
+      "vector_db": 0,
+      "business_intelligence": 0,
+      "property_management": 0,
+      "analytics": 0,
+      "communication": 0
+    },
+    "total_routes": 0,
+    "active_gateways": [],
+    "metrics_summary": {}
+  },
+  "mcp_servers": {
+    "config_exists": true,
+    "servers": [
+      "sophia-payready",
+      "property-management",
+      "huggingface"
+    ]
+  },
+  "integration_tests": {
+    "vector_db": 0,
+    "business_intelligence": 0,
+    "property_management": 0
+  }
+}
