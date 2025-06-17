@@ -1,0 +1,47 @@
+{
+  "generated_at": "2025-06-17T13:51:59.597570",
+  "conversation_intelligence": [
+    {
+      "conversation_thread_id": "thread_20250617_135159",
+      "conversation_type": "mixed",
+      "interaction_count": 2,
+      "overall_sentiment_score": "0.75",
+      "success_probability_score": "0.85",
+      "deal_value_estimated": "50000.00",
+      "conversation_summary": "Multi-channel conversation about apartment management software integration",
+      "company_name": "Apartment Company LLC",
+      "customer_segment": "mid_market"
+    }
+  ],
+  "interaction_summary": [
+    {
+      "source_system": "Slack",
+      "interaction_count": 1,
+      "avg_sentiment": "0.70000000000000000000",
+      "avg_relevance": "0.90000000000000000000",
+      "avg_impact": "0.80000000000000000000"
+    },
+    {
+      "source_system": "Gong",
+      "interaction_count": 1,
+      "avg_sentiment": "0.80000000000000000000",
+      "avg_relevance": "1.00000000000000000000",
+      "avg_impact": "0.90000000000000000000"
+    }
+  ],
+  "top_slack_channels": [
+    {
+      "name": "sales-team",
+      "business_relevance_score": "0.90",
+      "apartment_industry_focus": true
+    },
+    {
+      "name": "customer-success",
+      "business_relevance_score": "0.80",
+      "apartment_industry_focus": true
+    }
+  ],
+  "total_conversations": 1,
+  "avg_sentiment_score": "0.75",
+  "avg_success_probability": "0.85"
+}

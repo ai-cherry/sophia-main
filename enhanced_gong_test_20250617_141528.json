@@ -1,0 +1,147 @@
+{
+  "gong_api_tests": {
+    "Last 3 days": {
+      "status": "FAILED",
+      "error_code": 400,
+      "error_response": "{\"requestId\":\"79zhxjsfu90b0g50np0\",\"errors\":[\"direction: must not be null\",\"parties: must not be null\",\"actualStart: must not be null\",\"clientUniqueId: must not be null\"]}"
+    },
+    "Last 7 days": {
+      "status": "FAILED",
+      "error_code": 400,
+      "error_response": "{\"requestId\":\"696ddip34t0h4flysqz\",\"errors\":[\"direction: must not be null\",\"parties: must not be null\",\"actualStart: must not be null\",\"clientUniqueId: must not be null\"]}"
+    },
+    "Last 30 days": {
+      "status": "FAILED",
+      "error_code": 400,
+      "error_response": "{\"requestId\":\"3pp44iiq9xsngvit0l0\",\"errors\":[\"parties: must not be null\",\"actualStart: must not be null\",\"direction: must not be null\",\"clientUniqueId: must not be null\"]}"
+    },
+    "Last 90 days": {
+      "status": "FAILED",
+      "error_code": 400,
+      "error_response": "{\"requestId\":\"3ekyb3im9wbkkm02v6m\",\"errors\":[\"direction: must not be null\",\"parties: must not be null\",\"actualStart: must not be null\",\"clientUniqueId: must not be null\"]}"
+    }
+  },
+  "data_samples": {
+    "total_users": 84,
+    "active_users": 71,
+    "workspaces": 2,
+    "primary_workspace": "Initial workspace"
+  },
+  "schema_validation": {
+    "gong_structure": {
+      "user_fields": [
+        "id",
+        "emailAddress",
+        "firstName",
+        "lastName",
+        "active",
+        "created",
+        "phoneNumber",
+        "extension",
+        "managerId"
+      ],
+      "call_fields": [
+        "id",
+        "title",
+        "started",
+        "duration",
+        "primaryUserId",
+        "participants",
+        "direction",
+        "system",
+        "scope",
+        "media",
+        "language",
+        "workspaceId",
+        "dealId",
+        "customData"
+      ],
+      "participant_fields": [
+        "emailAddress",
+        "name",
+        "title",
+        "affiliation",
+        "methods",
+        "userId",
+        "speakerId"
+      ],
+      "recommended_tables": [
+        {
+          "name": "gong_users",
+          "purpose": "Store Gong user information",
+          "key_fields": [
+            "id",
+            "emailAddress",
+            "firstName",
+            "lastName",
+            "active"
+          ]
+        },
+        {
+          "name": "gong_calls",
+          "purpose": "Store call metadata",
+          "key_fields": [
+            "id",
+            "title",
+            "started",
+            "duration",
+            "primaryUserId"
+          ]
+        },
+        {
+          "name": "gong_participants",
+          "purpose": "Store call participants",
+          "key_fields": [
+            "call_id",
+            "emailAddress",
+            "name",
+            "affiliation"
+          ]
+        },
+        {
+          "name": "gong_call_intelligence",
+          "purpose": "Store AI-processed call insights",
+          "key_fields": [
+            "call_id",
+            "sentiment_score",
+            "topics",
+            "action_items"
+          ]
+        }
+      ]
+    },
+    "database_test": {
+      "status": "SUCCESS",
+      "tables_created": 6,
+      "sample_data_inserted": true,
+      "query_results": {
+        "Total users": 1,
+        "Total calls": 1,
+        "Total participants": 1,
+        "Intelligence records": 1,
+        "Unified contacts": 1,
+        "Cross-platform interactions": 1,
+        "Join test": [
+          [
+            "Discovery Call - Sunset Apartments",
+            "Kreeya Boac",
+            0.75,
+            0.95
+          ]
+        ]
+      }
+    }
+  },
+  "recommendations": [
+    "\u26a0\ufe0f No successful Gong API calls - investigate authentication or API permissions",
+    "\u2705 Database schema validated - ready for production deployment",
+    "\ud83c\udfd7\ufe0f Recommended tables: gong_users, gong_calls, gong_participants, gong_conversation_intelligence",
+    "\ud83d\udd17 Cross-platform correlation ready via unified_contacts and unified_interactions tables",
+    "\ud83d\udc65 84 Gong users available for analysis",
+    "\ud83d\udcc8 Large team detected - implement user segmentation for analysis",
+    "\ud83d\udd04 Implement Airbyte connector for automated data sync",
+    "\ud83e\udde0 Deploy NLP processing for conversation intelligence",
+    "\ud83d\udcca Create real-time dashboard for business intelligence",
+    "\ud83c\udfaf Focus on apartment industry-specific insights and terminology"
+  ]
+}

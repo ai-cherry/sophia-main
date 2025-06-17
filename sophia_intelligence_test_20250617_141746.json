@@ -1,0 +1,112 @@
+{
+  "executive_summary": {
+    "test_status": "PASSED",
+    "success_rate": "100.0%",
+    "total_duration": "0.04s",
+    "intelligence_readiness": "PRODUCTION_READY"
+  },
+  "processing_capabilities": {
+    "conversations_analyzed": 6,
+    "database_integration": {
+      "status": "SUCCESS",
+      "records_inserted": 6,
+      "query_results": {
+        "High urgency conversations": 1,
+        "Apartment relevant conversations": 1,
+        "High business impact": 1,
+        "Positive sentiment": 1,
+        "Competitive mentions": 3,
+        "Average sentiment": 0.04547081543635334,
+        "Average relevance": 0.4620347842782775
+      }
+    },
+    "performance_metrics": {
+      "total_processing_time": 0.0014357566833496094,
+      "large_dataset_processing": {
+        "total_conversations": 300,
+        "total_time": 0.03882169723510742,
+        "avg_time_per_conversation": 0.00012940565745035807,
+        "conversations_per_second": 7727.637413253086
+      }
+    }
+  },
+  "sample_analyses": [
+    {
+      "title": "Discovery Call - Sunset Apartments",
+      "sentiment_score": 0.28169014084507044,
+      "urgency_score": 0.10662983425414366,
+      "apartment_relevance": 0.49295774647887325,
+      "business_impact": 0.4507042253521127,
+      "key_topics": [
+        "product_demo",
+        "rent_collection",
+        "resident_communication"
+      ],
+      "action_items": [
+        "Schedule follow-up meeting"
+      ],
+      "competitive_mentions": [
+        "AppFolio"
+      ],
+      "satisfaction_indicators": [
+        "negative_feedback"
+      ],
+      "ai_summary": "Neutral conversation. moderately relevant to apartment industry. with moderate business impact potential. discussing product_demo, rent_collection, resident_communication. mentioning competitors: appfolio."
+    },
+    {
+      "title": "Support Escalation - Urgent Issue",
+      "sentiment_score": -0.425531914893617,
+      "urgency_score": 1.0,
+      "apartment_relevance": 0.5319148936170213,
+      "business_impact": 0.1702127659574468,
+      "key_topics": [
+        "rent_collection",
+        "resident_communication",
+        "business_intelligence"
+      ],
+      "action_items": [
+        "Prepare contract documentation"
+      ],
+      "competitive_mentions": [],
+      "satisfaction_indicators": [
+        "negative_feedback",
+        "churn_risk"
+      ],
+      "ai_summary": "Negative conversation. moderately relevant to apartment industry. discussing rent_collection, resident_communication, business_intelligence. requiring urgent attention."
+    },
+    {
+      "title": "Pricing Discussion - Metro Properties",
+      "sentiment_score": 0.0,
+      "urgency_score": 0.005859375,
+      "apartment_relevance": 0.4098360655737705,
+      "business_impact": 0.9180327868852459,
+      "key_topics": [
+        "pricing",
+        "technical_integration",
+        "maintenance_management",
+        "resident_communication"
+      ],
+      "action_items": [
+        "Send pricing proposal",
+        "Plan implementation timeline"
+      ],
+      "competitive_mentions": [
+        "Yardi",
+        "RealPage"
+      ],
+      "satisfaction_indicators": [
+        "negative_feedback",
+        "churn_risk"
+      ],
+      "ai_summary": "Neutral conversation. moderately relevant to apartment industry. with high business impact potential. discussing pricing, technical_integration, maintenance_management. mentioning competitors: yardi, realpage."
+    }
+  ],
+  "recommendations": [
+    "\u2705 Intelligence processing fully operational - ready for production",
+    "\ud83d\ude80 High throughput achieved (7727.6 conversations/sec) - excellent for real-time processing",
+    "\ud83d\udd04 Implement real-time conversation processing pipeline",
+    "\ud83d\udcca Deploy business intelligence dashboard with conversation insights",
+    "\ud83c\udfaf Focus on apartment industry-specific terminology and use cases",
+    "\ud83e\udd16 Integrate with Slack and Gong for automated conversation analysis"
+  ]
+}
