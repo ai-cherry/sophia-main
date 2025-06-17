@@ -20,12 +20,12 @@ class DatabaseSettings(BaseSettings):
     postgres_host: str = Field(default="localhost", env='POSTGRES_HOST')
     postgres_port: int = Field(default=5432, env='POSTGRES_PORT')
     postgres_user: str = Field(default="sophia", env='POSTGRES_USER')
-    postgres_password: str = Field(default="sophia_pass", env='POSTGRES_PASSWORD')
+    postgres_password: str = Field(env='POSTGRES_PASSWORD')
     postgres_db: str = Field(default="sophia_payready", env='POSTGRES_DB')
     
     redis_host: str = Field(default="localhost", env='REDIS_HOST')
     redis_port: int = Field(default=6379, env='REDIS_PORT')
-    redis_password: Optional[str] = Field(default="", env='REDIS_PASSWORD')
+    redis_password: Optional[str] = Field(default=None, env='REDIS_PASSWORD')
     redis_db: int = Field(default=0, env='REDIS_DB')
     
     @property
@@ -53,7 +53,7 @@ class SecuritySettings(BaseSettings):
     jwt_expiration_hours: int = Field(default=24, env='JWT_EXPIRATION_HOURS')
     
     admin_username: str = Field(default="admin", env='ADMIN_USERNAME')
-    admin_password: str = Field(default="changeme", env='ADMIN_PASSWORD')
+    admin_password: str = Field(env='ADMIN_PASSWORD')
     
     allowed_origins: list[str] = Field(
         default=["http://localhost:3000", "http://localhost:5000"],
@@ -160,7 +160,7 @@ class MonitoringSettings(BaseSettings):
     
     grafana_enabled: bool = Field(default=False, env='SOPHIA_GRAFANA_ENABLED')
     grafana_port: int = Field(default=3000, env='GRAFANA_PORT')
-    grafana_admin_password: str = Field(default="admin", env='GRAFANA_ADMIN_PASSWORD')
+    grafana_admin_password: str = Field(env='GRAFANA_ADMIN_PASSWORD')
     
     log_level: str = Field(default="INFO", env='SOPHIA_LOG_LEVEL')
     log_format: str = Field(default="json", env='SOPHIA_LOG_FORMAT')
@@ -266,8 +266,8 @@ class Settings(BaseSettings):
             if self.security.secret_key == "change-me-in-production":
                 warnings.append("Secret key must be changed in production!")
             
-            if self.security.admin_password == "changeme":
-                warnings.append("Admin password must be changed in production!")
+            if not self.security.admin_password:
+                warnings.append("Admin password must be set in production!")
             
             if len(self.security.secret_key) < 32:
                 warnings.append("SECRET_KEY should be at least 32 characters in production")
