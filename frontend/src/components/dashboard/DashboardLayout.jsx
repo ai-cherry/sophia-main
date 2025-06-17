@@ -15,6 +15,7 @@ import GlassCard from '../design-system/cards/GlassCard';
 import Button from '../design-system/buttons/Button';
 import { cn } from '@/lib/utils';
 import api from '../../services/api';
+import NaturalLanguageInterface from '../NaturalLanguageInterface';
 
 // Tab configuration
 const TABS = [
@@ -315,6 +316,10 @@ const InsightsTab = () => {
             </div>
           </div>
         </div>
+      </div>
+      <div className="mt-6">
+        <h3 className="text-h4 font-medium mb-2">Try a command</h3>
+        <NaturalLanguageInterface />
       </div>
     </GlassCard>
   );
