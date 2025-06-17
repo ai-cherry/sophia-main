@@ -1,3 +1,6 @@
+import defaultTheme from 'tailwindcss/defaultTheme'
+import animate from 'tailwindcss-animate'
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -44,18 +47,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'Consolas', 'Courier New', 'monospace'],
-      },
-      fontSize: {
-        'display': ['48px', { lineHeight: '1.1' }],
-        'h1': ['30px', { lineHeight: '1.3' }],
-        'h2': ['24px', { lineHeight: '1.4' }],
-        'h3': ['20px', { lineHeight: '1.5' }],
-        'h4': ['18px', { lineHeight: '1.5' }],
-        'body': ['16px', { lineHeight: '1.7' }],
-        'small': ['14px', { lineHeight: '1.6' }],
-        'caption': ['12px', { lineHeight: '1.5' }],
+        sans: ['Inter', ...defaultTheme.fontFamily.sans],
+        mono: ['JetBrains Mono', ...defaultTheme.fontFamily.mono],
       },
       spacing: {
         '18': '4.5rem',
@@ -70,6 +63,8 @@ export default {
         'scale-in': 'scaleIn 0.2s ease-out',
         'glow': 'glow 2s ease-in-out infinite',
         'spin-slow': 'spin 3s linear infinite',
+        'pulse-slow': 'pulse 3s ease-in-out infinite',
+        'gradient': 'gradient 6s ease infinite',
       },
       keyframes: {
         fadeIn: {
@@ -97,12 +92,12 @@ export default {
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
         glow: {
-          '0%, 100%': { 
-            boxShadow: '0 0 20px rgba(139, 92, 246, 0.3)',
-          },
-          '50%': { 
-            boxShadow: '0 0 30px rgba(139, 92, 246, 0.5), 0 0 40px rgba(139, 92, 246, 0.3)',
-          },
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.7' },
+        },
+        gradient: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
         },
       },
       transitionDuration: {
@@ -119,7 +114,7 @@ export default {
       },
       boxShadow: {
         'glow': '0 0 20px rgba(139, 92, 246, 0.3)',
-        'glow-lg': '0 0 30px rgba(139, 92, 246, 0.5)',
+        'glow-lg': '0 0 40px rgba(139, 92, 246, 0.4)',
         'inner-glow': 'inset 0 0 20px rgba(139, 92, 246, 0.1)',
       },
       borderRadius: {
@@ -133,5 +128,6 @@ export default {
   plugins: [
     require('@tailwindcss/forms'),
     require('@tailwindcss/typography'),
+    animate,
   ],
 } 
