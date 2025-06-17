@@ -1,0 +1,107 @@
+{
+  "timestamp": "2025-06-17T20:08:29.389353",
+  "credentials_used": {
+    "access_key": "EX5L7AKSGQ...",
+    "base_url": "https://us-70092.api.gong.io/v2"
+  },
+  "extraction_summary": {
+    "total_users": 0,
+    "total_calls": 0,
+    "apartment_relevant_calls": 0,
+    "high_value_opportunities": 0,
+    "data_quality_score": 0.3,
+    "extraction_success": true,
+    "api_endpoints_tested": [
+      "users",
+      "calls",
+      "workspaces",
+      "library"
+    ]
+  },
+  "data_quality": {},
+  "apartment_intelligence": {
+    "relevant_calls_count": 0,
+    "total_calls": 0,
+    "relevance_percentage": 0.0,
+    "high_value_opportunities": [],
+    "competitive_landscape": {},
+    "business_insights": [],
+    "deal_pipeline": {},
+    "market_intelligence": {}
+  },
+  "errors": [],
+  "api_connection": {
+    "success": true,
+    "status_code": 200,
+    "user_count": 84,
+    "message": "API connection successful with updated credentials",
+    "base_url": "https://us-70092.api.gong.io/v2"
+  },
+  "users": {
+    "success": false,
+    "error": "'NoneType' object has no attribute 'lower'",
+    "users": []
+  },
+  "calls": {
+    "success": true,
+    "calls": [],
+    "total_count": 0,
+    "pages_extracted": 0,
+    "apartment_relevant_calls": 0,
+    "high_value_calls": 0,
+    "date_range": {
+      "from": "2025-04-18",
+      "to": "2025-06-17"
+    }
+  },
+  "workspace": {
+    "success": true,
+    "workspace_data": {
+      "requestId": "5lqjk89nbejddzga5xg",
+      "workspaces": [
+        {
+          "id": "3728622533553102187",
+          "name": "Initial workspace",
+          "description": "The built-in workspace"
+        },
+        {
+          "id": "6227427178809627537",
+          "name": "Executive Workspace",
+          "description": ""
+        }
+      ]
+    },
+    "workspace_count": 2,
+    "workspace_analysis": {
+      "3728622533553102187": {
+        "name": "Initial workspace",
+        "apartment_focus": {
+          "apartment_keywords_found": [],
+          "focus_score": 0.0,
+          "industry_indicators": []
+        }
+      },
+      "6227427178809627537": {
+        "name": "Executive Workspace",
+        "apartment_focus": {
+          "apartment_keywords_found": [],
+          "focus_score": 0.0,
+          "industry_indicators": []
+        }
+      }
+    }
+  },
+  "library": {
+    "success": false,
+    "error": "HTTP 400: {\"requestId\":\"4qw3bhih7h3d82p5x33\",\"errors\":[\"Bad request\"]}",
+    "library_data": {}
+  },
+  "database_storage": {
+    "users_stored": 0,
+    "calls_stored": 0,
+    "insights_stored": 0,
+    "business_intelligence_stored": 0,
+    "errors": [],
+    "success": true
+  }
+}
