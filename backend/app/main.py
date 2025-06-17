@@ -64,18 +64,20 @@ def create_app(config_class=Config):
     app.register_blueprint(operations_bp, url_prefix='/api/operations')
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     
-    # Register Knowledge Base and HF MCP blueprints
+    # Register Knowledge Base, HF MCP, and ESC blueprints
     try:
         from knowledge.admin_integration import admin_kb_bp
         from knowledge.knowledge_api import knowledge_bp
         from integrations.huggingface_mcp import hf_mcp_bp
+        from integrations.pulumi_esc import esc_bp
         
         app.register_blueprint(admin_kb_bp, url_prefix='/admin')
         app.register_blueprint(knowledge_bp, url_prefix='/api')
         app.register_blueprint(hf_mcp_bp, url_prefix='/api')
-        logger.info("Knowledge Base and HF MCP integration registered")
+        app.register_blueprint(esc_bp, url_prefix='/api')
+        logger.info("Knowledge Base, HF MCP, and ESC integration registered")
     except ImportError as e:
-        logger.warning(f"Knowledge Base integration not available: {e}")
+        logger.warning(f"Integration modules not available: {e}")
     
     # Health check endpoint
     @app.route('/api/health')
@@ -93,6 +95,7 @@ def create_app(config_class=Config):
                 "ai_orchestrator": app.orchestrator is not None,
                 "knowledge_base": "operational",
                 "hf_mcp_integration": "connected",
+                "esc_integration": "active",
                 "database": "connected",  # TODO: Add actual DB check
                 "cache": "connected"      # TODO: Add actual Redis check
             },
@@ -127,7 +130,8 @@ def create_app(config_class=Config):
                 "Market Research & Competitive Analysis",
                 "Decision Support & Business Insights",
                 "Knowledge Base Management",
-                "Hugging Face Model Integration"
+                "Hugging Face Model Integration",
+                "Centralized Secrets Management"
             ],
             "api_documentation": "/docs",
             "health_check": "/api/health",
@@ -148,6 +152,7 @@ def create_app(config_class=Config):
                 "/api/auth/*",
                 "/api/knowledge/*",
                 "/api/hf-mcp/*",
+                "/api/esc/*",
                 "/admin/knowledge"
             ]
         }), 404
