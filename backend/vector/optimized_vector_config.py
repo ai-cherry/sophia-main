@@ -5,7 +5,7 @@ Production-ready setup for Pinecone and Weaviate with advanced features
 
 import json
 import logging
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from dataclasses import dataclass
 import time
 

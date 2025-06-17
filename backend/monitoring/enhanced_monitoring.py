@@ -16,8 +16,8 @@ import logging
 import time
 import psutil
 import aiohttp
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from datetime import datetime
+from typing import Dict, List, Any
 from dataclasses import dataclass
 import redis.asyncio as redis
 
