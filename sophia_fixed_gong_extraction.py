@@ -24,9 +24,13 @@ class SophiaGongDataExtractorFixed:
     """
     
     def __init__(self):
-        # Updated Gong API credentials
-        self.access_key = "EX5L7AKSGQBOPNK66TDYVVEAKBVQ6IPK"
-        self.access_secret = "eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjIwNjU1NDc5ODksImFjY2Vzc0tleSI6IkVYNUw3QUtTR1FCT1BOSzY2VERZVlZFQUtCVlE2SVBLIn0.djgpFaMkt94HJHYHKbymM2D5aj_tQNJMV3aY_rwOSTY"
+        # Load Gong API credentials from environment variables
+        self.access_key = os.getenv("GONG_ACCESS_KEY")
+        self.access_secret = os.getenv("GONG_CLIENT_SECRET")
+
+        if not self.access_key or not self.access_secret:
+            logger.error("GONG_ACCESS_KEY or GONG_CLIENT_SECRET environment variables not set.")
+            raise ValueError("Gong API credentials not found in environment variables.")
         
         # Create authorization header
         credentials = f"{self.access_key}:{self.access_secret}"
@@ -64,7 +68,8 @@ class SophiaGongDataExtractorFixed:
         extraction_results = {
             "timestamp": datetime.utcnow().isoformat(),
             "credentials_used": {
-                "access_key": self.access_key[:10] + "...",
+                "source": "Environment Variables (GONG_ACCESS_KEY, GONG_CLIENT_SECRET)",
+                "access_key_present": bool(self.access_key), # To confirm it was loaded
                 "base_url": self.base_url
             },
             "extraction_summary": {},
@@ -219,9 +224,13 @@ class SophiaGongDataExtractorFixed:
             to_date = datetime.utcnow().strftime("%Y-%m-%d")
             
             # Try basic calls endpoint first
+            # Updated to include required parameters for the /calls endpoint
             params = {
                 "fromDateTime": from_date,
-                "toDateTime": to_date
+                "toDateTime": to_date,
+                "clientUniqueId": True,  # As per Gong API requirements
+                "parties": True,         # To include participant details
+                "direction": "all"       # To get all call directions (inbound/outbound)
             }
             
             response = requests.post(
@@ -826,4 +835,3 @@ async def test_fixed_sophia_gong_extraction():
 if __name__ == "__main__":
     # Run the fixed extraction
     results = asyncio.run(test_fixed_sophia_gong_extraction())
-

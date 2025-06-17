@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Calendar, Users, TrendingUp, MessageSquare, Mail, Upload, Eye, BarChart3 } from 'lucide-react';
+import { Search, Filter, Calendar, Users, TrendingUp, MessageSquare, Mail, Upload, Eye, BarChart3, Settings, Map, Type, Building, Zap, ListChecks } from 'lucide-react'; // Added Building, Zap, ListChecks
 import './App.css';
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -17,7 +17,7 @@ function App() {
   });
   const [dashboardStats, setDashboardStats] = useState(null);
   const [selectedConversation, setSelectedConversation] = useState(null);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('dashboard'); // Default to dashboard
   const [pagination, setPagination] = useState({
     offset: 0,
     limit: 20,
@@ -82,6 +82,10 @@ function App() {
     fetchDashboardStats();
     if (activeTab === 'conversations') {
       searchConversations();
+    }
+    if (activeTab === 'schema-mapping') {
+      // Placeholder for fetching schema mapping data if needed
+      console.log("Schema Mapping tab active");
     }
   }, [activeTab]);
 
@@ -197,6 +201,46 @@ function App() {
               </div>
             </div>
           </div>
+
+          {/* Apartment Industry Specific Insights */}
+          {dashboardStats.apartment_insights && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center mb-4">
+                <Building className="w-6 h-6 text-teal-500 mr-3" />
+                <h3 className="text-lg font-semibold text-gray-900">Apartment Industry Insights</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                <div>
+                  <p className="text-gray-500 mb-1">Avg. Lease Conversion (Discussed)</p>
+                  <p className="font-medium text-gray-800">{formatScore(dashboardStats.apartment_insights.avg_lease_conversion_rate_discussed)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">Competitor Sentiment Score</p>
+                  <p className={`font-medium ${dashboardStats.apartment_insights.competitor_sentiment_score >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {dashboardStats.apartment_insights.competitor_sentiment_score}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">Common Amenities Mentioned</p>
+                  <p className="font-medium text-gray-800 capitalize">
+                    {dashboardStats.apartment_insights.common_amenities_mentioned.join(', ')}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-1">Peak Leasing Activity</p>
+                  <p className="font-medium text-gray-800">{dashboardStats.apartment_insights.peak_leasing_season_activity}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <p className="text-gray-500 mb-1">PayReady Feature Requests</p>
+                  <ul className="list-disc list-inside font-medium text-gray-800">
+                    {dashboardStats.apartment_insights.pay_ready_feature_requests.map((req, idx) => (
+                      <li key={idx}>{req}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -511,6 +555,42 @@ function App() {
     );
   };
 
+  // Schema Mapping component (Placeholder)
+  const SchemaMapping = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">Interactive Schema Mapping</h1>
+        <div className="flex items-center space-x-2 text-sm text-gray-500">
+          <Map className="w-4 h-4" />
+          <span>Define Data Structures</span>
+        </div>
+      </div>
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Gong Fields to Sophia Schema</h2>
+        <p className="text-gray-600 mb-4">
+          This section will allow visual mapping of Gong API fields to your internal Sophia database schema. 
+          You'll be able to drag-and-drop fields, define transformations, and set data types.
+        </p>
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+          <Settings size={48} className="mx-auto text-gray-400 mb-4" />
+          <p className="text-gray-500">Schema mapping interface coming soon.</p>
+        </div>
+      </div>
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Natural Language Data Definitions</h2>
+        <p className="text-gray-600 mb-4">
+          Configure business rules and data definitions using a chat-like interface. 
+          For example: "Map Gong call titles to apartment relevance scores" or "Create alerts for competitor mentions."
+        </p>
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+          <Type size={48} className="mx-auto text-gray-400 mb-4" />
+          <p className="text-gray-500">Natural language configuration interface coming soon.</p>
+        </div>
+      </div>
+    </div>
+  );
+
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
@@ -543,6 +623,17 @@ function App() {
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Conversations
               </button>
+              <button
+                onClick={() => setActiveTab('schema-mapping')}
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  activeTab === 'schema-mapping'
+                    ? 'border-blue-500 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Schema Mapping
+              </button>
             </div>
           </div>
         </div>
@@ -554,6 +645,7 @@ function App() {
           {activeTab === 'dashboard' && <Dashboard />}
           {activeTab === 'conversations' && <Conversations />}
           {activeTab === 'email-upload' && <EmailUpload />}
+          {activeTab === 'schema-mapping' && <SchemaMapping />}
         </div>
       </main>
 
@@ -658,4 +750,3 @@ function App() {
 }
 
 export default App;
-

@@ -4,7 +4,7 @@ Sophia Admin API - Backend for Gong conversation intelligence
 Provides REST API for searching and managing Gong conversation data
 """
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect
 from flask_cors import CORS
 import asyncpg
 import asyncio
@@ -13,6 +13,14 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 import os
+
+# Attempt to import GongOAuthHandler
+try:
+    from gong_oauth_application import GongOAuthHandler
+except ImportError:
+    GongOAuthHandler = None
+    logger.warning("gong_oauth_application.py not found or GongOAuthHandler could not be imported. OAuth endpoints will not function.")
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -345,6 +353,15 @@ class SophiaDatabase:
                 {"company": row["company_name"], "calls": row["call_count"]}
                 for row in top_companies
             ]
+
+            # Placeholder for Apartment Industry Specific Insights
+            stats["apartment_insights"] = {
+                "avg_lease_conversion_rate_discussed": 0.35, # Example: 35%
+                "common_amenities_mentioned": ["pool", "gym", "pet-friendly", "in-unit laundry"],
+                "peak_leasing_season_activity": "High (based on call volume in Spring/Summer)",
+                "competitor_sentiment_score": -0.2, # Example: Slightly negative towards competitors
+                "pay_ready_feature_requests": ["automated payment reminders", "integration with Yardi"]
+            }
             
             return stats
             
@@ -475,6 +492,199 @@ def upload_email():
         logger.error(f"Email upload endpoint error: {e}")
         return jsonify({"error": str(e)}), 500
 
+# Placeholder for schema configuration data
+current_schema_config = {
+    "version": "1.0",
+    "last_updated": datetime.utcnow().isoformat(),
+    "mappings": [
+        {"gong_field": "call.title", "sophia_field": "conversations.title", "type": "string", "transformation": "direct"},
+        {"gong_field": "call.duration", "sophia_field": "conversations.duration_minutes", "type": "integer", "transformation": "seconds_to_minutes"},
+    ],
+    "definitions": {
+        "apartment_relevance_score": "Calculated based on keywords in title and participant company.",
+        "deal_stage_rule": "Derived from call title keywords like 'demo', 'proposal', 'closing'."
+    }
+}
+
+@app.route('/api/schema/config', methods=['GET'])
+def get_schema_config():
+    """Get current schema mapping and data definitions"""
+    try:
+        # In a real implementation, this would fetch from a database or config file
+        return jsonify({
+            "success": True,
+            "config": current_schema_config
+        })
+    except Exception as e:
+        logger.error(f"Get schema config error: {e}")
+        return jsonify({"error": str(e), "success": False}), 500
+
+@app.route('/api/schema/config', methods=['POST'])
+def update_schema_config():
+    """Update schema mapping and data definitions"""
+    global current_schema_config
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided", "success": False}), 400
+        
+        # Basic validation (in real app, much more thorough)
+        if "mappings" not in data or "definitions" not in data:
+            return jsonify({"error": "Missing 'mappings' or 'definitions' in request", "success": False}), 400
+
+        # Update the placeholder config
+        current_schema_config["mappings"] = data["mappings"]
+        current_schema_config["definitions"] = data["definitions"]
+        current_schema_config["last_updated"] = datetime.utcnow().isoformat()
+        current_schema_config["version"] = str(float(current_schema_config.get("version", "1.0")) + 0.1) # Simple version increment
+
+        # In a real implementation, this would save to a database or config file
+        # and potentially trigger schema migration or validation logic.
+        
+        logger.info(f"Schema config updated: {current_schema_config}")
+        return jsonify({
+            "success": True, 
+            "message": "Schema configuration updated successfully.",
+            "updated_config": current_schema_config
+        })
+        
+    except Exception as e:
+        logger.error(f"Update schema config error: {e}")
+        return jsonify({"error": str(e), "success": False}), 500
+
+@app.route('/api/schema/nl_process', methods=['POST'])
+def process_natural_language_schema_query():
+    """Process a natural language query for schema definition"""
+    try:
+        data = request.get_json()
+        if not data or "query" not in data:
+            return jsonify({"error": "No query provided", "success": False}), 400
+        
+        nl_query = data["query"]
+        
+        # Placeholder NLP processing logic
+        # In a real app, this would involve a more sophisticated NLP model/service
+        interpretation = {
+            "original_query": nl_query,
+            "intent": "unknown",
+            "entities": [],
+            "parsed_action": None,
+            "confidence": 0.0
+        }
+        
+        if "map gong call titles to apartment relevance scores" in nl_query.lower():
+            interpretation["intent"] = "define_mapping_rule"
+            interpretation["entities"] = [
+                {"type": "source_field", "value": "Gong call titles"},
+                {"type": "target_field", "value": "apartment relevance scores"}
+            ]
+            interpretation["parsed_action"] = {
+                "action_type": "CREATE_MAPPING",
+                "source": "gong.call.title",
+                "target": "sophia.apartment_relevance_score",
+                "transformation_hint": "keyword_based_scoring"
+            }
+            interpretation["confidence"] = 0.85
+        elif "create alerts for competitor mentions" in nl_query.lower():
+            interpretation["intent"] = "define_alert_rule"
+            interpretation["entities"] = [{"type": "condition", "value": "competitor mentions"}]
+            interpretation["parsed_action"] = {
+                "action_type": "CREATE_ALERT",
+                "trigger": "competitor_mention_in_call",
+                "notification_channel": "slack" # Default or configurable
+            }
+            interpretation["confidence"] = 0.90
+        else:
+            interpretation["parsed_action"] = {"error": "Could not understand the query."}
+            interpretation["confidence"] = 0.30
+            
+        logger.info(f"NL Query: '{nl_query}', Interpretation: {interpretation}")
+        return jsonify({"success": True, "interpretation": interpretation})
+        
+    except Exception as e:
+        logger.error(f"NL process error: {e}")
+        return jsonify({"error": str(e), "success": False}), 500
+
+# OAuth Routes
+if GongOAuthHandler:
+    gong_oauth_handler = GongOAuthHandler()
+
+    @app.route('/api/auth/gong/login', methods=['GET'])
+    def gong_oauth_login():
+        """
+        Redirects the user to Gong's OAuth authorization page.
+        """
+        if not gong_oauth_handler.client_id or not gong_oauth_handler.redirect_uri:
+            return jsonify({"error": "Gong OAuth is not configured properly on the server.", "success": False}), 500
+        
+        # Generate a state parameter for CSRF protection (optional but recommended)
+        # For simplicity, a fixed state or no state is used here. In production, generate and validate a unique state.
+        state = "csrf_token_placeholder" # Replace with actual CSRF token logic
+        authorization_url = gong_oauth_handler.get_authorization_url(state=state)
+        
+        if authorization_url == "/error_oauth_misconfigured":
+             return jsonify({"error": "Gong OAuth is not configured properly on the server (URL generation failed).", "success": False}), 500
+        
+        # Store state in session if using it for validation: session['oauth_state'] = state
+        return redirect(authorization_url)
+
+    @app.route('/api/auth/gong/callback', methods=['GET'])
+    def gong_oauth_callback():
+        """
+        Handles the callback from Gong after user authorization.
+        Exchanges the authorization code for tokens.
+        """
+        error = request.args.get('error')
+        if error:
+            error_description = request.args.get('error_description', 'No description provided.')
+            logger.error(f"Gong OAuth error: {error} - {error_description}")
+            return jsonify({"error": f"Gong OAuth failed: {error}", "description": error_description, "success": False}), 400
+
+        authorization_code = request.args.get('code')
+        returned_state = request.args.get('state')
+
+        # Validate state parameter for CSRF protection (if used)
+        # expected_state = session.pop('oauth_state', None)
+        # if not returned_state or returned_state != expected_state:
+        #     logger.error("OAuth state mismatch. Possible CSRF attack.")
+        #     return jsonify({"error": "Invalid OAuth state.", "success": False}), 400
+            
+        if not authorization_code:
+            logger.error("No authorization code received from Gong.")
+            return jsonify({"error": "Authorization code missing in callback.", "success": False}), 400
+
+        tokens = gong_oauth_handler.exchange_code_for_tokens(authorization_code)
+
+        if "error" in tokens:
+            logger.error(f"Failed to exchange Gong auth code for tokens: {tokens.get('details', tokens['error'])}")
+            return jsonify({"error": "Failed to obtain Gong tokens.", "details": tokens.get('details'), "success": False}), 500
+        
+        # At this point, tokens are successfully retrieved.
+        # Securely store them (e.g., associated with the logged-in user or tenant).
+        # For this placeholder, we'll just log and return them.
+        # A real app would likely redirect the user to a success page or their dashboard.
+        gong_oauth_handler.store_tokens(
+            access_token=tokens.get("access_token"),
+            refresh_token=tokens.get("refresh_token"),
+            expires_in=tokens.get("expires_in", 3600), # Default to 1 hour if not provided
+            # user_id=current_user.id # Example: associate with a logged-in user
+        )
+        
+        logger.info(f"Gong OAuth successful. Tokens obtained (details omitted for security).")
+        # In a real app, you might redirect to a frontend page:
+        # return redirect(url_for('frontend_success_page', status='gong_auth_success'))
+        return jsonify({
+            "success": True,
+            "message": "Gong OAuth successful. Tokens obtained and stored (placeholder).",
+            "access_token_type": tokens.get("token_type"),
+            "access_token_expires_in": tokens.get("expires_in"),
+            # Do NOT return access_token or refresh_token directly to the client here for security reasons
+            # unless it's a specific flow that requires it (e.g. SPA immediately using it).
+            # Typically, the server stores them and uses them for API calls on behalf of the user.
+        })
+else:
+    logger.warning("GongOAuthHandler not available. Gong OAuth endpoints are disabled.")
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
