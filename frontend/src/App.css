@@ -1,12 +1,12 @@
 /* Import fonts - must be first */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-@import "tailwindcss";
-@import "tw-animate-css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
+:root {
+  /* Default to dark theme */
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
@@ -14,46 +14,6 @@
   --radius: var(--radius-md);
   
   /* Dark theme colors from design guide */
-  --color-background: #0f172a;
-  --color-foreground: #ffffff;
-  --color-card: #1e293b;
-  --color-card-foreground: #e5e7eb;
-  --color-popover: #1e293b;
-  --color-popover-foreground: #e5e7eb;
-  --color-primary: #8b5cf6;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #334155;
-  --color-secondary-foreground: #e5e7eb;
-  --color-muted: #334155;
-  --color-muted-foreground: #9ca3af;
-  --color-accent: #3b82f6;
-  --color-accent-foreground: #ffffff;
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #ffffff;
-  --color-border: rgba(100, 116, 139, 0.2);
-  --color-input: rgba(100, 116, 139, 0.2);
-  --color-ring: #8b5cf6;
-  
-  /* Chart colors */
-  --color-chart-1: #8b5cf6;
-  --color-chart-2: #3b82f6;
-  --color-chart-3: #10b981;
-  --color-chart-4: #f59e0b;
-  --color-chart-5: #ef4444;
-  
-  /* Sidebar colors */
-  --color-sidebar: #1e293b;
-  --color-sidebar-foreground: #e5e7eb;
-  --color-sidebar-primary: #8b5cf6;
-  --color-sidebar-primary-foreground: #ffffff;
-  --color-sidebar-accent: #334155;
-  --color-sidebar-accent-foreground: #e5e7eb;
-  --color-sidebar-border: rgba(100, 116, 139, 0.2);
-  --color-sidebar-ring: #8b5cf6;
-}
-
-:root {
-  /* Default to dark theme */
   --background: #0f172a;
   --foreground: #ffffff;
   --card: #1e293b;

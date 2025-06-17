@@ -1,176 +1,210 @@
-# Sophia AI Deployment Guide
+# Sophia AI - Production Deployment Guide
 
-## 🚀 Overview
+## 🚀 Quick Start
 
-This guide covers deploying Sophia AI's backend infrastructure to Lambda Labs and frontend to Vercel.
+This guide covers deploying Sophia AI to production using GitHub Actions, Vercel (frontend), and Lambda Labs (backend).
 
 ## 📋 Prerequisites
 
-### Required Secrets in GitHub (Organization Level)
-- ✅ All API keys (already set at org level)
-- ❓ `VERCEL_TOKEN` - Need to add for frontend deployment
-- ❓ `LAMBDA_LABS_API_KEY` - Verify if set
+### Required API Keys (Minimal Setup)
+1. **LLM Gateway** (2 keys for 100+ models):
+   - `PORTKEY_API_KEY` - Get from [portkey.ai](https://portkey.ai)
+   - `OPENROUTER_API_KEY` - Get from [openrouter.ai](https://openrouter.ai)
 
-### Current Status
-- **Pull Request**: [#6](https://github.com/ai-cherry/sophia-main/pull/6) created
-- **Branch**: `feat/enhanced-infrastructure`
-- **GitHub Actions**: Configured and ready
+2. **Deployment Targets**:
+   - `VERCEL_ACCESS_TOKEN` - For frontend deployment
+   - `LAMBDA_LABS_API_KEY` - For backend deployment
 
-## 🔧 Deployment Steps
+3. **Security**:
+   - `SECRET_KEY` - Generate a random 32+ character string
+   - `ADMIN_USERNAME` - Admin dashboard username
+   - `ADMIN_PASSWORD` - Strong admin password
 
-### Option 1: Automatic Deployment (Recommended)
+### Optional Integrations (Add as Needed)
+- **Business**: `HUBSPOT_API_KEY`, `GONG_API_KEY`, `SLACK_BOT_TOKEN`
+- **Vector DBs**: `PINECONE_API_KEY`, `WEAVIATE_API_KEY`
+- **AI Discovery**: `HUGGINGFACE_API_TOKEN`
 
-1. **Add Vercel Token to GitHub Secrets**
-   ```bash
-   # Get your Vercel token from: https://vercel.com/account/tokens
-   # Add to GitHub org secrets as VERCEL_TOKEN
-   ```
+## 🔑 Setting Up GitHub Secrets
 
-2. **Merge the Pull Request**
-   - Review PR #6: https://github.com/ai-cherry/sophia-main/pull/6
-   - Approve and merge to main
-   - GitHub Actions will automatically:
-     - Run tests
-     - Build Docker images
-     - Deploy backend to Lambda Labs
-     - Deploy frontend to Vercel
+### Step 1: Add Organization Secrets
+Navigate to your GitHub organization settings → Secrets → Actions
 
-### Option 2: Manual Vercel Deployment
+Add these secrets:
+```yaml
+# Core LLM Gateway (Required)
+PORTKEY_API_KEY=pk_xxx
+OPENROUTER_API_KEY=sk-or-xxx
 
-1. **Install Vercel CLI**
-   ```bash
-   npm i -g vercel
-   ```
+# Deployment (Required)
+VERCEL_ACCESS_TOKEN=xxx
+LAMBDA_LABS_API_KEY=xxx
 
-2. **Deploy Frontend**
-   ```bash
-   # From project root
-   vercel --prod
-   
-   # Follow prompts:
-   # - Set up and deploy: Y
-   # - Which scope: Select your account
-   # - Link to existing project: N (first time) or Y
-   # - Project name: sophia-ai-frontend
-   # - In which directory: ./frontend
-   # - Override settings: N
-   ```
+# Security (Required)
+SECRET_KEY=<generate-random-32-char-string>
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=<strong-password>
 
-3. **Set Environment Variables in Vercel**
-   ```bash
-   # Set the API URL for production
-   vercel env add VITE_API_URL production
-   # Enter: https://api.sophiaai.payready.com (or your backend URL)
-   ```
+# Database (Optional - uses Docker defaults if not set)
+POSTGRES_PASSWORD=<strong-db-password>
 
-### Option 3: Deploy Backend Manually
+# Business Integrations (Optional)
+HUBSPOT_API_KEY=xxx
+GONG_API_KEY=xxx
+GONG_API_SECRET=xxx
+SLACK_BOT_TOKEN=xoxb-xxx
+SLACK_SIGNING_SECRET=xxx
 
-1. **Build Docker Image**
-   ```bash
-   docker build -t sophia-payready:latest .
-   ```
-
-2. **Push to Registry**
-   ```bash
-   docker tag sophia-payready:latest ghcr.io/ai-cherry/sophia-main:latest
-   docker push ghcr.io/ai-cherry/sophia-main:latest
-   ```
-
-3. **Deploy to Lambda Labs**
-   ```bash
-   # Use Lambda Labs API or dashboard
-   # Image: ghcr.io/ai-cherry/sophia-main:latest
-   # Ports: 5001 (backend), 80 (nginx)
-   ```
-
-## 🌐 Post-Deployment Configuration
-
-### 1. **Update DNS Records**
-- Point `sophiaai.payready.com` to Lambda Labs IP
-- Point `app.sophiaai.payready.com` to Vercel deployment
-
-### 2. **Configure SSL**
-- Lambda Labs: Use Let's Encrypt via nginx
-- Vercel: Automatic SSL
-
-### 3. **Update Frontend API URL**
-- In Vercel dashboard, update `VITE_API_URL` to production backend URL
-
-### 4. **Test Deployment**
-```bash
-# Test backend
-curl https://api.sophiaai.payready.com/health
-
-# Test frontend
-open https://app.sophiaai.payready.com
+# Vector Databases (Optional)
+PINECONE_API_KEY=xxx
+WEAVIATE_API_KEY=xxx
 ```
+
+### Step 2: Verify Secrets
+The deployment workflow will automatically report which features are enabled based on available secrets.
+
+## 🏗️ Architecture Overview
+
+```mermaid
+graph TD
+    A[GitHub Actions] -->|Deploy Frontend| B[Vercel]
+    A -->|Deploy Backend| C[Lambda Labs]
+    
+    C --> D[Portkey Gateway]
+    D --> E[OpenRouter<br/>100+ LLM Models]
+    D --> F[Direct APIs<br/>Fallback]
+    
+    C --> G[PostgreSQL]
+    C --> H[Redis]
+    
+    B -->|API Calls| C
+    
+    I[Optional Services] --> C
+    I --> J[HubSpot CRM]
+    I --> K[Gong.io]
+    I --> L[Slack]
+    I --> M[Pinecone/Weaviate]
+```
+
+## 📦 Deployment Process
+
+### Automatic Deployment (Recommended)
+1. Push to `main` branch
+2. GitHub Actions automatically:
+   - Builds Docker images
+   - Deploys frontend to Vercel
+   - Deploys backend to Lambda Labs
+   - Reports deployment status
+
+### Manual Deployment
+```bash
+# Frontend
+cd frontend
+pnpm install
+pnpm build
+vercel --prod
+
+# Backend
+docker build -t sophia-backend .
+docker push your-registry/sophia-backend
+# Deploy to Lambda Labs via their CLI/API
+```
+
+## 🔧 Configuration
+
+### LLM Gateway Setup
+Sophia uses Portkey + OpenRouter for unified LLM access:
+
+```python
+# Automatically configured in backend/config/settings.py
+LLM_GATEWAY=portkey
+PORTKEY_API_KEY=your-key
+OPENROUTER_API_KEY=your-key
+
+# This gives access to:
+# - Claude 3 Opus/Sonnet
+# - GPT-4 Turbo
+# - Llama 3
+# - 100+ other models
+```
+
+### Environment Variables
+Create `.env` from the minimal template:
+```bash
+cp env.minimal.example .env
+# Add your API keys
+```
+
+### Feature Flags
+Features auto-enable based on available API keys:
+- ✅ AI Chat (if Portkey configured)
+- ✅ CRM Sync (if HubSpot configured)
+- ✅ Call Analysis (if Gong configured)
+- ✅ Notifications (if Slack configured)
+- ✅ Vector Search (if Pinecone/Weaviate configured)
+
+## 🚨 Production Checklist
+
+### Security
+- [ ] Change default `SECRET_KEY`
+- [ ] Set strong `ADMIN_PASSWORD`
+- [ ] Enable HTTPS on Lambda Labs
+- [ ] Configure CORS origins
+- [ ] Review firewall rules
+
+### Performance
+- [ ] Enable Redis caching
+- [ ] Configure CDN for frontend
+- [ ] Set up monitoring (Prometheus/Grafana)
+- [ ] Configure rate limiting
+
+### Backup
+- [ ] PostgreSQL automated backups
+- [ ] Redis persistence enabled
+- [ ] Configuration backups
 
 ## 📊 Monitoring
 
-### Backend Monitoring
-- Grafana: `https://api.sophiaai.payready.com:3001`
-- Prometheus: `https://api.sophiaai.payready.com:9090`
+### Health Checks
+- Frontend: `https://your-app.vercel.app/health`
+- Backend: `https://your-api.lambda-labs.com/health`
+- API Status: `https://your-api.lambda-labs.com/api/v1/status`
 
-### Frontend Monitoring
-- Vercel Analytics (automatic)
-- Browser console for errors
+### Logs
+- Frontend: Vercel dashboard
+- Backend: Lambda Labs console
+- Application: `/logs` directory
 
-## 🔒 Security Checklist
+## 🆘 Troubleshooting
 
-- [ ] All secrets in GitHub organization secrets
-- [ ] SSL certificates configured
-- [ ] Firewall rules set (Lambda Labs)
-- [ ] Environment variables not exposed
-- [ ] API authentication enabled
+### Deployment Fails
+1. Check GitHub Actions logs
+2. Verify all required secrets are set
+3. Ensure Docker builds locally
 
-## 🛠️ Troubleshooting
+### LLM Gateway Issues
+1. Verify Portkey and OpenRouter keys
+2. Check rate limits
+3. Review fallback configuration
 
-### Frontend Issues
-```bash
-# Check build logs
-vercel logs
-
-# Redeploy
-vercel --prod --force
-```
-
-### Backend Issues
-```bash
-# Check Docker logs
-docker logs sophia-payready
-
-# Check health endpoint
-curl http://localhost:5001/health
-```
-
-### Common Issues
-1. **CORS errors**: Update backend CORS settings
-2. **API connection failed**: Check VITE_API_URL
-3. **Build failures**: Check npm/pnpm lockfiles
-
-## 📱 Mobile Access
-
-The frontend is fully responsive and works on:
-- iOS Safari
-- Android Chrome
-- Tablet browsers
-
-## 🎉 Success Indicators
-
-- ✅ Backend health check returns 200
-- ✅ Frontend loads without errors
-- ✅ API calls successful
-- ✅ Metrics visible in dashboard
-- ✅ WebSocket connections working
+### Integration Problems
+1. Test API keys individually
+2. Check network connectivity
+3. Review error logs
 
 ## 📞 Support
 
-For deployment issues:
-1. Check GitHub Actions logs
-2. Review Vercel deployment logs
-3. Verify all environment variables
-4. Check network connectivity
+- Documentation: `/docs`
+- Issues: GitHub Issues
+- Community: Discord/Slack
+
+## 🔄 Updates
+
+To update Sophia:
+1. Pull latest changes
+2. Review migration notes
+3. Push to main (auto-deploys)
 
 ---
 
-**Note**: This deployment will make Sophia AI publicly accessible. Ensure all security measures are in place before proceeding. 
+**Note**: This guide assumes you're using GitHub organization secrets. For personal repos, add secrets to repository settings instead. 
