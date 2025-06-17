@@ -1,0 +1,376 @@
+{
+  "test_summary": {
+    "timestamp": "2025-06-17T19:34:52.357529",
+    "credentials_used": {
+      "access_key": "EX5L7AKSGQBOPNK66TDYVVEAKBVQ6IPK",
+      "base_url": "https://us-70092.api.gong.io"
+    },
+    "total_endpoints_tested": 7,
+    "successful_endpoints": 3,
+    "failed_endpoints": 4
+  },
+  "endpoint_results": {
+    "users": {
+      "status_code": 200,
+      "success": true,
+      "description": "List all users in the workspace",
+      "response_size": 52020,
+      "url": "https://us-70092.api.gong.io/v2/users",
+      "data_structure": {
+        "type": "object",
+        "keys": [
+          "requestId",
+          "records",
+          "users"
+        ],
+        "nested_structure": {
+          "requestId": "str",
+          "records": "dict",
+          "users": "list"
+        }
+      },
+      "record_count": 84,
+      "sample_data": {
+        "requestId": "2fdydqvesezo1vhqvbr",
+        "records": {
+          "totalRecords": 84,
+          "currentPageSize": 84
+        }
+      }
+    },
+    "calls_basic": {
+      "status_code": 200,
+      "success": true,
+      "description": "Basic call information",
+      "response_size": 72322,
+      "url": "https://us-70092.api.gong.io/v2/calls",
+      "data_structure": {
+        "type": "object",
+        "keys": [
+          "requestId",
+          "records",
+          "calls"
+        ],
+        "nested_structure": {
+          "requestId": "str",
+          "records": "dict",
+          "calls": "list"
+        }
+      },
+      "record_count": 100,
+      "sample_data": {
+        "requestId": "1vgpox0w0w5z9vtrfy4",
+        "records": {
+          "totalRecords": 246,
+          "currentPageSize": 100
+        }
+      }
+    },
+    "calls_extensive": {
+      "status_code": 400,
+      "success": false,
+      "description": "Extended call data with interaction stats",
+      "response_size": 60,
+      "url": "https://us-70092.api.gong.io/v2/calls/extensive",
+      "error": "{\"requestId\":\"2i16tuff39ggupeerk5\",\"errors\":[\"Bad request\"]}",
+      "error_analysis": {
+        "status_code": 400,
+        "status_text": "Bad Request",
+        "headers": {
+          "Date": "Tue, 17 Jun 2025 19:34:51 GMT",
+          "Content-Type": "application/json;charset=UTF-8",
+          "Transfer-Encoding": "chunked",
+          "Connection": "keep-alive",
+          "Set-Cookie": "AWSALBTG=NxIrspmjCXAjPB0PzwqlHA6cnr/NiyFs3HPntK3BgwbKN/hVgcMAoqUuy5tbDEGdciVZu8akoPk/b7hTCz/L2awKKPFzyHqiXIJ4BXqWYkJABJJoLS8RGvp0i2yp9npnymZhtaiuE6hSXFrQPqyfdKl18nPB9QQHu0Qg0wHjsPZw; Expires=Tue, 24 Jun 2025 19:34:51 GMT; Path=/, AWSALBTGCORS=NxIrspmjCXAjPB0PzwqlHA6cnr/NiyFs3HPntK3BgwbKN/hVgcMAoqUuy5tbDEGdciVZu8akoPk/b7hTCz/L2awKKPFzyHqiXIJ4BXqWYkJABJJoLS8RGvp0i2yp9npnymZhtaiuE6hSXFrQPqyfdKl18nPB9QQHu0Qg0wHjsPZw; Expires=Tue, 24 Jun 2025 19:34:51 GMT; Path=/; SameSite=None; Secure, AWSALB=h9BoomSeU6Hbu/LeepOpeMpedpJSN5VculIMzfFYuzwe2EE4Yp5wfgi/CIV/o2DBguG/nFEH69eRVmMQj/AzG9pjn5rYBTkjJVNyAWhEfn65WtCLf4NM1Q8kgGl5; Expires=Tue, 24 Jun 2025 19:34:51 GMT; Path=/, AWSALBCORS=h9BoomSeU6Hbu/LeepOpeMpedpJSN5VculIMzfFYuzwe2EE4Yp5wfgi/CIV/o2DBguG/nFEH69eRVmMQj/AzG9pjn5rYBTkjJVNyAWhEfn65WtCLf4NM1Q8kgGl5; Expires=Tue, 24 Jun 2025 19:34:51 GMT; Path=/; SameSite=None; Secure, __cf_bm=p1cQjdaIa314d5v8R1WX6RH0Pl.ujob3CpqS9zVZYjA-1750188891-1.0.1.1-lceKOF914dlpcGE4xarhPJuVrsSWU7JKgBfQvDjyG_vacnmOPRaMAy5lP61T1H.tbFLCssttFFBcKvENzAVVTOy1BTC3n5R1JxI0R3xlbcg; path=/; expires=Tue, 17-Jun-25 20:04:51 GMT; domain=.gong.io; HttpOnly; Secure; SameSite=None",
+          "x-traceid": "2i16tuff39ggupeerk5",
+          "vary": "accept-encoding",
+          "Content-Encoding": "gzip",
+          "cf-cache-status": "DYNAMIC",
+          "Server": "cloudflare",
+          "CF-RAY": "9514fc9dbc2fe5ed-IAD"
+        },
+        "error_structure": {
+          "requestId": "2i16tuff39ggupeerk5",
+          "errors": [
+            "Bad request"
+          ]
+        }
+      }
+    },
+    "stats_activity": {
+      "status_code": 404,
+      "success": false,
+      "description": "User activity statistics",
+      "response_size": 104,
+      "url": "https://us-70092.api.gong.io/v2/stats/activity/users",
+      "error": "{\n  \"requestId\" : \"1li348h77w40zhe99hj\",\n  \"errors\" : [ \"No endpoint GET /v2/stats/activity/users.\" ]\n}\n",
+      "error_analysis": {
+        "status_code": 404,
+        "status_text": "Not Found",
+        "headers": {
+          "Date": "Tue, 17 Jun 2025 19:34:51 GMT",
+          "Content-Type": "application/json;charset=UTF-8",
+          "Transfer-Encoding": "chunked",
+          "Connection": "keep-alive",
+          "Set-Cookie": "AWSALBTG=gysoZAqrwH1PPkYkJsstPZgr8EfRI1M4r+Idvyx8jnh2rQCiCM1yFZY8ooNMWdiXkY69kanaLmkcRttY0fjBK1DHHdxncenExDIfElwqZNZL0nszuib50oHD7fR/Tz/Om6BlyAgTMd4ih3lQ78R0NEe7kFS0vcShBx9zH7T2q5TF; Expires=Tue, 24 Jun 2025 19:34:51 GMT; Path=/, AWSALBTGCORS=gysoZAqrwH1PPkYkJsstPZgr8EfRI1M4r+Idvyx8jnh2rQCiCM1yFZY8ooNMWdiXkY69kanaLmkcRttY0fjBK1DHHdxncenExDIfElwqZNZL0nszuib50oHD7fR/Tz/Om6BlyAgTMd4ih3lQ78R0NEe7kFS0vcShBx9zH7T2q5TF; Expires=Tue, 24 Jun 2025 19:34:51 GMT; Path=/; SameSite=None; Secure, AWSALB=iRE0nVRn7s+Ib8D4IWgMB8Bn82kitlIO0Hh1IIdFEINyihG8O3VsS6SdnwIji2AdC+4CmYr92V1du7f1Ptk0uXtnaiz2nBwBhK4InhUPd/NY795AbPiSBeOu0GDq; Expires=Tue, 24 Jun 2025 19:34:51 GMT; Path=/, AWSALBCORS=iRE0nVRn7s+Ib8D4IWgMB8Bn82kitlIO0Hh1IIdFEINyihG8O3VsS6SdnwIji2AdC+4CmYr92V1du7f1Ptk0uXtnaiz2nBwBhK4InhUPd/NY795AbPiSBeOu0GDq; Expires=Tue, 24 Jun 2025 19:34:51 GMT; Path=/; SameSite=None; Secure, __cf_bm=hDltZ1UcFILKflGGFxfx7R7CucoEIlkxTnDaz3_cH1E-1750188891-1.0.1.1-CCQsPh5myT8XFIN5NXQ_7C2sC.W3g3QKbOIcrB9aMQNyH20GC13kFe0CHlfG0eZEqwqkzF3Am.Fc3cVsKf7V2XxXLZ.MeR_mCvus4O4FolI; path=/; expires=Tue, 17-Jun-25 20:04:51 GMT; domain=.gong.io; HttpOnly; Secure; SameSite=None",
+          "x-traceid": "1li348h77w40zhe99hj",
+          "vary": "accept-encoding",
+          "Content-Encoding": "gzip",
+          "cf-cache-status": "DYNAMIC",
+          "Server": "cloudflare",
+          "CF-RAY": "9514fc9e5839c9b1-IAD"
+        },
+        "error_structure": {
+          "requestId": "1li348h77w40zhe99hj",
+          "errors": [
+            "No endpoint GET /v2/stats/activity/users."
+          ]
+        },
+        "interpretation": "Endpoint not found - may not be available"
+      }
+    },
+    "stats_interaction": {
+      "status_code": 405,
+      "success": false,
+      "description": "Interaction statistics for calls",
+      "response_size": 93,
+      "url": "https://us-70092.api.gong.io/v2/stats/interaction",
+      "error": "{\n  \"requestId\" : \"54e0rlaeelh52qb1833\",\n  \"errors\" : [ \"Method 'GET' is not supported.\" ]\n}\n",
+      "error_analysis": {
+        "status_code": 405,
+        "status_text": "Method Not Allowed",
+        "headers": {
+          "Date": "Tue, 17 Jun 2025 19:34:52 GMT",
+          "Content-Type": "application/json;charset=UTF-8",
+          "Transfer-Encoding": "chunked",
+          "Connection": "keep-alive",
+          "Set-Cookie": "AWSALBTG=QsikYcfBmvjVRJXL2wcW9F8fuwROI8uynW0g76xkce9YvpwYQ6akR7ZF39iK1fYvlYPzt+QznT/Se9HJv2SAvPDxEBRGrZQqqWGhJFVtBXmebjKz8zlqYnHI3okNFItmDDZ23wFFLYQ7pQaiNJ/uMHEMpiNQnHWazTmnIbmwMo8K; Expires=Tue, 24 Jun 2025 19:34:52 GMT; Path=/, AWSALBTGCORS=QsikYcfBmvjVRJXL2wcW9F8fuwROI8uynW0g76xkce9YvpwYQ6akR7ZF39iK1fYvlYPzt+QznT/Se9HJv2SAvPDxEBRGrZQqqWGhJFVtBXmebjKz8zlqYnHI3okNFItmDDZ23wFFLYQ7pQaiNJ/uMHEMpiNQnHWazTmnIbmwMo8K; Expires=Tue, 24 Jun 2025 19:34:52 GMT; Path=/; SameSite=None; Secure, AWSALB=AS2xCYLg6GLqDQRMqSP0xF4WGCbNonFHzA4a/2diai8OVma+Y3UK/i8IqrwjsKRLVLyZkB7F816/UfLo6TNnsg7kPo4BR+2Eq4Qc3Nw99LIO8hVTWNyrgVKwCHER; Expires=Tue, 24 Jun 2025 19:34:52 GMT; Path=/, AWSALBCORS=AS2xCYLg6GLqDQRMqSP0xF4WGCbNonFHzA4a/2diai8OVma+Y3UK/i8IqrwjsKRLVLyZkB7F816/UfLo6TNnsg7kPo4BR+2Eq4Qc3Nw99LIO8hVTWNyrgVKwCHER; Expires=Tue, 24 Jun 2025 19:34:52 GMT; Path=/; SameSite=None; Secure, __cf_bm=Bs9qzXhaFxrxVSEqXWrYS6Wigbo7DpFSlw2ha.I141Q-1750188892-1.0.1.1-W8Tv3jSC7XNJgwuHF7C6Hs8ImFzA6Uf67W0pdc1KoYscya7Y3Gf6DKyrkQvZR99vMlpRZ7qJBnYydP2zX3t8JujiICEKlUEBWTNwn4V.KQI; path=/; expires=Tue, 17-Jun-25 20:04:52 GMT; domain=.gong.io; HttpOnly; Secure; SameSite=None",
+          "x-traceid": "54e0rlaeelh52qb1833",
+          "allow": "POST",
+          "vary": "accept-encoding",
+          "Content-Encoding": "gzip",
+          "cf-cache-status": "DYNAMIC",
+          "Server": "cloudflare",
+          "CF-RAY": "9514fc9f088a82c0-IAD"
+        },
+        "error_structure": {
+          "requestId": "54e0rlaeelh52qb1833",
+          "errors": [
+            "Method 'GET' is not supported."
+          ]
+        }
+      }
+    },
+    "library": {
+      "status_code": 400,
+      "success": false,
+      "description": "Library folders and call organization",
+      "response_size": 60,
+      "url": "https://us-70092.api.gong.io/v2/library/folders",
+      "error": "{\"requestId\":\"5pu6sux60dasb8pfpv0\",\"errors\":[\"Bad request\"]}",
+      "error_analysis": {
+        "status_code": 400,
+        "status_text": "Bad Request",
+        "headers": {
+          "Date": "Tue, 17 Jun 2025 19:34:52 GMT",
+          "Content-Type": "application/json;charset=UTF-8",
+          "Transfer-Encoding": "chunked",
+          "Connection": "keep-alive",
+          "Set-Cookie": "AWSALBTG=UG/cgVhzaXmdZ5Fizqc9kbltWvErGEBjGI/XOk13MHCL7aqCSrhsMVoo6KgyswQEjamXLMoDQSjmRg9wKFIdP7sA5WQPNCWu76s2BlUQz4nssXsT1NU0k9T1CGUxMi7mHswIoB5iPZry2oFGQjrtDNe4MpAd7HEvVedhDPxgaBdF; Expires=Tue, 24 Jun 2025 19:34:52 GMT; Path=/, AWSALBTGCORS=UG/cgVhzaXmdZ5Fizqc9kbltWvErGEBjGI/XOk13MHCL7aqCSrhsMVoo6KgyswQEjamXLMoDQSjmRg9wKFIdP7sA5WQPNCWu76s2BlUQz4nssXsT1NU0k9T1CGUxMi7mHswIoB5iPZry2oFGQjrtDNe4MpAd7HEvVedhDPxgaBdF; Expires=Tue, 24 Jun 2025 19:34:52 GMT; Path=/; SameSite=None; Secure, AWSALB=5aMSkbnXNUEUhxni/bPX2bxkUp8Q4XIvLV1cRZMvH6wEZ9yer9OryiD/vfr94Z1dPeDrfREFtdK+CnYOxu+D2uGw/e3tm1lv0/qeO2lEob94gAUN4l2ZYS7OQvQD; Expires=Tue, 24 Jun 2025 19:34:52 GMT; Path=/, AWSALBCORS=5aMSkbnXNUEUhxni/bPX2bxkUp8Q4XIvLV1cRZMvH6wEZ9yer9OryiD/vfr94Z1dPeDrfREFtdK+CnYOxu+D2uGw/e3tm1lv0/qeO2lEob94gAUN4l2ZYS7OQvQD; Expires=Tue, 24 Jun 2025 19:34:52 GMT; Path=/; SameSite=None; Secure, __cf_bm=APjLZlmPWq804qSfKADbDMJVeQXS61N7zgpYmMdP4Qw-1750188892-1.0.1.1-ddRCtA.MxIGfqqnt3oGeeXc3SKwPYeIaGoTNqX8FgG7sm_FInHG1qVArWjG6IVsk8kSLMBz.3hXONDHw2sa0vH1CViN7uLeDHuohAINFE9w; path=/; expires=Tue, 17-Jun-25 20:04:52 GMT; domain=.gong.io; HttpOnly; Secure; SameSite=None",
+          "x-traceid": "5pu6sux60dasb8pfpv0",
+          "vary": "accept-encoding",
+          "Content-Encoding": "gzip",
+          "cf-cache-status": "DYNAMIC",
+          "Server": "cloudflare",
+          "CF-RAY": "9514fc9ffc09c583-IAD"
+        },
+        "error_structure": {
+          "requestId": "5pu6sux60dasb8pfpv0",
+          "errors": [
+            "Bad request"
+          ]
+        }
+      }
+    },
+    "settings_trackers": {
+      "status_code": 200,
+      "success": true,
+      "description": "Keyword trackers configuration",
+      "response_size": 36692,
+      "url": "https://us-70092.api.gong.io/v2/settings/trackers",
+      "data_structure": {
+        "type": "object",
+        "keys": [
+          "requestId",
+          "keywordTrackers"
+        ],
+        "nested_structure": {
+          "requestId": "str",
+          "keywordTrackers": "list"
+        }
+      },
+      "record_count": 1,
+      "sample_data": {
+        "requestId": "74crbdh9cf7wk7f89ao",
+        "keywordTrackers": [
+          {
+            "trackerId": "1793298175918521325",
+            "trackerName": "Agencies",
+            "workspaceId": "3728622533553102187",
+            "languageKeywords": [
+              {
+                "language": "eng",
+                "keywords": [
+                  "agency",
+                  "agencies",
+                  "collection agency",
+                  "collection agencies"
+                ],
+                "includeRelatedForms": false
+              }
+            ],
+            "affiliation": "Anyone",
+            "partOfQuestion": false,
+            "saidAt": "Anytime",
+            "saidAtInterval": null,
+            "saidAtUnit": null,
+            "saidInTopics": [],
+            "filterQuery": "{}",
+            "created": "2024-11-06T07:32:11.772326-08:00",
+            "creatorUserId": "1811402494005982095",
+            "updated": "2024-11-06T07:32:11.772326-08:00",
+            "updaterUserId": "1811402494005982095"
+          },
+          {
+            "trackerId": "5134349137274910958",
+            "trackerName": "Agreement Discussion",
+            "workspaceId": "3728622533553102187",
+            "languageKeywords": [
+              {
+                "language": "eng",
+                "keywords": [
+                  "Soc 2",
+                  "Subscriber",
+                  "Temporary provider",
+                  "Day 0",
+                  "FTCPA",
+                  "FTC",
+                  "De facto employee",
+                  "employee training",
+                  "Handling fee",
+                  "judgements",
+                  "legal action",
+                  "reassignment",
+                  "18 month",
+                  "not yet in default",
+                  "fee structure. contract",
+                  "agreement",
+                  "terms",
+                  "signing delay",
+                  "red lines",
+                  "attorney"
+                ],
+                "includeRelatedForms": true
+              }
+            ],
+            "affiliation": "Anyone",
+            "partOfQuestion": false,
+            "saidAt": "Anytime",
+            "saidAtInterval": null,
+            "saidAtUnit": null,
+            "saidInTopics": [],
+            "filterQuery": "{\"sort\": null, \"search\": null}",
+            "created": "2024-12-23T05:55:18.044569-08:00",
+            "creatorUserId": "1811402494005982095",
+            "updated": "2025-02-04T11:15:31.834413-08:00",
+            "updaterUserId": "1068153567878394980"
+          }
+        ]
+      }
+    }
+  },
+  "apartment_relevance": {
+    "apartment_keywords": [
+      "apartment",
+      "property",
+      "lease",
+      "rent",
+      "tenant",
+      "resident",
+      "multifamily",
+      "community",
+      "unit",
+      "building",
+      "complex",
+      "property management",
+      "leasing",
+      "maintenance",
+      "collections"
+    ],
+    "competitor_keywords": [
+      "yardi",
+      "realpage",
+      "appfolio",
+      "entrata",
+      "rent manager",
+      "property solutions",
+      "apartment software",
+      "property tech"
+    ],
+    "analysis_results": {
+      "users": {
+        "apartment_keyword_matches": 1,
+        "competitor_keyword_matches": 0,
+        "apartment_relevance_score": 0.06666666666666667,
+        "competitor_relevance_score": 0.0,
+        "total_relevance_score": 0.043478260869565216
+      },
+      "calls_basic": {
+        "apartment_keyword_matches": 1,
+        "competitor_keyword_matches": 0,
+        "apartment_relevance_score": 0.06666666666666667,
+        "competitor_relevance_score": 0.0,
+        "total_relevance_score": 0.043478260869565216
+      },
+      "settings_trackers": {
+        "apartment_keyword_matches": 1,
+        "competitor_keyword_matches": 0,
+        "apartment_relevance_score": 0.06666666666666667,
+        "competitor_relevance_score": 0.0,
+        "total_relevance_score": 0.043478260869565216
+      }
+    }
+  },
+  "database_population": {
+    "database_operations": {},
+    "data_extracted": {
+      "users": {
+        "error": "'str' object has no attribute 'get'"
+      },
+      "calls_basic": {
+        "error": "'str' object has no attribute 'get'"
+      }
+    },
+    "apartment_analysis": {}
+  },
+  "recommendations": {
+    "immediate_actions": [
+      "Focus on successful endpoints for data extraction",
+      "Investigate failed endpoints for permission issues",
+      "Implement apartment industry keyword tracking",
+      "Set up automated data synchronization"
+    ],
+    "api_optimization": [
+      "Implement proper error handling for failed endpoints",
+      "Add retry logic for rate-limited requests",
+      "Cache frequently accessed data",
+      "Monitor API usage and performance"
+    ],
+    "business_intelligence": [
+      "Develop apartment industry conversation scoring",
+      "Create competitor mention tracking",
+      "Implement deal progression analysis",
+      "Build customer success metrics dashboard"
+    ]
+  }
+}

@@ -1,136 +1,87 @@
-# Sophia AI Production Environment - Pulumi ESC Configuration
-# This file defines the complete secret management strategy for Pay Ready
-
 environment:
   imports:
-    - github-org-secrets
-  
+  - github-org-secrets
   values:
-    # Application Configuration
-    app:
-      name: sophia-ai
-      environment: production
-      version: "2.0.0"
-      host: "0.0.0.0"
-      port: 5000
-      debug: false
-      
-    # Security Configuration
-    security:
-      secret_key:
-        fn::secret: ${github.SOPHIA_SECRET_KEY}
-      admin_username:
-        fn::secret: ${github.SOPHIA_ADMIN_USERNAME}
-      admin_password:
-        fn::secret: ${github.SOPHIA_ADMIN_PASSWORD}
-      master_key:
-        fn::secret: ${github.SOPHIA_MASTER_KEY}
-      jwt_secret:
-        fn::secret: ${github.SOPHIA_JWT_SECRET}
-      encryption_key:
-        fn::secret: ${github.SOPHIA_ENCRYPTION_KEY}
-    
-    # Database Configuration
-    database:
-      postgres:
-        host:
-          fn::secret: ${github.POSTGRES_HOST}
-        port: 5432
-        user:
-          fn::secret: ${github.POSTGRES_USER}
-        password:
-          fn::secret: ${github.POSTGRES_PASSWORD}
-        database:
-          fn::secret: ${github.POSTGRES_DB}
-        url:
-          fn::secret: postgresql://${github.POSTGRES_USER}:${github.POSTGRES_PASSWORD}@${github.POSTGRES_HOST}:5432/${github.POSTGRES_DB}
-      
-      redis:
-        host:
-          fn::secret: ${github.REDIS_HOST}
-        port: 6379
-        password:
-          fn::secret: ${github.REDIS_PASSWORD}
-        url:
-          fn::secret: redis://:${github.REDIS_PASSWORD}@${github.REDIS_HOST}:6379/0
-    
-    # LLM Gateway Configuration
-    llm_gateway:
-      provider: "portkey"
-      portkey:
+    additional_tools:
+      bardeen:
+        id:
+          fn::secret: ${github.BARDEEN_ID}
+      eden_ai:
         api_key:
-          fn::secret: ${github.PORTKEY_API_KEY}
-        config:
-          fn::secret: ${github.PORTKEY_CONFIG}
-      openrouter:
+          fn::secret: ${github.EDEN_AI_API_KEY}
+      figma:
+        personal_access_token:
+          fn::secret: ${github.FIGMA_PERSONAL_ACCESS_TOKEN}
+      mureka:
         api_key:
-          fn::secret: ${github.OPENROUTER_API_KEY}
-    
-    # AI Service Providers
+          fn::secret: ${github.MUREKA_API_KEY}
+      phantom_buster:
+        api_key:
+          fn::secret: ${github.PHANTOM_BUSTER_API_KEY}
+      slidespeak:
+        api_key:
+          fn::secret: ${github.SLIDESPEAK_API_KEY}
+      twingly:
+        api_key:
+          fn::secret: ${github.TWINGLY_API_KEY}
+      venice_ai:
+        api_key:
+          fn::secret: ${github.VENICE_AI_API_KEY}
     ai_services:
-      openai:
-        api_key:
-          fn::secret: ${github.OPENAI_API_KEY}
-        model: "gpt-4"
-        embedding_model: "text-embedding-ada-002"
-      
       anthropic:
         api_key:
           fn::secret: ${github.ANTHROPIC_API_KEY}
-        model: "claude-3-5-sonnet-20241022"
-      
-      gemini:
-        api_key:
-          fn::secret: ${github.GEMINI_API_KEY}
-      
-      perplexity:
-        api_key:
-          fn::secret: ${github.PERPLEXITY_API_KEY}
-      
-      mistral:
-        api_key:
-          fn::secret: ${github.MISTRAL_API_KEY}
-      
-      together_ai:
-        api_key:
-          fn::secret: ${github.TOGETHER_AI_API_KEY}
-      
+        model: claude-3-5-sonnet-20241022
       deepseek:
         api_key:
           fn::secret: ${github.DEEPSEEK_API_KEY}
-      
-      grok_ai:
-        api_key:
-          fn::secret: ${github.GROK_AI_API_KEY}
-      
-      huggingface:
-        api_key:
-          fn::secret: ${github.HUGGINGFACE_API_TOKEN}
-      
-      stability:
-        api_key:
-          fn::secret: ${github.STABILITY_API_KEY}
-      
       eleven_labs:
         api_key:
           fn::secret: ${github.ELEVEN_LABS_API_KEY}
-    
-    # Business Integrations
+      gemini:
+        api_key:
+          fn::secret: ${github.GEMINI_API_KEY}
+      grok_ai:
+        api_key:
+          fn::secret: ${github.GROK_AI_API_KEY}
+      huggingface:
+        api_key:
+          fn::secret: ${github.HUGGINGFACE_API_TOKEN}
+      mistral:
+        api_key:
+          fn::secret: ${github.MISTRAL_API_KEY}
+      openai:
+        api_key:
+          fn::secret: ${github.OPENAI_API_KEY}
+        embedding_model: text-embedding-ada-002
+        model: gpt-4
+      perplexity:
+        api_key:
+          fn::secret: ${github.PERPLEXITY_API_KEY}
+      stability:
+        api_key:
+          fn::secret: ${github.STABILITY_API_KEY}
+      together_ai:
+        api_key:
+          fn::secret: ${github.TOGETHER_AI_API_KEY}
+    airbyte:
+      client_id:
+        fn::secret: ${github.AIRBYTE_CLIENT_ID}
+      client_secret:
+        fn::secret: ${github.AIRBYTE_CLIENT_SECRET}
+    app:
+      debug: false
+      environment: production
+      host: 0.0.0.0
+      name: sophia-ai
+      port: 5000
+      version: 2.0.0
     business_integrations:
       gong:
         access_key:
           fn::secret: ${github.GONG_ACCESS_KEY}
         access_key_secret:
           fn::secret: ${github.GONG_ACCESS_KEY_SECRET}
-      
-      salesforce:
-        access_token:
-          fn::secret: ${github.SALESFORCE_ACCESS_TOKEN}
-        client_id:
-          fn::secret: ${github.SALESFORCE_CLIENT_ID}
-        client_secret:
-          fn::secret: ${github.SALESFORCE_CLIENT_SECRET}
-      
       hubspot:
         api_key:
           fn::secret: ${github.HUBSPOT_API_KEY}
@@ -138,189 +89,183 @@ environment:
           fn::secret: ${github.HUBSPOT_CLIENT_ID}
         client_secret:
           fn::secret: ${github.HUBSPOT_CLIENT_SECRET}
-      
-      slack:
+      salesforce:
+        access_token:
+          fn::secret: ${github.SALESFORCE_ACCESS_TOKEN}
         client_id:
-          fn::secret: ${github.SLACK_CLIENT_ID}
+          fn::secret: ${github.SALESFORCE_CLIENT_ID}
         client_secret:
-          fn::secret: ${github.SLACK_CLIENT_SECRET}
-        signing_secret:
-          fn::secret: ${github.SLACK_SIGNING_SECRET}
+          fn::secret: ${github.SALESFORCE_CLIENT_SECRET}
+      slack:
         app_token:
           fn::secret: ${github.SLACK_APP_TOKEN}
         bot_token:
           fn::secret: ${github.SLACK_BOT_TOKEN}
+        client_id:
+          fn::secret: ${github.SLACK_CLIENT_ID}
+        client_secret:
+          fn::secret: ${github.SLACK_CLIENT_SECRET}
         refresh_token:
           fn::secret: ${github.SLACK_REFRESH_TOKEN}
+        signing_secret:
+          fn::secret: ${github.SLACK_SIGNING_SECRET}
         user_id:
           fn::secret: ${github.SLACK_USER_ID}
-    
-    # Vector Databases
-    vector_databases:
-      pinecone:
-        api_key:
-          fn::secret: ${github.PINECONE_API_KEY}
-        environment: "us-west1-gcp"
-        index_name: "sophia-ai-production"
-      
-      weaviate:
+    compliance:
+      ai_ethics_monitoring: true
+      audit_logging: true
+      data_retention_days: 2555
+      fair_housing_enabled: true
+      fdcpa_enabled: true
+    database:
+      postgres:
+        database:
+          fn::secret: ${github.POSTGRES_DB}
+        host:
+          fn::secret: ${github.POSTGRES_HOST}
+        password:
+          fn::secret: ${github.POSTGRES_PASSWORD}
+        port: 5432
         url:
-          fn::secret: ${github.WEAVIATE_URL}
-        grpc_url:
-          fn::secret: ${github.WEAVIATE_GRPC_URL}
-        api_key:
-          fn::secret: ${github.WEAVIATE_API_KEY}
-    
-    # Knowledge Base & Search
-    knowledge_services:
-      notion:
-        api_key:
-          fn::secret: ${github.NOTION_API_KEY}
-      
-      apollo_io:
-        api_key:
-          fn::secret: ${github.APOLLO_IO_API_KEY}
-      
-      apify:
-        api_token:
-          fn::secret: ${github.APIFY_API_TOKEN}
-      
-      brave:
-        api_key:
-          fn::secret: ${github.BRAVE_API_KEY}
-      
-      tavily:
-        api_key:
-          fn::secret: ${github.TAVILY_API_KEY}
-      
-      zenrows:
-        api_key:
-          fn::secret: ${github.ZENROWS_API_KEY}
-      
-      exa:
-        api_key:
-          fn::secret: ${github.EXA_API_KEY}
-    
-    # Development & Monitoring
-    monitoring:
-      langsmith:
-        api_key:
-          fn::secret: ${github.LANGSMITH_API_KEY}
-      
-      langchain:
-        api_key:
-          fn::secret: ${github.LANGCHAIN_API_KEY}
-      
-      langgraph:
-        api_key:
-          fn::secret: ${github.LANGGRAPH_API_KEY}
-      
-      arize:
-        api_key:
-          fn::secret: ${github.ARIZE_API_KEY}
-    
-    # Infrastructure & Deployment
+          fn::secret: postgresql://${github.POSTGRES_USER}:${github.POSTGRES_PASSWORD}@${github.POSTGRES_HOST}:5432/${github.POSTGRES_DB}
+        user:
+          fn::secret: ${github.POSTGRES_USER}
+      redis:
+        host:
+          fn::secret: ${github.REDIS_HOST}
+        password:
+          fn::secret: ${github.REDIS_PASSWORD}
+        port: 6379
+        url:
+          fn::secret: redis://:${github.REDIS_PASSWORD}@${github.REDIS_HOST}:6379/0
+    features:
+      automated_compliance: true
+      conversation_intelligence: true
+      multi_source_integration: true
+      natural_language_interface: true
+      predictive_analytics: true
+      real_time_monitoring: true
     infrastructure:
-      pulumi:
-        access_token:
-          fn::secret: ${github.PULUMI_ACCESS_TOKEN}
-      
+      docker:
+        token:
+          fn::secret: ${github.DOCKER_TOKEN}
+        username:
+          fn::secret: ${github.DOCKER_USERNAME}
       lambda_labs:
         api_key:
           fn::secret: ${github.LAMBDA_LABS_API_KEY}
-      
+      pulumi:
+        access_token:
+          fn::secret: ${github.PULUMI_ACCESS_TOKEN}
       vercel:
         token:
           fn::secret: ${github.VERCEL_TOKEN}
-      
-      docker:
-        username:
-          fn::secret: ${github.DOCKER_USERNAME}
-        token:
-          fn::secret: ${github.DOCKER_TOKEN}
-    
-    # Redis Cloud
-    redis_cloud:
-      user_api_key:
-        fn::secret: ${github.REDIS_USER_API_KEY}
-      account_key:
-        fn::secret: ${github.REDIS_ACCOUNT_KEY}
-    
-    # Neo4j Graph Database
+    knowledge_services:
+      apify:
+        api_token:
+          fn::secret: ${github.APIFY_API_TOKEN}
+      apollo_io:
+        api_key:
+          fn::secret: ${github.APOLLO_IO_API_KEY}
+      brave:
+        api_key:
+          fn::secret: ${github.BRAVE_API_KEY}
+      exa:
+        api_key:
+          fn::secret: ${github.EXA_API_KEY}
+      notion:
+        api_key:
+          fn::secret: ${github.NOTION_API_KEY}
+      tavily:
+        api_key:
+          fn::secret: ${github.TAVILY_API_KEY}
+      zenrows:
+        api_key:
+          fn::secret: ${github.ZENROWS_API_KEY}
+    llm_gateway:
+      openrouter:
+        api_key:
+          fn::secret: ${github.OPENROUTER_API_KEY}
+      portkey:
+        api_key:
+          fn::secret: ${github.PORTKEY_API_KEY}
+        config:
+          fn::secret: ${github.PORTKEY_CONFIG}
+      provider: portkey
+    monitoring:
+      arize:
+        api_key:
+          fn::secret: ${github.ARIZE_API_KEY}
+      langchain:
+        api_key:
+          fn::secret: ${github.LANGCHAIN_API_KEY}
+      langgraph:
+        api_key:
+          fn::secret: ${github.LANGGRAPH_API_KEY}
+      langsmith:
+        api_key:
+          fn::secret: ${github.LANGSMITH_API_KEY}
     neo4j:
-      uri:
-        fn::secret: ${github.NEO4J_URI}
-      username:
-        fn::secret: ${github.NEO4J_USERNAME}
-      password:
-        fn::secret: ${github.NEO4J_PASSWORD}
       client_id:
         fn::secret: ${github.NEO4J_CLIENT_ID}
       client_secret:
         fn::secret: ${github.NEO4J_CLIENT_SECRET}
-    
-    # Airbyte Integration
-    airbyte:
-      client_id:
-        fn::secret: ${github.AIRBYTE_CLIENT_ID}
-      client_secret:
-        fn::secret: ${github.AIRBYTE_CLIENT_SECRET}
-    
-    # Additional Tools
-    additional_tools:
-      figma:
-        personal_access_token:
-          fn::secret: ${github.FIGMA_PERSONAL_ACCESS_TOKEN}
-      
-      phantom_buster:
-        api_key:
-          fn::secret: ${github.PHANTOM_BUSTER_API_KEY}
-      
-      slidespeak:
-        api_key:
-          fn::secret: ${github.SLIDESPEAK_API_KEY}
-      
-      mureka:
-        api_key:
-          fn::secret: ${github.MUREKA_API_KEY}
-      
-      venice_ai:
-        api_key:
-          fn::secret: ${github.VENICE_AI_API_KEY}
-      
-      eden_ai:
-        api_key:
-          fn::secret: ${github.EDEN_AI_API_KEY}
-      
-      twingly:
-        api_key:
-          fn::secret: ${github.TWINGLY_API_KEY}
-      
-      bardeen:
-        id:
-          fn::secret: ${github.BARDEEN_ID}
-    
-    # Compliance & Security Settings
-    compliance:
-      fair_housing_enabled: true
-      fdcpa_enabled: true
-      ai_ethics_monitoring: true
-      audit_logging: true
-      data_retention_days: 2555  # 7 years for compliance
-    
-    # Performance Configuration
+      password:
+        fn::secret: ${github.NEO4J_PASSWORD}
+      uri:
+        fn::secret: ${github.NEO4J_URI}
+      username:
+        fn::secret: ${github.NEO4J_USERNAME}
     performance:
-      max_concurrent_agents: 10
       agent_timeout_seconds: 300
       cache_ttl_seconds: 3600
+      max_concurrent_agents: 10
       rate_limit_per_minute: 1000
-      
-    # Feature Flags
-    features:
-      natural_language_interface: true
-      conversation_intelligence: true
-      predictive_analytics: true
-      multi_source_integration: true
-      real_time_monitoring: true
-      automated_compliance: true
-
+    redis_cloud:
+      account_key:
+        fn::secret: ${github.REDIS_ACCOUNT_KEY}
+      user_api_key:
+        fn::secret: ${github.REDIS_USER_API_KEY}
+    security:
+      admin_password:
+        fn::secret: ${github.SOPHIA_ADMIN_PASSWORD}
+      admin_username:
+        fn::secret: ${github.SOPHIA_ADMIN_USERNAME}
+      encryption_key:
+        fn::secret: ${github.SOPHIA_ENCRYPTION_KEY}
+      jwt_secret:
+        fn::secret: ${github.SOPHIA_JWT_SECRET}
+      master_key:
+        fn::secret: ${github.SOPHIA_MASTER_KEY}
+      secret_key:
+        fn::secret: ${github.SOPHIA_SECRET_KEY}
+    vector_databases:
+      pinecone:
+        api_key:
+          fn::secret: ${github.PINECONE_API_KEY}
+        environment: us-west1-gcp
+        index_name: sophia-ai-production
+      weaviate:
+        api_key:
+          fn::secret: ${github.WEAVIATE_API_KEY}
+        grpc_url:
+          fn::secret: ${github.WEAVIATE_GRPC_URL}
+        url:
+          fn::secret: ${github.WEAVIATE_URL}
+imports:
+- github:
+    organization: ai-cherry
+    repository: sophia-main
+    secrets:
+    - GONG_ACCESS_KEY
+    - GONG_CLIENT_SECRET
+values:
+  business_integrations:
+    gong:
+      access_key: ${GONG_ACCESS_KEY}
+      api_version: v2
+      base_url: https://us-70092.api.gong.io
+      client_secret: ${GONG_CLIENT_SECRET}
+      enabled: true
+      last_updated: '2025-06-17T19:31:30.424089'
+      workspace_id: us-70092

@@ -30,8 +30,8 @@ class SecureAPIConfig:
     
     # Business Intelligence
     hubspot_api_key: Optional[str] = None
-    gong_api_key: Optional[str] = None
-    gong_api_secret: Optional[str] = None
+    gong_access_key: Optional[str] = None
+    gong_client_secret: Optional[str] = None
     salesforce_api_key: Optional[str] = None
     looker_api_key: Optional[str] = None
     
@@ -113,8 +113,8 @@ class SecureAPIConfig:
             
             # Business Intelligence
             'HUBSPOT_API_KEY': 'hubspot_api_key',
-            'GONG_API_KEY': 'gong_api_key',
-            'GONG_API_SECRET': 'gong_api_secret',
+            'GONG_ACCESS_KEY': 'gong_access_key',
+            'GONG_CLIENT_SECRET': 'gong_client_secret',
             'SALESFORCE_API_KEY': 'salesforce_api_key',
             'LOOKER_API_KEY': 'looker_api_key',
             

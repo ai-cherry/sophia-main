@@ -1,0 +1,138 @@
+name: Deploy Sophia with Secure Credentials
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'pulumi-esc-environment.yaml'
+      - 'backend/config/**'
+      - '.github/workflows/deploy-secure.yml'
+  workflow_dispatch:
+
+env:
+  PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+  GONG_ACCESS_KEY: ${{ secrets.GONG_ACCESS_KEY }}
+  GONG_CLIENT_SECRET: ${{ secrets.GONG_CLIENT_SECRET }}
+
+jobs:
+  deploy-credentials:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install Pulumi CLI
+        uses: pulumi/actions@v4
+        with:
+          pulumi-version: latest
+      
+      - name: Install Pulumi ESC CLI
+        run: |
+          curl -fsSL https://get.pulumi.com/esc/install.sh | sh
+          echo "$HOME/.pulumi/bin" >> $GITHUB_PATH
+      
+      - name: Configure Pulumi ESC Environment
+        run: |
+          esc env set ai-cherry/sophia-production --file pulumi-esc-environment.yaml
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      
+      - name: Validate Gong API Credentials
+        run: |
+          python3 -c "
+          import requests
+          import base64
+          import os
+          
+          access_key = os.environ['GONG_ACCESS_KEY']
+          client_secret = os.environ['GONG_CLIENT_SECRET']
+          
+          credentials = f'{access_key}:{client_secret}'
+          encoded_credentials = base64.b64encode(credentials.encode()).decode()
+          
+          headers = {
+              'Authorization': f'Basic {encoded_credentials}',
+              'Content-Type': 'application/json'
+          }
+          
+          response = requests.get('https://us-70092.api.gong.io/v2/settings/workspaces', headers=headers)
+          
+          if response.status_code == 200:
+              print('✅ Gong API credentials validated successfully')
+              print(f'Workspaces available: {len(response.json().get("workspaces", []))}')
+          else:
+              print(f'❌ Gong API validation failed: {response.status_code}')
+              print(response.text)
+              exit(1)
+          "
+      
+      - name: Generate Secure Environment File
+        run: |
+          python3 -c "
+          import os
+          import yaml
+          from datetime import datetime
+          
+          # Load ESC environment
+          with open('pulumi-esc-environment.yaml', 'r') as f:
+              env_config = yaml.safe_load(f)
+          
+          # Generate .env.secure file
+          with open('.env.secure', 'w') as f:
+              f.write('# Sophia AI Secure Environment\n')
+              f.write(f'# Generated: {datetime.utcnow().isoformat()}\n')
+              f.write('# Source: GitHub Actions + Pulumi ESC\n\n')
+              
+              f.write('# Gong API Configuration\n')
+              f.write(f'GONG_ACCESS_KEY={os.environ["GONG_ACCESS_KEY"]}\n')
+              f.write(f'GONG_CLIENT_SECRET={os.environ["GONG_CLIENT_SECRET"]}\n')
+              f.write('GONG_BASE_URL=https://us-70092.api.gong.io\n')
+              f.write('GONG_API_VERSION=v2\n\n')
+              
+              f.write('# Deployment Configuration\n')
+              f.write('DEPLOYMENT_ENV=production\n')
+              f.write('SECURE_DEPLOYMENT=true\n')
+          
+          print('✅ Generated secure environment file')
+          "
+      
+      - name: Test Sophia Integration
+        run: |
+          python3 -c "
+          import sys
+          sys.path.append('backend')
+          
+          from config.secure_config import get_secure_config
+          
+          config = get_secure_config()
+          api_count = config.get_api_count()
+          validation = config.validate_critical_apis()
+          
+          print(f'📊 API Configuration: {api_count["configured"]}/{api_count["total"]} ({api_count["percentage"]}%)')
+          print(f'🔒 Critical APIs: {"✅ All configured" if validation["all_configured"] else "❌ Missing: " + ", ".join(validation["missing"])}')
+          "
+        env:
+          GONG_ACCESS_KEY: ${{ secrets.GONG_ACCESS_KEY }}
+          GONG_CLIENT_SECRET: ${{ secrets.GONG_CLIENT_SECRET }}
+      
+      - name: Commit Secure Configuration
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          if [ -f .env.secure ]; then
+            git add .env.secure
+            git commit -m "🔐 SECURE: Update environment with validated Gong credentials" || echo "No changes to commit"
+          fi
+      
+      - name: Deploy to Production
+        run: |
+          echo "🚀 Ready for production deployment with secure credentials"
+          echo "✅ Gong API credentials validated and configured"
+          echo "✅ Pulumi ESC environment updated"
+          echo "✅ Secure configuration generated"
