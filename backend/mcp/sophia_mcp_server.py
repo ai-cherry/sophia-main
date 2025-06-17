@@ -43,16 +43,16 @@ class SophiaMCPConfig:
     server_description: str = "Sophia AI Pay Ready Business Intelligence MCP Server"
     
     # Database Configuration
-    database_url: str = "postgresql://sophia_admin:simple123@150.230.47.71:5432/sophia_payready"
-    redis_url: str = "redis://150.230.47.71:6379/0"
+    database_url: str = os.getenv("DATABASE_URL", "postgresql://sophia_admin:simple123@localhost:5432/sophia_payready")
+    redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     
     # Vector Database Configuration
-    pinecone_api_key: str = "pcsk_7PHV2G_Mj1rRCwiHZ7YsuuzJcqKch9akzNKXv6mfwDX65DenD8Q72w3Qjh4AmuataTnEDW"
-    pinecone_environment: str = "us-west-2"
-    pinecone_index: str = "sophia-payready"
+    pinecone_api_key: str = os.getenv("PINECONE_API_KEY", "")
+    pinecone_environment: str = os.getenv("PINECONE_ENVIRONMENT", "us-west-2")
+    pinecone_index: str = os.getenv("PINECONE_INDEX_NAME", "sophia-payready")
     
-    weaviate_url: str = "https://w6bigpoxsrwvq7wlgmmdva.c0.us-west3.gcp.weaviate.cloud"
-    weaviate_api_key: str = "VMKjGMQUnXQIDiFOciZZOhr7amBfCHMh7hNf"
+    weaviate_url: str = os.getenv("WEAVIATE_URL", "")
+    weaviate_api_key: str = os.getenv("WEAVIATE_API_KEY", "")
     weaviate_class: str = "SophiaPayReady"
     
     # AI Service Configuration
