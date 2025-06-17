@@ -5,16 +5,12 @@ Handles integration with existing admin website and deployment
 
 from flask import Flask, Blueprint, request, jsonify, render_template_string
 from flask_cors import CORS
-import os
-import sys
-from pathlib import Path
 
-# Add the backend directory to Python path
-backend_dir = Path(__file__).parent.parent
-sys.path.append(str(backend_dir))
-
-from knowledge.knowledge_api import knowledge_bp
-from knowledge.workflow_manager import KnowledgeBaseWorkflowManager, ScheduledWorkflowManager
+from backend.knowledge.knowledge_api import knowledge_bp
+from backend.knowledge.workflow_manager import (
+    KnowledgeBaseWorkflowManager,
+    ScheduledWorkflowManager,
+)
 
 # Knowledge Base Admin Interface Blueprint
 admin_kb_bp = Blueprint('admin_knowledge', __name__, url_prefix='/admin/knowledge')
