@@ -1,0 +1,34 @@
+crm_sync_workflow:
+  trigger: webhook
+  nodes:
+    - fetch_source_data
+    - transform
+    - validate
+    - update_target
+    - notify
+  error_handling:
+    retry: true
+    backoff: exponential
+    alert_on_failure: true
+
+call_analysis_workflow:
+  trigger: gong_recording
+  nodes:
+    - fetch_transcript
+    - sentiment_analysis
+    - extract_insights
+    - update_crm
+    - generate_summary
+  integrations:
+    - gong_api
+    - llm
+    - hubspot_api
+
+customer_onboarding_workflow:
+  trigger: manual
+  description: Multi-step onboarding across systems
+  nodes:
+    - create_account
+    - configure_integrations
+    - send_welcome
+    - follow_up

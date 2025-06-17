@@ -80,6 +80,11 @@ jobs:
         PINECONE_API_KEY=${{ secrets.PINECONE_API_KEY }}
         WEAVIATE_URL=${{ secrets.WEAVIATE_URL }}
         WEAVIATE_API_KEY=${{ secrets.WEAVIATE_API_KEY }}
+
+        # Workflow Orchestration
+        N8N_BASE_URL=${{ secrets.N8N_BASE_URL }}
+        N8N_API_KEY=${{ secrets.N8N_API_KEY }}
+        APIFY_API_TOKEN=${{ secrets.APIFY_API_TOKEN }}
         
         # Monitoring
         GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
