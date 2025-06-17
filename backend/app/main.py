@@ -64,20 +64,25 @@ def create_app(config_class=Config):
     app.register_blueprint(operations_bp, url_prefix='/api/operations')
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     
-    # Register Knowledge Base, HF MCP, ESC, and CoStar blueprints
+    # Register Knowledge Base, HF MCP, ESC, CoStar, and Enhanced Integration blueprints
     try:
         from knowledge.admin_integration import admin_kb_bp
         from knowledge.knowledge_api import knowledge_bp
         from integrations.huggingface_mcp import hf_mcp_bp
         from integrations.pulumi_esc import esc_bp
         from integrations.costar_pipeline import costar_bp
+        from integrations.enhanced_integration import create_enhanced_integration
         
         app.register_blueprint(admin_kb_bp, url_prefix='/admin')
         app.register_blueprint(knowledge_bp, url_prefix='/api')
         app.register_blueprint(hf_mcp_bp, url_prefix='/api')
         app.register_blueprint(esc_bp, url_prefix='/api')
         app.register_blueprint(costar_bp, url_prefix='/api')
-        logger.info("Knowledge Base, HF MCP, ESC, and CoStar integration registered")
+        
+        # Initialize enhanced integration
+        app.enhanced_integration = create_enhanced_integration()
+        
+        logger.info("All integrations registered including Enhanced Bardeen+Arize")
     except ImportError as e:
         logger.warning(f"Integration modules not available: {e}")
     
@@ -99,6 +104,9 @@ def create_app(config_class=Config):
                 "hf_mcp_integration": "connected",
                 "esc_integration": "active",
                 "costar_pipeline": "ready",
+                "enhanced_integration": "active",
+                "bardeen_automation": "connected",
+                "arize_monitoring": "operational",
                 "database": "connected",  # TODO: Add actual DB check
                 "cache": "connected"      # TODO: Add actual Redis check
             },
