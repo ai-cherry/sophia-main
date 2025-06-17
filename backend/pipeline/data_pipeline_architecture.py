@@ -7,11 +7,10 @@ import json
 import logging
 import asyncio
 from datetime import datetime
-from typing import Dict, List, Any, Optional, Callable
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 import psycopg2
 import redis
-import requests
 from .vector.vector_integration import VectorIntegration, VectorConfig # Assuming VectorIntegration is in a sub-module
 from .database.schema_migration_system import SchemaMigrationSystem # Assuming SchemaMigrationSystem is in a sub-module
 
@@ -64,7 +63,10 @@ class DataPipeline:
         self.last_run_summary: Optional[Dict[str, Any]] = None
 
     def setup_logging(self):
-        logging.basicConfig(level=logging.INFO, format=\'%(asctime)s - %(name)s - %(levelname)s - %(message)s\')
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        )
 
     def get_db_connection(self):
         return psycopg2.connect(self.config.database_url)
@@ -205,7 +207,7 @@ class DataPipeline:
         
         # Simplified ingestion logic
         with self.get_db_connection() as conn:
-            with conn.cursor() as cursor:
+            with conn.cursor():
                 for item in data_items:
                     table_name = item["table"]
                     record_data = item["data"]
@@ -287,10 +289,10 @@ async def main():
         airbyte_connections={"slack_source": "your_slack_connection_id"}
     )
 
-    pipeline = DataPipeline(pipeline_conf)
+    DataPipeline(pipeline_conf)
 
     # Run pipeline once
-    # await pipeline.run_pipeline()
+    # await DataPipeline(pipeline_conf).run_pipeline()
 
     # Or schedule periodic runs
     # await pipeline.schedule_pipeline_runs()

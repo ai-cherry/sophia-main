@@ -3,19 +3,14 @@ Sophia AI - Vector Database Integration
 Comprehensive integration with Pinecone and Weaviate for semantic search and AI-powered insights
 """
 
-import json
 import logging
-import asyncio
 import numpy as np
 from datetime import datetime
-from typing import Dict, List, Any, Optional, Union, Tuple
+from typing import Dict, List, Any, Optional, Union
 from dataclasses import dataclass
-import hashlib
-import openai
 import pinecone
 import weaviate
 from sentence_transformers import SentenceTransformer
-import requests
 
 @dataclass
 class VectorConfig:
@@ -356,7 +351,6 @@ class VectorIntegration:
                         "content": item.get("content", ""),
                         "title": item.get("title", ""),
                         "category": item.get("category", ""),
-                        "source": item.get("source", ""),
                         "timestamp": item.get("timestamp", ""),
                         "metadata": item.get("metadata", {}),
                         "score": item.get("_additional", {}).get("certainty", 0.0),
@@ -468,7 +462,7 @@ class VectorIntegration:
             try:
                 index_stats = self.pinecone_index.describe_index_stats()
                 stats["pinecone_vector_count"] = index_stats.total_vector_count
-            except:
+            except Exception:
                 stats["pinecone_vector_count"] = "unknown"
         
         return stats
