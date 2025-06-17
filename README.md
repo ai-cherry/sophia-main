@@ -1,305 +1,260 @@
-# Pay Ready AI Agent System - Complete Implementation
+# Sophia AI - Business Intelligence Orchestrator
 
 ## 🚀 Overview
 
-The Pay Ready AI Agent System is a comprehensive B2B technology platform that provides centralized orchestration of specialized AI agents for apartment industry operations. This system enables natural language control of business intelligence, client management, sales optimization, infrastructure management, and compliance monitoring.
+Sophia AI is an advanced AI assistant orchestrator designed as the central "Pay Ready Brain" for business intelligence and automation. It orchestrates multiple AI agents and integrates with critical business systems including HubSpot CRM, Gong.io call analysis, Slack communication, and property management platforms.
 
 ## 🏗️ Architecture
 
-### Core Components
+### Core Infrastructure
+- **Type:** Multi-agent AI orchestrator with flat-to-hierarchical evolution
+- **Backend:** FastAPI/Python with async support
+- **Frontend:** React + Vite with modern dark-themed UI
+- **Databases:** PostgreSQL, Redis, Pinecone, Weaviate
+- **Infrastructure:** Lambda Labs servers, Vercel frontend deployment
+- **Monitoring:** Prometheus + Grafana
 
-1. **Specialized AI Agents** (`backend/agents/specialized/`)
-   - **Client Health Agent**: Monitors client portfolio health and churn risks
-   - **Sales Intelligence Agent**: Optimizes sales performance and competitive positioning
-   - **Market Research Agent**: Provides apartment industry intelligence
-   - **Compliance Monitoring Agent**: Ensures regulatory compliance
-   - **Workflow Automation Agent**: Manages CRM and business processes
+### Key Components
 
-2. **Enhanced Natural Language Processor** (`backend/integrations/`)
-   - Advanced intent recognition with business context
-   - Entity extraction for apartment industry terminology
-   - Intelligent request routing to appropriate agents
-   - Conversational context management
+1. **Specialized AI Agents** (`backend/agents/`)
+   - Call Analysis Agent (Gong.io integration)
+   - CRM Sync Agent (HubSpot integration)
+   - Notification Agent (Slack integration)
+   - Business Intelligence Agent (Revenue/performance reports)
 
-3. **Real-Time Business Intelligence** (`backend/analytics/`)
-   - Live revenue and client metrics
-   - Sales performance analytics
-   - Infrastructure monitoring
-   - Executive reporting and insights
+2. **Unified Gateway Orchestrator** (`backend/integrations/unified_gateway_orchestrator.py`)
+   - Intelligent routing across LLM providers
+   - Automatic failover and cost optimization
+   - Performance tracking and monitoring
 
-4. **Admin Control Center** (`sophia-admin-control/`)
-   - Unified command interface with natural language chat
-   - Real-time dashboards and metrics
-   - AI agent status monitoring
-   - Infrastructure management
+3. **Property Management MCP Server** (`backend/mcp/property_management_mcp_server.py`)
+   - Complete apartment industry integration
+   - Support for Yardi, RealPage, AppFolio, Entrata, CoStar
 
-## 🎯 Key Features
+4. **Modern UI Dashboard** (`frontend/`)
+   - Dark theme with glassmorphism effects
+   - Real-time metrics and KPIs
+   - 4-tab interface: Overview, Strategy, Operations, AI Insights
 
-### Business Intelligence
-- **Revenue Tracking**: Real-time revenue metrics with growth analysis
-- **Client Health Monitoring**: Automated churn risk detection and expansion opportunities
-- **Sales Performance**: Pipeline analysis, close rate optimization, competitive intelligence
-- **Market Intelligence**: Apartment industry trends and prospect research
+## 🔐 Secret Management
 
-### AI Agent Capabilities
-- **Natural Language Commands**: Control entire system through conversational interface
-- **Automated Analysis**: Continuous monitoring and intelligent insights
-- **Predictive Analytics**: Churn prediction, sales forecasting, market opportunities
-- **Compliance Automation**: Fair housing, FDCPA, and AI ethics monitoring
+### IMPORTANT: How Secrets Work in This Project
 
-### Infrastructure Management
-- **Lambda Labs Integration**: GPU instance management and cost optimization
-- **Kong AI Gateway**: Unified API management with semantic caching
-- **Database Optimization**: PostgreSQL, Redis, and vector database management
-- **Real-Time Monitoring**: System health, performance metrics, and alerting
+All secrets are managed through a unified system. **For AI assistants and developers working on this project:**
+
+1. **Primary Documentation:** See `docs/SECRET_MANAGEMENT_GUIDE.md` for complete details
+2. **Secret Names:** Use EXACT names as specified (e.g., `VERCEL_ACCESS_TOKEN` not `VERCEL_TOKEN`)
+3. **Management Tool:** Use `scripts/setup_pulumi_secrets.py` for all secret operations
+
+### Quick Secret Reference
+
+```bash
+# Check what secrets are needed
+cat env.example
+
+# Import secrets from .env file
+python scripts/setup_pulumi_secrets.py import-env --env-file .env
+
+# Sync secrets to GitHub
+python scripts/setup_pulumi_secrets.py sync
+
+# Validate all secrets are configured
+python scripts/setup_pulumi_secrets.py validate
+```
+
+### Critical Deployment Secrets
+- `VERCEL_ACCESS_TOKEN` - Frontend deployment (NOT VERCEL_TOKEN!)
+- `LAMBDA_LABS_API_KEY` - Backend deployment
+- `PORTKEY_API_KEY` - LLM gateway (recommended)
+- `OPENROUTER_API_KEY` - Alternative LLM gateway
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Python 3.11+
+- Node.js 18+
 - PostgreSQL 14+
 - Redis 6+
-- Node.js 18+
-- Lambda Labs account
-- Kong AI Gateway access
+- Docker (optional)
 
-### Installation
+### Local Development Setup
 
-1. **Clone Repository**
+1. **Clone and Setup**
    ```bash
    git clone https://github.com/ai-cherry/sophia-main.git
    cd sophia-main
    ```
 
-2. **Backend Setup**
+2. **Configure Environment**
+   ```bash
+   # Use minimal setup for development
+   cp env.minimal.example .env
+   # Edit .env with your API keys
+   ```
+
+3. **Backend Setup**
    ```bash
    cd backend
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
    pip install -r requirements.txt
+   python main.py
    ```
 
-3. **Environment Configuration**
+4. **Frontend Setup**
    ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-4. **Database Setup**
-   ```bash
-   # Create PostgreSQL database
-   createdb payready_db
-   
-   # Run migrations (if available)
-   python manage.py migrate
-   ```
-
-5. **Start Backend Services**
-   ```bash
-   python backend/main.py
-   ```
-
-6. **Frontend Setup**
-   ```bash
-   cd sophia-admin-control
+   cd frontend
    npm install
    npm run dev
    ```
 
-### Production Deployment
+5. **Access the Application**
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:5001
+   - API Docs: http://localhost:5001/docs
 
-1. **Lambda Labs Deployment**
-   ```bash
-   # Deploy to Lambda Labs GPU instance
-   ./deploy_to_lambda.sh
-   ```
+### Docker Setup (Recommended)
 
-2. **Frontend Deployment**
-   ```bash
-   # Build and deploy frontend
-   npm run build
-   # Deploy to your hosting platform
-   ```
+```bash
+# Start all services
+docker-compose up -d
 
-## 📊 Usage Examples
+# Check status
+docker-compose ps
 
-### Natural Language Commands
-
-```
-"Show me client health metrics for this quarter"
-"Analyze sales pipeline performance vs Yardi"
-"Generate revenue report for apartment industry clients"
-"Deploy new infrastructure for peak load handling"
-"Create workflow for automated client onboarding"
-"Check compliance status for fair housing regulations"
-"Find expansion opportunities in current client base"
-"Optimize database performance and costs"
+# View logs
+docker-compose logs -f
 ```
 
-### API Usage
+## 📊 Key Features
 
-```python
-import requests
+### Business Intelligence
+- Real-time revenue tracking and KPIs
+- Customer health monitoring
+- Sales performance analytics
+- AI-powered insights and predictions
 
-# Submit agent task
-response = requests.post('http://localhost:8000/agents/task', json={
-    'agent_type': 'client_health',
-    'task_type': 'analyze_client_health',
-    'data': {},
-    'priority': 'high'
-})
+### Integrations
+- **HubSpot CRM:** Contact and deal management
+- **Gong.io:** Call recording analysis
+- **Slack:** Team notifications
+- **Property Management:** Yardi, RealPage, AppFolio support
 
-# Get business dashboard
-dashboard = requests.post('http://localhost:8000/metrics/dashboard', json={
-    'time_period': '30_days'
-})
-```
+### AI Capabilities
+- Natural language business queries
+- Automated report generation
+- Predictive analytics
+- Strategic recommendations
 
-## 🔧 Configuration
+## 🛠️ Configuration
 
 ### Environment Variables
 
-Key configuration options in `.env`:
+See `env.example` for all available options. Key configurations:
 
 ```bash
-# Database
-DATABASE_URL=postgresql://user:pass@localhost/payready_db
+# LLM Gateway (Recommended approach)
+LLM_GATEWAY=portkey
+PORTKEY_API_KEY=your_key
+OPENROUTER_API_KEY=your_key
 
-# AI Services
-OPENAI_API_KEY=your_openai_key
-KONG_ACCESS_TOKEN=your_kong_token
+# Business Integrations
+HUBSPOT_API_KEY=your_key
+GONG_API_KEY=your_key
+SLACK_BOT_TOKEN=your_token
 
 # Vector Databases
-PINECONE_API_KEY=your_pinecone_key
-WEAVIATE_URL=http://localhost:8080
-
-# Infrastructure
-LAMBDA_LABS_API_KEY=your_lambda_key
+PINECONE_API_KEY=your_key
+WEAVIATE_URL=your_url
 ```
 
-### Agent Configuration
+## 🚀 Deployment
 
-Each agent can be configured with specific parameters:
+### GitHub Actions (Automated)
 
-```python
-config = {
-    'database_url': 'postgresql://...',
-    'kong_config': {
-        'access_token': 'your_token',
-        'base_url': 'https://api.konghq.com'
-    },
-    'nlp_config': {
-        'model_name': 'gpt-4',
-        'temperature': 0.7
-    }
-}
+1. Ensure secrets are set in GitHub (see Secret Management section)
+2. Push to main branch
+3. Actions will automatically deploy to Lambda Labs and Vercel
+
+### Manual Deployment
+
+See `docs/DEPLOYMENT_GUIDE.md` for detailed instructions.
+
+## 📚 Documentation
+
+### Core Documentation
+- **Secret Management:** `docs/SECRET_MANAGEMENT_GUIDE.md` 📌
+- **Infrastructure Report:** `docs/SOPHIA_AI_INFRASTRUCTURE_REPORT.md`
+- **Design System:** `docs/SOPHIA_DESIGN_SYSTEM_INTEGRATION.md`
+- **Deployment Guide:** `docs/DEPLOYMENT_GUIDE.md`
+
+### Technical Documentation
+- **Architecture:** `docs/implementation/sophia_technical_architecture.md`
+- **Implementation Plan:** `docs/implementation/sophia_implementation_plan.md`
+- **MCP Servers:** `docs/mcp_server_documentation.md`
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+pytest
+
+# Test infrastructure
+python test_infrastructure.py
+
+# Test specific components
+pytest tests/test_auth.py
 ```
 
-## 📈 Monitoring and Analytics
+## 🔧 Development
 
-### Business Metrics
-- Revenue tracking and growth analysis
-- Client health scores and churn prediction
-- Sales pipeline velocity and close rates
-- Market opportunity identification
+### Project Structure
+```
+sophia-main/
+├── backend/           # Python backend
+│   ├── agents/       # AI agents
+│   ├── integrations/ # External services
+│   └── config/       # Configuration
+├── frontend/         # React frontend
+│   ├── src/         # Source code
+│   └── public/      # Static assets
+├── docs/            # Documentation
+├── scripts/         # Utility scripts
+└── tests/          # Test files
+```
 
-### System Metrics
-- Agent performance and success rates
-- API response times and throughput
-- Infrastructure utilization and costs
-- Compliance status and audit trails
+### Adding New Features
 
-### Dashboards
-- Executive summary dashboard
-- Real-time operational metrics
-- Agent performance monitoring
-- Infrastructure health status
-
-## 🛡️ Security and Compliance
-
-### Compliance Features
-- **Fair Housing Act**: Automated communication monitoring
-- **FDCPA**: Debt collection compliance automation
-- **AI Ethics**: Responsible AI usage monitoring
-- **Data Privacy**: Encryption and access controls
-
-### Security Measures
-- JWT-based authentication
-- Role-based access control
-- Audit logging for all operations
-- Encrypted data storage and transmission
-
-## 🔄 Development Workflow
-
-### Adding New Agents
-
-1. Create agent class inheriting from `BasePayReadyAgent`
-2. Implement required methods (`_execute_task`, etc.)
-3. Add agent to orchestrator configuration
-4. Update API endpoints and documentation
-
-### Extending NLP Capabilities
-
-1. Add new intent patterns to `intent_patterns`
-2. Implement entity extraction for new domains
-3. Update response generation logic
-4. Test with various input scenarios
-
-## 📚 API Documentation
-
-### Core Endpoints
-
-- `POST /chat` - Process natural language requests
-- `POST /agents/task` - Submit tasks to specific agents
-- `GET /agents/status` - Get agent performance metrics
-- `POST /metrics/dashboard` - Get business intelligence dashboard
-- `GET /health` - System health check
-
-### Agent-Specific Endpoints
-
-- `POST /agents/start-health-monitoring` - Start client health monitoring
-- `POST /agents/analyze-sales-performance` - Trigger sales analysis
-- `POST /agents/market-research` - Conduct market research
+1. Follow the patterns in `.cursorrules`
+2. Use type hints and comprehensive error handling
+3. Include tests for new functionality
+4. Update relevant documentation
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Implement changes with tests
-4. Submit a pull request
+1. Check existing issues and PRs
+2. Follow the code style in `.cursorrules`
+3. Include tests with your changes
+4. Update documentation as needed
 
-## 📄 License
+## 📈 Monitoring
 
-This project is proprietary to Pay Ready. All rights reserved.
+- **Grafana Dashboard:** http://localhost:3000 (when running locally)
+- **Prometheus Metrics:** http://localhost:9090
+- **Health Check:** http://localhost:5001/health
 
 ## 🆘 Support
 
-For technical support or questions:
-- Email: support@payready.com
-- Documentation: https://docs.payready.com
-- Issues: GitHub Issues
+- GitHub Issues: [Create an issue](https://github.com/ai-cherry/sophia-main/issues)
+- Documentation: Check `docs/` directory
+- Logs: Check `logs/` directory for debugging
 
-## 🎯 Roadmap
+## 🔒 Security
 
-### Phase 1 (Current)
-- ✅ Core agent implementation
-- ✅ Natural language processing
-- ✅ Business intelligence dashboard
-- ✅ Admin control center
-
-### Phase 2 (Next 30 days)
-- Advanced predictive analytics
-- Enhanced compliance monitoring
-- Multi-tenant architecture
-- Mobile application
-
-### Phase 3 (60-90 days)
-- Machine learning model training
-- Advanced workflow automation
-- Third-party integrations expansion
-- Enterprise security features
+- All API keys must be kept secure
+- Use environment variables, never commit secrets
+- Follow the secret management guide
+- Enable audit logging in production
 
 ---
 
-**Pay Ready AI Agent System** - Revolutionizing apartment industry B2B operations through intelligent automation and natural language control.
+**Sophia AI** - The intelligent business orchestrator for Pay Ready, powered by advanced AI and modern architecture.
 

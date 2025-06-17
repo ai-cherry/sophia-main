@@ -57,6 +57,21 @@ class ServiceIntegration:
 - Log all security-relevant events
 - Follow principle of least privilege
 
+### Secret Management (CRITICAL)
+- **Documentation:** Always refer to `docs/SECRET_MANAGEMENT_GUIDE.md` for secret handling
+- **Tool:** Use `scripts/setup_pulumi_secrets.py` for all secret operations
+- **Secret Names:** Use EXACT names (e.g., `VERCEL_ACCESS_TOKEN` not `VERCEL_TOKEN`)
+- **Never hardcode secrets:** Always use environment variables
+- **GitHub Actions:** Secrets cannot be used in `if:` conditions - check inside scripts
+- **Local Development:** Use `env.minimal.example` as template for `.env`
+- **Adding Secrets:** Follow the unified workflow:
+  ```bash
+  # Import from .env
+  python scripts/setup_pulumi_secrets.py import-env --env-file .env
+  # Sync to GitHub
+  python scripts/setup_pulumi_secrets.py sync
+  ```
+
 ### Testing Strategy
 - Write unit tests for all business logic
 - Include integration tests for external APIs
