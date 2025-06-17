@@ -5,6 +5,7 @@ Production-ready setup for Pinecone and Weaviate with advanced features
 
 import json
 import logging
+import os
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 import time
@@ -638,13 +639,13 @@ def create_optimized_vector_config():
     """Create optimized vector database configuration for Sophia AI"""
     
     pinecone_config = PineconeConfig(
-        api_key="pcsk_7PHV2G_Mj1rRCwiHZ7YsuuzJcqKch9akzNKXv6mfwDX65DenD8Q72w3Qjh4AmuataTnEDW",
-        environment="us-west-2"
+        api_key=os.getenv("PINECONE_API_KEY", ""),
+        environment=os.getenv("PINECONE_ENVIRONMENT", "us-west-2")
     )
     
     weaviate_config = WeaviateConfig(
-        url="https://w6bigpoxsrwvq7wlgmmdva.c0.us-west3.gcp.weaviate.cloud",
-        api_key="VMKjGMQUnXQIDiFOciZZOhr7amBfCHMh7hNf"
+        url=os.getenv("WEAVIATE_URL", ""),
+        api_key=os.getenv("WEAVIATE_API_KEY", "")
     )
     
     return OptimizedVectorDatabaseManager(pinecone_config, weaviate_config)

@@ -14,6 +14,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
+import os
 import redis
 import openai
 from .orchestrator import AgentStatus, AgentCapability, Task, TaskStatus
@@ -25,7 +26,7 @@ class AgentConfig:
     agent_id: str
     agent_type: str
     specialization: str
-    redis_host: str = "150.230.47.71"
+    redis_host: str = os.getenv("REDIS_HOST", "localhost")
     redis_port: int = 6379
     openai_api_key: str = None
     performance_target: float = 0.90

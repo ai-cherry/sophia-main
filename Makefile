@@ -158,11 +158,11 @@ shell:
 
 db-shell:
 	@echo "Connecting to PostgreSQL..."
-	psql postgresql://sophia:sophia_pass@150.230.47.71:5432/sophia_payready
+        psql $(POSTGRES_URL)
 
 redis-cli:
 	@echo "Connecting to Redis..."
-	redis-cli -h 150.230.47.71 -p 6379
+        redis-cli -h $(REDIS_HOST) -p $(REDIS_PORT)
 
 # Monitoring
 monitor:
@@ -181,7 +181,7 @@ backup:
 	@echo "Creating backup..."
 	@mkdir -p backups
 	@TIMESTAMP=$$(date +%Y%m%d_%H%M%S) && \
-	pg_dump postgresql://sophia:sophia_pass@150.230.47.71:5432/sophia_payready > backups/sophia_db_$$TIMESTAMP.sql && \
+        pg_dump $(POSTGRES_URL) > backups/sophia_db_$$TIMESTAMP.sql && \
 	tar -czf backups/sophia_code_$$TIMESTAMP.tar.gz backend/ frontend/ && \
 	echo "Backup created: backups/*_$$TIMESTAMP.*"
 
@@ -207,5 +207,5 @@ health:
 	@echo "Checking system health..."
 	@curl -s http://localhost:5000/health | jq . || echo "Backend not responding"
 	@curl -s http://localhost:3000 > /dev/null && echo "Frontend: OK" || echo "Frontend: Not responding"
-	@nc -zv 150.230.47.71 5432 2>&1 | grep succeeded > /dev/null && echo "PostgreSQL: OK" || echo "PostgreSQL: Not responding"
-	@nc -zv 150.230.47.71 6379 2>&1 | grep succeeded > /dev/null && echo "Redis: OK" || echo "Redis: Not responding" 
+        @nc -zv $(POSTGRES_HOST) 5432 2>&1 | grep succeeded > /dev/null && echo "PostgreSQL: OK" || echo "PostgreSQL: Not responding"
+        @nc -zv $(REDIS_HOST) 6379 2>&1 | grep succeeded > /dev/null && echo "Redis: OK" || echo "Redis: Not responding"
