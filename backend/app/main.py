@@ -6,15 +6,12 @@ Dedicated business intelligence platform for Pay Ready company operations.
 """
 
 import os
-import sys
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 import logging
 from datetime import datetime
 
-# Add the backend directory to Python path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import Orchestra Shared Library
 try:
@@ -26,11 +23,11 @@ except ImportError:
     ORCHESTRA_AVAILABLE = False
 
 # Import local modules
-from routes.company_routes import company_bp
-from routes.strategy_routes import strategy_bp
-from routes.operations_routes import operations_bp
-from routes.auth_routes import auth_bp
-from config.settings import Config
+from backend.app.routes.company_routes import company_bp
+from backend.app.routes.strategy_routes import strategy_bp
+from backend.app.routes.operations_routes import operations_bp
+from backend.app.routes.auth_routes import auth_bp
+from backend.config.settings import Config
 
 # Configure logging
 logging.basicConfig(
@@ -66,12 +63,12 @@ def create_app(config_class=Config):
     
     # Register Knowledge Base, HF MCP, ESC, CoStar, and Enhanced Integration blueprints
     try:
-        from knowledge.admin_integration import admin_kb_bp
-        from knowledge.knowledge_api import knowledge_bp
-        from integrations.huggingface_mcp import hf_mcp_bp
-        from integrations.pulumi_esc import esc_bp
-        from integrations.costar_pipeline import costar_bp
-        from integrations.enhanced_integration import create_enhanced_integration
+        from backend.knowledge.admin_integration import admin_kb_bp
+        from backend.knowledge.knowledge_api import knowledge_bp
+        from backend.integrations.huggingface_mcp import hf_mcp_bp
+        from backend.integrations.pulumi_esc import esc_bp
+        from backend.integrations.costar_pipeline import costar_bp
+        from backend.integrations.enhanced_integration import create_enhanced_integration
         
         app.register_blueprint(admin_kb_bp, url_prefix='/admin')
         app.register_blueprint(knowledge_bp, url_prefix='/api')

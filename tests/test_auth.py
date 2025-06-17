@@ -8,11 +8,7 @@ This module tests the authentication endpoints and security features.
 import pytest
 import json
 from datetime import datetime
-import sys
-import os
 
-# Add parent directory to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.app.main import app
 from backend.config.settings import settings
