@@ -1,0 +1,3 @@
+pulumi-command>=0.9.0
+pulumi-vercel>=1.0.0
+

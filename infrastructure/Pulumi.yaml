@@ -1,0 +1,28 @@
+name: sophia-ai
+runtime: python
+description: Sophia AI conversation intelligence platform infrastructure
+main: __main__.py
+
+config:
+  project_name:
+    type: string
+    default: sophia-ai
+  environment:
+    type: string
+    default: production
+  app_domain:
+    type: string
+    default: sophia.payready.com
+  lambda_labs_instance_ip:
+    type: string
+    default: 104.171.203.227
+  lambda_labs_ssh_user:
+    type: string
+    default: ubuntu
+  git_repo_url:
+    type: string
+    default: https://github.com/ai-cherry/sophia-main.git
+  git_branch:
+    type: string
+    default: main
+
