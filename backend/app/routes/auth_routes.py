@@ -15,14 +15,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime, timedelta
 import logging
 from typing import Dict, Any
-import sys
-import os
 
-# Add parent directory to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
-from config.settings import settings
-from security.security_manager import SophiaSecurityManager
+from backend.config.settings import settings
+from backend.security.security_manager import SophiaSecurityManager
 
 logger = logging.getLogger(__name__)
 
