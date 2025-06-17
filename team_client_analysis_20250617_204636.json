@@ -1,0 +1,67 @@
+{
+  "timestamp": "2025-06-17T20:46:36.646885",
+  "analysis_summary": {
+    "total_users": 109,
+    "domain_count": 3,
+    "recommendations": {
+      "schema_improvements": [
+        "Add 'user_type' column (pay_ready_team, apartment_client, external_contact)",
+        "Add 'company_type' column (internal, apartment_client, vendor, other)",
+        "Create separate tables for team_members and client_contacts",
+        "Add 'pay_ready_employee' boolean flag"
+      ],
+      "data_classification": [
+        "Identify Pay Ready email domains for automatic team classification",
+        "Create client company mapping based on email domains",
+        "Implement role-based classification (sales, support, executive)",
+        "Add apartment industry client identification"
+      ]
+    }
+  },
+  "schema_review": {
+    "tables_analyzed": [
+      "gong_users",
+      "gong_calls",
+      "gong_participants",
+      "gong_workspaces"
+    ],
+    "improvement_suggestions": {
+      "gong_users": {
+        "missing_columns": [
+          "user_type VARCHAR(50) - 'pay_ready_team', 'apartment_client', 'external_contact'",
+          "company_name VARCHAR(255) - Extracted from email domain or manually set",
+          "company_type VARCHAR(50) - 'internal', 'apartment_client', 'vendor', 'other'",
+          "pay_ready_employee BOOLEAN - True for Pay Ready team members",
+          "apartment_relevance DECIMAL(3,2) - Relevance score for apartment industry",
+          "role_category VARCHAR(50) - 'sales', 'support', 'executive', 'client'"
+        ],
+        "index_suggestions": [
+          "CREATE INDEX idx_users_email_domain ON gong_users (SPLIT_PART(email_address, '@', 2))",
+          "CREATE INDEX idx_users_type ON gong_users (user_type)",
+          "CREATE INDEX idx_users_payready ON gong_users (pay_ready_employee)"
+        ]
+      },
+      "gong_calls": {
+        "missing_columns": [
+          "apartment_relevance DECIMAL(3,2) - Apartment industry relevance score",
+          "business_value INTEGER - Estimated deal value",
+          "competitive_mentions TEXT[] - Array of competitor names mentioned",
+          "call_outcome VARCHAR(100) - 'qualified', 'demo_scheduled', 'proposal', 'closed_won', etc.",
+          "sophia_insights JSONB - AI-generated insights about the call"
+        ],
+        "enhancement_opportunities": [
+          "Add full-text search on call titles",
+          "Implement automatic apartment industry keyword detection",
+          "Create call outcome tracking and pipeline analysis"
+        ]
+      }
+    },
+    "priority_actions": [
+      "1. Add user_type classification to distinguish team vs clients",
+      "2. Implement Pay Ready email domain detection",
+      "3. Add apartment industry relevance scoring",
+      "4. Create separate views for team vs client analysis",
+      "5. Implement call outcome tracking for sales pipeline"
+    ]
+  }
+}
