@@ -1,211 +1,132 @@
-# Sophia AI - Development Makefile
-# Common commands for development and deployment
-
-.PHONY: help install dev prod test clean docker-build docker-up docker-down db-migrate db-reset lint format security-check deploy
+.PHONY: help setup dev test lint format clean docker-build docker-up docker-down deploy-dev deploy-prod
 
 # Default target
 help:
-	@echo "Sophia AI - Available Commands:"
-	@echo "================================"
-	@echo "install        - Install all dependencies"
-	@echo "dev           - Run in development mode"
-	@echo "prod          - Run in production mode"
-	@echo "test          - Run all tests"
-	@echo "clean         - Clean up generated files"
-	@echo ""
-	@echo "Docker Commands:"
+	@echo "SOPHIA AI System - Development Commands"
+	@echo "-------------------------------------"
+	@echo "setup         - Install dependencies and set up development environment"
+	@echo "dev           - Run development server"
+	@echo "test          - Run tests"
+	@echo "lint          - Run linters"
+	@echo "format        - Format code"
+	@echo "clean         - Clean up temporary files"
 	@echo "docker-build  - Build Docker images"
 	@echo "docker-up     - Start Docker containers"
 	@echo "docker-down   - Stop Docker containers"
-	@echo ""
-	@echo "Database Commands:"
-	@echo "db-migrate    - Run database migrations"
-	@echo "db-reset      - Reset database (WARNING: deletes all data)"
-	@echo ""
-	@echo "Code Quality:"
-	@echo "lint          - Run code linting"
-	@echo "format        - Format code with Black"
-	@echo "security-check - Run security checks"
-	@echo ""
-	@echo "Deployment:"
-	@echo "deploy        - Deploy to production (Lambda Labs)"
+	@echo "deploy-dev    - Deploy to development environment"
+	@echo "deploy-prod   - Deploy to production environment"
 
-# Install dependencies
-install:
-	@echo "Installing Python dependencies..."
-	pip install -r requirements.txt
-	@echo "Installing frontend dependencies..."
-	cd frontend && pnpm install
-	@echo "Creating necessary directories..."
-	mkdir -p logs data temp
-	@echo "Copying environment template..."
-	[ ! -f .env ] && cp env.example .env || echo ".env already exists"
-	@echo "Installation complete!"
+# Setup development environment
+setup:
+	@echo "Setting up development environment..."
+	python -m pip install --upgrade pip
+	pip install -r requirements-dev.txt
+	pre-commit install
+	@echo "Development environment setup complete."
 
-# Development mode
+# Run development server
 dev:
-	@echo "Starting Sophia AI in development mode..."
-	@echo "Starting backend..."
-	cd backend && python app/main.py &
-	@echo "Starting frontend..."
-	cd frontend && pnpm dev &
-	@echo "Starting MCP server..."
-	cd backend/mcp && python sophia_mcp_server.py &
-	@echo "Development servers started!"
-	@echo "Backend: http://localhost:5000"
-	@echo "Frontend: http://localhost:3000"
-	@echo "MCP Server: http://localhost:8002"
-
-# Production mode
-prod:
-	@echo "Starting Sophia AI in production mode..."
-	export SOPHIA_ENV=production && \
-	cd backend && \
-	gunicorn -w 4 -b 0.0.0.0:5000 app.main:app
+	@echo "Starting development server..."
+	uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
 
 # Run tests
 test:
 	@echo "Running tests..."
-	pytest tests/ -v --cov=backend --cov-report=html
-	@echo "Test results available in htmlcov/index.html"
+	pytest tests/ -v --cov=backend
 
-# Clean up
+# Run linters
+lint:
+	@echo "Running linters..."
+	flake8 backend tests
+	mypy backend
+	pylint backend
+
+# Format code
+format:
+	@echo "Formatting code..."
+	black backend tests
+	isort backend tests
+
+# Clean up temporary files
 clean:
-	@echo "Cleaning up..."
-	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@echo "Cleaning up temporary files..."
+	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
-	rm -rf .pytest_cache
-	rm -rf htmlcov
-	rm -rf .coverage
-	rm -rf logs/*.log
-	@echo "Cleanup complete!"
+	find . -type f -name "*.pyo" -delete
+	find . -type f -name "*.pyd" -delete
+	find . -type f -name ".coverage" -delete
+	find . -type d -name "*.egg-info" -exec rm -rf {} +
+	find . -type d -name "*.egg" -exec rm -rf {} +
+	find . -type d -name ".pytest_cache" -exec rm -rf {} +
+	find . -type d -name ".coverage" -exec rm -rf {} +
+	find . -type d -name "htmlcov" -exec rm -rf {} +
+	find . -type d -name ".mypy_cache" -exec rm -rf {} +
+	rm -rf build/
+	rm -rf dist/
+	rm -rf .eggs/
 
 # Docker commands
 docker-build:
 	@echo "Building Docker images..."
 	docker-compose build
-	@echo "Docker images built!"
 
 docker-up:
 	@echo "Starting Docker containers..."
 	docker-compose up -d
-	@echo "Containers started!"
-	@echo "Waiting for services to be ready..."
-	sleep 10
-	docker-compose ps
 
 docker-down:
 	@echo "Stopping Docker containers..."
 	docker-compose down
-	@echo "Containers stopped!"
+
+# Deployment commands
+deploy-dev:
+	@echo "Deploying to development environment..."
+	./deploy_dev.sh
+
+deploy-prod:
+	@echo "Deploying to production environment..."
+	./deploy_production.sh
 
 # Database commands
 db-migrate:
 	@echo "Running database migrations..."
-	cd backend && python database/schema_migration_system.py migrate
-	@echo "Migrations complete!"
+	alembic upgrade head
+
+db-rollback:
+	@echo "Rolling back last database migration..."
+	alembic downgrade -1
 
 db-reset:
-	@echo "WARNING: This will delete all data in the database!"
-	@echo "Press Ctrl+C to cancel, or wait 5 seconds to continue..."
-	@sleep 5
-	cd backend && python database/schema_migration_system.py reset
-	@echo "Database reset complete!"
+	@echo "Resetting database..."
+	alembic downgrade base
+	alembic upgrade head
 
-# Code quality
-lint:
-	@echo "Running linters..."
-	@echo "Python linting..."
-	flake8 backend/ --max-line-length=88 --extend-ignore=E203
-	mypy backend/ --ignore-missing-imports
-	@echo "Frontend linting..."
-	cd frontend && pnpm lint
-	@echo "Linting complete!"
+# MCP server commands
+mcp-server:
+	@echo "Starting MCP server..."
+	python -m backend.mcp.server
 
-format:
-	@echo "Formatting code..."
-	black backend/ --line-length 88
-	@echo "Code formatted!"
+# Monitoring commands
+monitoring-up:
+	@echo "Starting monitoring stack..."
+	docker-compose --profile monitoring up -d
 
-security-check:
-	@echo "Running security checks..."
-	@echo "Checking Python dependencies..."
-	pip-audit
-	@echo "Checking for secrets..."
-	grep -r "api_key\|password\|secret" backend/ --include="*.py" | grep -v "os.getenv\|Field\|config\|settings" || echo "No hardcoded secrets found"
-	@echo "Security check complete!"
+monitoring-down:
+	@echo "Stopping monitoring stack..."
+	docker-compose --profile monitoring down
 
-# Deployment
-deploy:
-	@echo "Deploying to Lambda Labs..."
-	@echo "Running pre-deployment checks..."
-	make test
-	make security-check
-	@echo "Building production images..."
-	docker build -t sophia-ai:latest .
-	@echo "Running Pulumi deployment..."
-	cd infrastructure && pulumi up --yes
-	@echo "Deployment complete!"
+# Frontend commands
+frontend-dev:
+	@echo "Starting frontend development server..."
+	cd sophia_admin_frontend && npm run dev
 
-# Development helpers
-logs:
-	@echo "Tailing application logs..."
-	tail -f backend/app_server.log backend/mcp/mcp_server.log
+frontend-build:
+	@echo "Building frontend..."
+	cd sophia_admin_frontend && npm run build
 
-shell:
-	@echo "Starting Python shell with Sophia context..."
-	cd backend && python -c "from app.main import app; from agents.core.orchestrator import SophiaOrchestrator; import IPython; IPython.embed()"
-
-db-shell:
-	@echo "Connecting to PostgreSQL..."
-        psql $(POSTGRES_URL)
-
-redis-cli:
-	@echo "Connecting to Redis..."
-        redis-cli -h $(REDIS_HOST) -p $(REDIS_PORT)
-
-# Monitoring
-monitor:
-	@echo "Opening monitoring dashboards..."
-	@echo "Prometheus: http://localhost:9090"
-	@echo "Grafana: http://localhost:3000"
-	open http://localhost:9090 http://localhost:3000
-
-# API Documentation
-api-docs:
-	@echo "Generating API documentation..."
-	cd backend && python -m pdoc --html --output-dir ../docs/api app
-
-# Backup
-backup:
-	@echo "Creating backup..."
-	@mkdir -p backups
-	@TIMESTAMP=$$(date +%Y%m%d_%H%M%S) && \
-        pg_dump $(POSTGRES_URL) > backups/sophia_db_$$TIMESTAMP.sql && \
-	tar -czf backups/sophia_code_$$TIMESTAMP.tar.gz backend/ frontend/ && \
-	echo "Backup created: backups/*_$$TIMESTAMP.*"
-
-# Performance testing
-perf-test:
-	@echo "Running performance tests..."
-	locust -f tests/performance/locustfile.py --host=http://localhost:5000
-
-# Create new agent
-new-agent:
-	@read -p "Enter agent name (e.g., email_analysis): " agent_name; \
-	cp backend/agents/specialized/template_agent.py backend/agents/specialized/$$agent_name_agent.py && \
-	echo "Created new agent: backend/agents/specialized/$$agent_name_agent.py"
-
-# Update dependencies
-update-deps:
-	@echo "Updating Python dependencies..."
-	pip list --outdated
-	@echo "To update all: pip install --upgrade -r requirements.txt"
-
-# Health check
-health:
-	@echo "Checking system health..."
-	@curl -s http://localhost:5000/health | jq . || echo "Backend not responding"
-	@curl -s http://localhost:3000 > /dev/null && echo "Frontend: OK" || echo "Frontend: Not responding"
-        @nc -zv $(POSTGRES_HOST) 5432 2>&1 | grep succeeded > /dev/null && echo "PostgreSQL: OK" || echo "PostgreSQL: Not responding"
-        @nc -zv $(REDIS_HOST) 6379 2>&1 | grep succeeded > /dev/null && echo "Redis: OK" || echo "Redis: Not responding"
+# Full development environment
+dev-full:
+	@echo "Starting full development environment..."
+	docker-compose up -d postgres redis weaviate mem0
+	python -m backend.mcp.server & 
+	uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000

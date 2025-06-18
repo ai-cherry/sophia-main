@@ -1,235 +1,213 @@
-# Sophia AI - Production Deployment Checklist
+# SOPHIA AI System - Deployment Checklist
 
-## 📋 Pre-Deployment Requirements
+This checklist outlines the steps required to deploy the SOPHIA AI System to production environments.
 
-### 1. API Keys Configuration
-You need to configure the following API keys in your `.env` file:
+## 📋 Pre-Deployment Preparation
 
-#### Required API Keys:
-- [ ] **OPENAI_API_KEY** - Get from https://platform.openai.com/api-keys
-- [ ] **HUBSPOT_API_KEY** - Get from HubSpot Settings > Integrations > API Key
-- [ ] **GONG_API_KEY** - Get from Gong.io Settings > API
-- [ ] **GONG_API_SECRET** - Get from Gong.io Settings > API
-- [ ] **SLACK_BOT_TOKEN** - Get from https://api.slack.com/apps (starts with xoxb-)
-- [ ] **SLACK_SIGNING_SECRET** - Get from Slack App Settings > Basic Information
+### Environment Setup
+- [ ] Verify target environment (development, staging, production)
+- [ ] Ensure all required environment variables are defined
+- [ ] Verify access to all required external services
+- [ ] Check infrastructure provisioning status
 
-#### Optional but Recommended:
-- [ ] **ANTHROPIC_API_KEY** - For Claude AI integration
-- [ ] **PINECONE_API_KEY** - Already configured in env.example
-- [ ] **WEAVIATE_API_KEY** - For Weaviate vector database
+### Code Preparation
+- [ ] Merge all feature branches to main
+- [ ] Run all tests and verify passing status
+- [ ] Check code coverage (minimum 80%)
+- [ ] Run linters and formatters
+- [ ] Verify documentation is up-to-date
 
-### 2. Security Configuration
-- [ ] Generate new **SECRET_KEY** (run: `python -c "import secrets; print(secrets.token_urlsafe(64))"`)
-- [ ] Generate new **SOPHIA_MASTER_KEY** (same command as above)
-- [ ] Change **ADMIN_PASSWORD** from default 'admin123'
+### Database Preparation
+- [ ] Prepare database migration scripts
+- [ ] Backup existing database (if applicable)
+- [ ] Verify migration rollback procedures
+- [ ] Prepare initial data seeding scripts
 
-### 3. Database Setup
-- [ ] Verify PostgreSQL connection (<POSTGRES_HOST>:5432)
-- [ ] Verify Redis connection (<REDIS_HOST>:6379)
+### Security Preparation
+- [ ] Complete security checklist (see SECURITY_DEPLOYMENT_CHECKLIST.md)
+- [ ] Rotate all API keys and secrets
+- [ ] Update Pulumi ESC with new secrets
+- [ ] Verify JWT configuration
+- [ ] Check CORS settings
+
+### Integration Preparation
+- [ ] Verify all integration endpoints are accessible
+- [ ] Test API rate limits
+- [ ] Prepare fallback mechanisms for external services
+- [ ] Update webhook configurations (if needed)
+
+## 🚀 Deployment Process
+
+### Infrastructure Deployment
+- [ ] Run Pulumi deployment
+  ```bash
+  cd infrastructure
+  pulumi up
+  ```
+- [ ] Verify all resources are created successfully
+- [ ] Check resource configurations
+- [ ] Verify network connectivity
+
+### Database Deployment
 - [ ] Run database migrations
+  ```bash
+  alembic upgrade head
+  ```
+- [ ] Verify migration success
+- [ ] Run data seeding scripts (if needed)
+- [ ] Verify data integrity
 
-## 🚀 Deployment Steps
+### Application Deployment
+- [ ] Build Docker images
+  ```bash
+  docker-compose build
+  ```
+- [ ] Push images to registry (if applicable)
+- [ ] Deploy application containers
+  ```bash
+  docker-compose --profile production up -d
+  ```
+- [ ] Verify all containers are running
 
-### Step 1: Configure Environment
-```bash
-# Edit your .env file with all required API keys
-nano .env
+### Frontend Deployment
+- [ ] Build frontend assets
+  ```bash
+  cd sophia_admin_frontend
+  npm run build
+  ```
+- [ ] Deploy frontend to hosting service
+- [ ] Verify frontend is accessible
+- [ ] Check browser compatibility
 
-# Or use the configuration helper
-python3 scripts/configure_deployment.py
-```
+### MCP Server Deployment
+- [ ] Deploy MCP server
+  ```bash
+  docker-compose up -d mcp-server
+  ```
+- [ ] Verify MCP server is running
+- [ ] Test MCP tools and resources
+- [ ] Check MCP server logs
 
-### Step 2: Install Dependencies
-```bash
-# Install Python dependencies
-make install
+## 🔍 Post-Deployment Verification
 
-# Or manually:
-pip install -r requirements.txt
-cd frontend && pnpm install
-```
+### Health Checks
+- [ ] Verify API health endpoint
+  ```bash
+  curl http://localhost:8000/health
+  ```
+- [ ] Check MCP server health
+  ```bash
+  curl http://localhost:8002/health
+  ```
+- [ ] Verify database connectivity
+- [ ] Check vector database connectivity
+- [ ] Verify Redis connectivity
 
-### Step 3: Database Setup
-```bash
-# Run database migrations
-make db-migrate
+### Functionality Checks
+- [ ] Test authentication and authorization
+- [ ] Verify API endpoints
+- [ ] Test agent functionality
+- [ ] Check integration functionality
+- [ ] Verify data processing pipelines
 
-# Verify database connection
-python -c "
-import psycopg2
-conn = psycopg2.connect(
-    host='<POSTGRES_HOST>',
-    port=5432,
-    user='sophia',
-    password='sophia_pass',
-    database='sophia_payready'
-)
-print('✅ PostgreSQL connected!')
-conn.close()
-"
-```
+### Performance Checks
+- [ ] Monitor API response times
+- [ ] Check database query performance
+- [ ] Verify vector search performance
+- [ ] Monitor memory and CPU usage
+- [ ] Check for bottlenecks
 
-### Step 4: Run Tests
-```bash
-# Run all tests to ensure everything is working
-make test
+### Security Checks
+- [ ] Verify HTTPS configuration
+- [ ] Check authentication mechanisms
+- [ ] Test authorization rules
+- [ ] Verify data encryption
+- [ ] Check for exposed secrets
 
-# Or run specific tests
-pytest tests/test_auth.py -v
-```
+## 📢 Deployment Announcement
 
-### Step 5: Local Verification
-```bash
-# Start in development mode to verify
-make dev
+### Internal Communication
+- [ ] Notify development team
+- [ ] Inform operations team
+- [ ] Update project management tools
+- [ ] Document deployment in knowledge base
 
-# Test endpoints:
-# - Frontend: http://localhost:3000
-# - Backend: http://localhost:5000
-# - Health: http://localhost:5000/health
-```
+### External Communication
+- [ ] Notify users (if applicable)
+- [ ] Update status page
+- [ ] Prepare release notes
+- [ ] Schedule training sessions (if needed)
 
-### Step 6: Production Configuration
-```bash
-# Set environment to production
-export SOPHIA_ENV=production
+## 🔄 Rollback Procedure
 
-# Update .env file:
-# SOPHIA_ENV=production
-```
+In case of deployment failure, follow these steps to rollback:
 
-### Step 7: Docker Deployment (Option A)
-```bash
-# Build Docker images
-make docker-build
+1. Stop all containers
+   ```bash
+   docker-compose --profile production down
+   ```
 
-# Start containers
-make docker-up
+2. Rollback database migrations
+   ```bash
+   alembic downgrade -1
+   ```
 
-# Verify containers are running
-docker ps
-```
+3. Deploy previous version
+   ```bash
+   git checkout <previous-tag>
+   docker-compose --profile production up -d
+   ```
 
-### Step 8: Lambda Labs Deployment (Option B)
-```bash
-# Configure Pulumi
-cd infrastructure
-pulumi login
-pulumi stack init sophia-production
+4. Verify rollback success
+   ```bash
+   curl http://localhost:8000/health
+   ```
 
-# Set configuration
-pulumi config set aws:region us-west-1
-pulumi config set instance_type gpu.a100.1x
-pulumi config set db_password <secure_password> --secret
-pulumi config set secret_key <your_secret_key> --secret
+5. Notify all stakeholders of the rollback
 
-# Deploy infrastructure
-pulumi up --yes
+## 📝 Post-Deployment Tasks
 
-# Note the outputs:
-# - app_url
-# - ssh_command
-# - monitoring urls
-```
+### Monitoring Setup
+- [ ] Configure Prometheus alerts
+- [ ] Set up Grafana dashboards
+- [ ] Configure log aggregation
+- [ ] Set up uptime monitoring
+- [ ] Configure performance monitoring
 
-### Step 9: Post-Deployment Verification
-```bash
-# Check application health
-curl https://your-domain.com/health
-
-# Test authentication
-curl -X POST https://your-domain.com/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"your_password"}'
-
-# Check monitoring
-# - Prometheus: https://your-domain.com:9090
-# - Grafana: https://your-domain.com:3000
-```
-
-## 🔒 Security Checklist
-
-- [ ] All default passwords changed
-- [ ] SSL/TLS certificates configured
-- [ ] Firewall rules configured
-- [ ] API rate limiting enabled
-- [ ] Audit logging enabled
-- [ ] Backup strategy implemented
-
-## 📊 Monitoring Setup
-
-### Configure Alerts
-- [ ] Set up CPU usage alerts (>80%)
-- [ ] Set up memory usage alerts (>90%)
-- [ ] Set up disk space alerts (>85%)
-- [ ] Configure application error alerts
-- [ ] Set up API response time alerts (>2s)
-
-### Configure Dashboards
-- [ ] Import Grafana dashboards
-- [ ] Set up business metrics dashboard
-- [ ] Configure agent performance dashboard
-- [ ] Create system health dashboard
-
-## 🔄 Backup & Recovery
-
-- [ ] Configure automated PostgreSQL backups
-- [ ] Set up Redis persistence
-- [ ] Configure S3 backup bucket
-- [ ] Test restore procedure
-- [ ] Document recovery process
-
-## 📝 Documentation
-
+### Documentation Updates
 - [ ] Update API documentation
-- [ ] Create user guide
-- [ ] Document deployment process
-- [ ] Create runbook for common issues
-- [ ] Update team wiki
+- [ ] Update deployment documentation
+- [ ] Document known issues
+- [ ] Update user guides
+- [ ] Document lessons learned
 
-## ✅ Final Checks
+### Cleanup
+- [ ] Remove temporary files
+- [ ] Archive old logs
+- [ ] Clean up test data
+- [ ] Remove unused resources
+- [ ] Update backup schedules
 
-- [ ] All tests passing
-- [ ] All integrations connected
-- [ ] Monitoring active
-- [ ] Backups configured
-- [ ] Team trained on new system
-- [ ] Support channels established
+## ✅ Final Approval
 
-## 🚨 Rollback Plan
+**Deployment Approved By:**
 
-If issues occur during deployment:
+Name: ________________________________
 
-1. **Immediate Rollback**
-   ```bash
-   # Docker
-   docker-compose down
-   docker-compose -f docker-compose.backup.yml up -d
-   
-   # Pulumi
-   pulumi destroy --yes
-   pulumi stack select sophia-previous
-   pulumi up --yes
-   ```
+Role: ________________________________
 
-2. **Database Rollback**
-   ```bash
-   # Restore from backup
-   pg_restore -h <POSTGRES_HOST> -U sophia -d sophia_payready backup.sql
-   ```
+Date: ________________________________
 
-3. **Communication**
-   - Notify team via Slack
-   - Update status page
-   - Document issues for post-mortem
-
-## 📞 Support Contacts
-
-- **Technical Lead**: [Your Name]
-- **DevOps**: [DevOps Contact]
-- **On-Call**: [On-Call Phone]
-- **Escalation**: [Manager Contact]
+Signature: ____________________________
 
 ---
 
-**Remember**: Take your time, test thoroughly, and don't hesitate to ask for help if needed! 
+**Deployment Verified By:**
+
+Name: ________________________________
+
+Role: ________________________________
+
+Date: ________________________________
+
+Signature: ____________________________

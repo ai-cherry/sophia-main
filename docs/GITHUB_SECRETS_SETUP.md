@@ -1,206 +1,241 @@
-# GitHub Secrets Setup for Sophia AI
+# SOPHIA AI System - GitHub Secrets Setup Guide
 
 ## Overview
 
-Instead of managing dozens of API keys locally, we use GitHub Secrets with a unified LLM gateway (Portkey + OpenRouter) for a cleaner, more secure setup.
+This guide outlines the process for setting up and managing GitHub secrets for the SOPHIA AI System. GitHub secrets are used to securely store sensitive information such as API keys, passwords, and tokens that are needed for CI/CD workflows.
 
-## LLM Strategy: Portkey + OpenRouter
+## Table of Contents
 
-### Why This Approach?
+1. [Introduction](#introduction)
+2. [Prerequisites](#prerequisites)
+3. [Setting Up GitHub Secrets](#setting-up-github-secrets)
+4. [Using GitHub Secrets in Workflows](#using-github-secrets-in-workflows)
+5. [Rotating GitHub Secrets](#rotating-github-secrets)
+6. [Best Practices](#best-practices)
+7. [Troubleshooting](#troubleshooting)
 
-1. **Single API Key**: Use Portkey as the gateway with OpenRouter as primary provider
-2. **Automatic Fallbacks**: If OpenRouter is down, automatically falls back to OpenAI/Anthropic
-3. **Cost Optimization**: OpenRouter provides access to many models at competitive prices
-4. **No Vendor Lock-in**: Easy to switch providers without code changes
-5. **Built-in Monitoring**: Portkey provides usage analytics and logging
+## Introduction
 
-### Architecture
+GitHub secrets provide a secure way to store sensitive information in your GitHub repository. These secrets are encrypted and can only be accessed by GitHub Actions workflows during execution. This ensures that sensitive information is not exposed in your codebase or logs.
 
-```
-Your App -> Portkey Gateway -> OpenRouter (Primary)
-                            -> OpenAI (Fallback)
-                            -> Anthropic (Fallback)
-```
+For the SOPHIA AI System, GitHub secrets are used for:
 
-## Required GitHub Secrets
+- API keys for external services (OpenAI, Pinecone, etc.)
+- Database credentials
+- Deployment credentials
+- JWT secrets
+- Integration credentials (HubSpot, Salesforce, etc.)
 
-### Core Secrets (Minimum)
+## Prerequisites
 
-1. **`SECRET_KEY`** - Generate with: `python -c "import secrets; print(secrets.token_hex(32))"`
-2. **`ADMIN_PASSWORD`** - Strong password for admin access
-3. **`PORTKEY_API_KEY`** - From [Portkey Dashboard](https://app.portkey.ai)
-4. **`OPENROUTER_API_KEY`** - From [OpenRouter](https://openrouter.ai/keys)
+Before setting up GitHub secrets, ensure you have:
 
-### Database Secrets
+1. Admin access to the GitHub repository
+2. The necessary secrets to be stored
+3. Python 3.11+ installed (for using the automation script)
+4. PyGithub and pynacl packages installed:
+   ```bash
+   pip install PyGithub pynacl
+   ```
 
-5. **`POSTGRES_HOST`** - Database host (e.g., `localhost` or your server IP)
-6. **`POSTGRES_PORT`** - Default: `5432`
-7. **`POSTGRES_USER`** - Default: `sophia`
-8. **`POSTGRES_PASSWORD`** - Database password
-9. **`POSTGRES_DB`** - Default: `sophia_payready`
-10. **`REDIS_HOST`** - Redis host
-11. **`REDIS_PORT`** - Default: `6379`
-12. **`REDIS_PASSWORD`** - Redis password (if configured)
+## Setting Up GitHub Secrets
 
-### Optional Integration Secrets
+### Manual Setup
 
-Only add these as you need them:
+You can manually set up GitHub secrets through the GitHub UI:
 
-- **`HUBSPOT_API_KEY`** - For CRM integration
-- **`GONG_API_KEY`** & **`GONG_API_SECRET`** - For call analysis
-- **`SLACK_BOT_TOKEN`** & **`SLACK_SIGNING_SECRET`** - For Slack notifications
-- **`PINECONE_API_KEY`** - For vector search
-- **`LAMBDA_LABS_API_KEY`** - For deployment
+1. Navigate to your repository on GitHub
+2. Go to Settings > Secrets and variables > Actions
+3. Click "New repository secret"
+4. Enter the name and value of the secret
+5. Click "Add secret"
 
-## Setting Up Secrets in GitHub
+### Automated Setup
 
-### Step 1: Navigate to Repository Settings
+For easier management, use the provided `configure_github_secrets.py` script:
 
-1. Go to your repository on GitHub
-2. Click **Settings** → **Secrets and variables** → **Actions**
+1. Create a `.env` file with your secrets (or use an existing one)
+2. Run the script:
+   ```bash
+   python configure_github_secrets.py --env-file .env --repo payready/sophia
+   ```
 
-### Step 2: Add Core Secrets
+The script will:
+- Read secrets from the `.env` file
+- Connect to the GitHub repository
+- Create or update secrets in the repository
 
-Click **New repository secret** for each:
+### Required Secrets
 
-```bash
-# Generate these values
-SECRET_KEY=<generated-64-char-hex>
-ADMIN_PASSWORD=<strong-password>
+The following secrets should be set up for the SOPHIA AI System:
 
-# From Portkey dashboard
-PORTKEY_API_KEY=<your-portkey-key>
+#### API Keys
+- `OPENAI_API_KEY`: OpenAI API key
+- `PINECONE_API_KEY`: Pinecone API key
+- `WEAVIATE_API_KEY`: Weaviate API key
+- `ANTHROPIC_API_KEY`: Anthropic API key
+- `ESTUARY_API_KEY`: Estuary Flow API key
 
-# From OpenRouter
-OPENROUTER_API_KEY=<your-openrouter-key>
+#### Database Credentials
+- `POSTGRES_PASSWORD`: PostgreSQL password
+- `REDIS_PASSWORD`: Redis password
+- `SNOWFLAKE_PASSWORD`: Snowflake password
 
-# Database (adjust for your setup)
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_USER=sophia
-POSTGRES_PASSWORD=<db-password>
-POSTGRES_DB=sophia_payready
-REDIS_HOST=localhost
-REDIS_PORT=6379
-```
+#### Security Tokens
+- `JWT_SECRET`: JWT secret key
+- `SLACK_SIGNING_SECRET`: Slack signing secret
 
-### Step 3: Configure Portkey
+#### Integration Credentials
+- `HUBSPOT_API_KEY`: HubSpot API key
+- `HUBSPOT_CLIENT_SECRET`: HubSpot client secret
+- `SALESFORCE_PASSWORD`: Salesforce password
+- `SALESFORCE_SECURITY_TOKEN`: Salesforce security token
+- `GONG_API_KEY`: Gong API key
+- `GONG_API_SECRET`: Gong API secret
+- `SLACK_BOT_TOKEN`: Slack bot token
+- `SLACK_APP_TOKEN`: Slack app token
 
-1. Log into [Portkey Dashboard](https://app.portkey.ai)
-2. Add your provider API keys:
-   - OpenRouter API key
-   - OpenAI API key (optional fallback)
-   - Anthropic API key (optional fallback)
-3. Create a virtual key for each provider
-4. Note your Portkey API key
+#### Infrastructure Credentials
+- `AWS_ACCESS_KEY_ID`: AWS access key ID
+- `AWS_SECRET_ACCESS_KEY`: AWS secret access key
+- `PULUMI_ACCESS_TOKEN`: Pulumi access token
+- `DOCKERHUB_TOKEN`: Docker Hub token
 
-### Step 4: Configure OpenRouter
+## Using GitHub Secrets in Workflows
 
-1. Sign up at [OpenRouter](https://openrouter.ai)
-2. Add credits to your account
-3. Copy your API key
-4. OpenRouter gives you access to:
-   - Claude 3 Opus/Sonnet
-   - GPT-4 Turbo
-   - Llama 3
-   - Mistral
-   - And many more models
-
-## Local Development
-
-For local development, create a minimal `.env` file:
-
-```bash
-# Minimal .env for local development
-PORTKEY_API_KEY=your-portkey-key
-OPENROUTER_API_KEY=your-openrouter-key
-
-# Local database
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_USER=sophia
-POSTGRES_PASSWORD=sophia_pass
-POSTGRES_DB=sophia_payready
-
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# Security
-SECRET_KEY=local-development-key
-ADMIN_PASSWORD=changeme
-```
-
-## Deployment
-
-The GitHub Action automatically creates the `.env` file from secrets during deployment:
+GitHub secrets can be accessed in GitHub Actions workflows using the `secrets` context:
 
 ```yaml
-- name: Create .env from GitHub Secrets
-  run: |
-    cat > .env << EOF
-    PORTKEY_API_KEY=${{ secrets.PORTKEY_API_KEY }}
-    OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
-    # ... other secrets
-    EOF
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Deploy to production
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: ./deploy_production.sh
 ```
 
-## Cost Optimization Tips
+### Important Notes
 
-1. **Use OpenRouter's Model Routing**: Let OpenRouter choose the cheapest available model
-2. **Set Model Preferences**: Configure preferred models in Portkey dashboard
-3. **Enable Caching**: Portkey's semantic caching reduces API calls
-4. **Monitor Usage**: Both Portkey and OpenRouter provide detailed usage analytics
+1. Secrets are not passed to workflows that are triggered by a pull request from a fork
+2. Secrets are masked in logs if they appear in output
+3. Secrets cannot be used in `if:` conditions in workflows
+4. Secrets are exposed as environment variables to the workflow
 
-## Verifying Your Setup
+## Rotating GitHub Secrets
 
-After setting up secrets, test the configuration:
+Secrets should be rotated regularly according to security policies. To rotate a GitHub secret:
 
-```python
-# Test script
-from backend.agents.core.llm_client import get_llm_client
+1. Generate a new secret value in the external service
+2. Update the secret in GitHub:
+   ```bash
+   python configure_github_secrets.py --env-file .env.new --repo payready/sophia
+   ```
+3. Verify that workflows still work with the new secret
+4. Revoke the old secret in the external service
 
-async def test_llm():
-    client = get_llm_client()
-    response = await client.complete_with_context(
-        prompt="Hello, what's 2+2?",
-        temperature=0
-    )
-    print(f"Response: {response}")
-    print(f"Available models: {client.get_available_models()}")
+### Automated Rotation
 
-# Run: python -m asyncio test_llm()
+For automated rotation, you can set up a scheduled workflow:
+
+```yaml
+name: Rotate Secrets
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'  # Run on the 1st of every month
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Rotate secrets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/rotate_secrets.py
 ```
 
-## Benefits of This Approach
+## Best Practices
 
-1. **Simplified Configuration**: Just 2 LLM-related keys instead of multiple provider keys
-2. **Automatic Failover**: If one provider fails, requests automatically route to another
-3. **Cost Visibility**: Single dashboard to monitor all LLM costs
-4. **Easy Testing**: Switch models without code changes
-5. **Future Proof**: Add new providers without updating application code
+1. **Use descriptive names**: Choose secret names that clearly indicate their purpose
+2. **Limit access**: Only grant access to secrets to those who need it
+3. **Rotate regularly**: Rotate secrets according to security policies
+4. **Audit usage**: Regularly audit which workflows use which secrets
+5. **Use environment secrets**: For different environments (dev, staging, prod), use environment-specific secrets
+6. **Avoid hardcoding**: Never hardcode secrets in your codebase or workflows
+7. **Use least privilege**: Only use the secrets that are necessary for each workflow
 
 ## Troubleshooting
 
-### "No LLM provider configured"
-- Ensure `PORTKEY_API_KEY` and `OPENROUTER_API_KEY` are set
-- Check that keys are valid in respective dashboards
+### Secret Not Available in Workflow
 
-### High Latency
-- Portkey automatically routes to fastest provider
-- Check Portkey dashboard for latency metrics
+If a secret is not available in a workflow:
 
-### Rate Limits
-- OpenRouter handles rate limits across providers
-- Portkey automatically retries with backoff
+1. Check that the secret is correctly set up in the repository
+2. Verify that the workflow is using the correct syntax to access the secret
+3. Ensure that the workflow has permission to access the secret
+4. Check if the workflow is triggered by a pull request from a fork
 
-## Summary
+### Secret Value Changed But Workflow Still Uses Old Value
 
-With GitHub Secrets + Portkey + OpenRouter:
-- ✅ Secure API key management
-- ✅ Single unified LLM interface
-- ✅ Automatic failovers
-- ✅ Cost optimization
-- ✅ Easy provider switching
-- ✅ Built-in monitoring
+If a workflow is still using an old secret value:
 
-This approach scales from development to production without configuration changes! 
+1. Ensure that the secret was correctly updated in GitHub
+2. Check if the workflow is using a cached version of the secret
+3. Try re-running the workflow
+
+### Secret Value Visible in Logs
+
+If a secret value is visible in logs:
+
+1. Ensure that the secret is correctly set up in GitHub
+2. Check if the workflow is explicitly printing the secret
+3. Verify that the secret is being masked correctly by GitHub
+
+### Permission Issues
+
+If you encounter permission issues when setting up secrets:
+
+1. Ensure that you have admin access to the repository
+2. Check if there are any organization policies that restrict secret management
+3. Verify that your GitHub token has the necessary permissions
+
+## Conclusion
+
+Proper management of GitHub secrets is essential for the security of the SOPHIA AI System. By following the guidelines in this document, you can ensure that sensitive information is securely stored and used in your CI/CD workflows.
+
+For more information, refer to the [GitHub Secrets documentation](https://docs.github.com/en/actions/security-guides/encrypted-secrets).

@@ -1,216 +1,517 @@
-# Sophia AI MCP Server Documentation
-**Updated:** June 17, 2025
-**Status:** ✅ OPERATIONAL
+# SOPHIA AI System - MCP Server Documentation
 
-## 🤖 MCP Server Overview
+## Overview
 
-The Sophia AI Model Context Protocol (MCP) server provides contextualized assistance for business intelligence development, agent creation, and integration management. It serves as the central knowledge hub for Cursor AI and other development tools.
+The Model Context Protocol (MCP) server is a critical component of the SOPHIA AI System, providing a standardized way for AI models to access tools and resources. This document outlines the architecture, configuration, and usage of the MCP server in SOPHIA.
 
-## 🚀 Server Status
+## Table of Contents
 
-### ✅ IMPLEMENTATION COMPLETE
-- **Code Base:** 930+ lines of production code
-- **Tools Available:** 8 specialized business intelligence tools
-- **Configuration:** Ready for Cursor AI integration
-- **Dependencies:** MCP library v1.9.4 installed
+1. [Introduction](#introduction)
+2. [Architecture](#architecture)
+3. [Configuration](#configuration)
+4. [Tools](#tools)
+5. [Resources](#resources)
+6. [Authentication](#authentication)
+7. [Rate Limiting](#rate-limiting)
+8. [Monitoring](#monitoring)
+9. [Development Guide](#development-guide)
+10. [Troubleshooting](#troubleshooting)
 
-### 📋 Available Tools
+## Introduction
 
-#### 1. Business Intelligence Tool
-- **Purpose:** Revenue and customer analytics
-- **Capabilities:** Financial tracking, performance metrics, growth analysis
-- **Usage:** Real-time business KPI monitoring
+The Model Context Protocol (MCP) is a standardized protocol for AI models to access external tools and resources. In SOPHIA, the MCP server acts as a bridge between AI models and various business systems, allowing models to:
 
-#### 2. Call Analysis Tool
-- **Purpose:** Call recording insights and processing
-- **Capabilities:** Sentiment analysis, topic extraction, next steps identification
-- **Usage:** Gong.io integration and sales coaching
+- Execute specialized tools for data analysis
+- Access structured resources from business systems
+- Maintain consistent interfaces across different AI providers
+- Ensure security and compliance with business rules
 
-#### 3. CRM Sync Tool
-- **Purpose:** Data synchronization patterns and strategies
-- **Capabilities:** HubSpot integration, data quality management
-- **Usage:** Automated CRM updates and conflict resolution
+## Architecture
 
-#### 4. Slack Communication Tool
-- **Purpose:** Team notification and communication strategies
-- **Capabilities:** Intelligent messaging, alert management
-- **Usage:** Automated team updates and notifications
+The MCP server in SOPHIA follows a modular architecture:
 
-#### 5. HubSpot Integration Tool
-- **Purpose:** CRM operation guidance and automation
-- **Capabilities:** Contact management, deal tracking, pipeline analysis
-- **Usage:** Sales process automation and optimization
+```
+backend/mcp/
+├── server.py                # Main server implementation
+├── resource_orchestrator.py # Manages resource access
+├── tool_orchestrator.py     # Manages tool execution
+├── auth/                    # Authentication modules
+├── tools/                   # Tool implementations
+│   ├── gong_tools.py        # Gong.io integration tools
+│   ├── vector_tools.py      # Vector database tools
+│   ├── crm_tools.py         # CRM integration tools
+│   └── ...
+└── resources/               # Resource implementations
+    ├── gong_resources.py    # Gong.io resources
+    ├── crm_resources.py     # CRM resources
+    └── ...
+```
 
-#### 6. Gong Integration Tool
-- **Purpose:** Call data processing and analysis
-- **Capabilities:** Recording analysis, conversation insights
-- **Usage:** Sales performance improvement and coaching
+### Key Components
 
-#### 7. Vector Search Tool
-- **Purpose:** Semantic search implementation
-- **Capabilities:** Pinecone and Weaviate integration, hybrid search
-- **Usage:** Intelligent document and data retrieval
+1. **Server**: The main MCP server that handles requests, authentication, and routing.
+2. **Tool Orchestrator**: Manages tool registration, validation, and execution.
+3. **Resource Orchestrator**: Manages resource registration, access, and caching.
+4. **Tools**: Implementations of specific tools that models can use.
+5. **Resources**: Implementations of specific resources that models can access.
 
-#### 8. Performance Monitoring Tool
-- **Purpose:** System health and performance tracking
-- **Capabilities:** Real-time metrics, alerting, optimization
-- **Usage:** Production system monitoring and maintenance
+## Configuration
 
-## 🔧 Configuration
+The MCP server is configured using the `mcp_config.json` file at the root of the project. This file defines:
 
-### MCP Configuration File
+- Server configuration (host, port, etc.)
+- Available tools and their configurations
+- Available resources and their configurations
+- Authentication settings
+- Rate limiting rules
+- Monitoring settings
+
+Example configuration:
+
 ```json
 {
-  "mcpServers": {
-    "sophia-ai": {
-      "command": "python",
-      "args": ["/home/ubuntu/sophia-main/backend/mcp/sophia_mcp_server.py"],
-      "env": {
-        "SOPHIA_ENV": "production",
-        "LOG_LEVEL": "INFO"
-      }
+  "server_name": "sophia-mcp-server",
+  "version": "1.0.0",
+  "description": "SOPHIA AI MCP Server for PayReady",
+  "host": "0.0.0.0",
+  "port": 8002,
+  "log_level": "INFO",
+  "cors_origins": ["*"],
+  "auth": {
+    "enabled": true,
+    "jwt_secret": "${JWT_SECRET}",
+    "jwt_algorithm": "HS256",
+    "token_expiration": 86400
+  },
+  "tools": [
+    {
+      "name": "gong_tools",
+      "module": "backend.mcp.tools.gong_tools",
+      "enabled": true,
+      "functions": [
+        "gong_call_analysis",
+        "gong_transcript_extraction"
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "name": "crm_resources",
+      "module": "backend.mcp.resources.crm_resources",
+      "enabled": true,
+      "resources": [
+        "hubspot_contacts",
+        "hubspot_companies"
+      ]
+    }
+  ]
+}
+```
+
+## Tools
+
+Tools are functions that models can execute to perform specific tasks. Each tool has:
+
+- A unique name
+- Input schema (parameters)
+- Output schema (return value)
+- Implementation logic
+
+### Tool Definition
+
+Tools are defined in Python modules under `backend/mcp/tools/`. Each tool is a function with type hints and docstrings that define its behavior.
+
+Example tool definition:
+
+```python
+from typing import Dict, List, Optional
+from pydantic import BaseModel, Field
+
+class GongCallAnalysisInput(BaseModel):
+    call_id: str = Field(..., description="The ID of the Gong call to analyze")
+    analysis_type: str = Field(..., description="Type of analysis to perform", enum=["sentiment", "topics", "questions", "next_steps"])
+    
+class GongCallAnalysisOutput(BaseModel):
+    call_id: str
+    analysis_results: Dict[str, any]
+    summary: str
+    
+def gong_call_analysis(input_data: GongCallAnalysisInput) -> GongCallAnalysisOutput:
+    """
+    Analyze a Gong call recording and extract insights.
+    
+    This tool connects to the Gong.io API, retrieves the specified call,
+    and performs the requested type of analysis on the call content.
+    
+    Args:
+        input_data: The input parameters for the analysis
+        
+    Returns:
+        Analysis results and summary
+    """
+    # Implementation logic here
+    ...
+    
+    return GongCallAnalysisOutput(
+        call_id=input_data.call_id,
+        analysis_results=results,
+        summary=summary
+    )
+```
+
+### Tool Registration
+
+Tools are automatically registered with the MCP server based on the configuration in `mcp_config.json`. The server scans the specified modules and registers functions that match the names in the configuration.
+
+### Tool Usage
+
+Models can use tools by sending a request to the MCP server with:
+
+- The tool name
+- Input parameters according to the tool's schema
+
+Example request:
+
+```json
+{
+  "tool_name": "gong_call_analysis",
+  "input": {
+    "call_id": "call-123456",
+    "analysis_type": "sentiment"
+  }
+}
+```
+
+## Resources
+
+Resources are data sources that models can access. Each resource has:
+
+- A unique URI
+- Access control rules
+- Implementation logic
+
+### Resource Definition
+
+Resources are defined in Python modules under `backend/mcp/resources/`. Each resource is a class that implements the `Resource` interface.
+
+Example resource definition:
+
+```python
+from typing import Dict, List, Optional
+from backend.mcp.resource import Resource, ResourceRequest
+
+class HubspotContactsResource(Resource):
+    """
+    Resource for accessing HubSpot contacts.
+    """
+    
+    def __init__(self, config: Dict[str, any]):
+        super().__init__(config)
+        self.hubspot_client = self._create_hubspot_client()
+    
+    async def get(self, request: ResourceRequest) -> Dict[str, any]:
+        """
+        Get HubSpot contacts based on the request parameters.
+        
+        Args:
+            request: The resource request
+            
+        Returns:
+            Contact data
+        """
+        # Implementation logic here
+        ...
+        
+        return contacts_data
+```
+
+### Resource Registration
+
+Resources are automatically registered with the MCP server based on the configuration in `mcp_config.json`. The server scans the specified modules and registers resources that match the names in the configuration.
+
+### Resource Usage
+
+Models can access resources by sending a request to the MCP server with:
+
+- The resource URI
+- Optional query parameters
+
+Example request:
+
+```json
+{
+  "resource_uri": "hubspot_contacts",
+  "query_params": {
+    "email": "customer@example.com"
+  }
+}
+```
+
+## Authentication
+
+The MCP server supports JWT-based authentication. Each request must include a valid JWT token in the `Authorization` header.
+
+### JWT Configuration
+
+JWT authentication is configured in the `auth` section of `mcp_config.json`:
+
+```json
+"auth": {
+  "enabled": true,
+  "jwt_secret": "${JWT_SECRET}",
+  "jwt_algorithm": "HS256",
+  "token_expiration": 86400
+}
+```
+
+### Token Generation
+
+Tokens can be generated using the `/auth/token` endpoint of the MCP server:
+
+```bash
+curl -X POST http://localhost:8002/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{"username": "model", "password": "password"}'
+```
+
+### Token Usage
+
+Include the token in the `Authorization` header of requests:
+
+```bash
+curl http://localhost:8002/tools/gong_call_analysis \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"input": {...}}'
+```
+
+## Rate Limiting
+
+The MCP server implements rate limiting to prevent abuse and ensure fair usage of resources.
+
+### Rate Limit Configuration
+
+Rate limits are configured in the `rate_limits` section of `mcp_config.json`:
+
+```json
+"rate_limits": {
+  "enabled": true,
+  "default_rate": 100,
+  "default_period": 60,
+  "per_tool_limits": {
+    "web_search": {
+      "rate": 10,
+      "period": 60
     }
   }
 }
 ```
 
-### Environment Variables
-```bash
-MCP_SERVER_HOST=localhost
-MCP_SERVER_PORT=8080
-MCP_LOG_LEVEL=INFO
-SOPHIA_ENV=production
+### Rate Limit Headers
+
+The server includes rate limit headers in responses:
+
+- `X-RateLimit-Limit`: The maximum number of requests allowed in the period
+- `X-RateLimit-Remaining`: The number of requests remaining in the current period
+- `X-RateLimit-Reset`: The time when the rate limit will reset (Unix timestamp)
+
+## Monitoring
+
+The MCP server includes monitoring capabilities to track usage, performance, and errors.
+
+### Prometheus Metrics
+
+The server exposes Prometheus metrics at the `/metrics` endpoint, including:
+
+- Request counts by tool/resource
+- Request durations
+- Error counts
+- Rate limit hits
+
+### Logging
+
+The server logs events to both console and file, with structured logging in JSON format. Log levels can be configured in `mcp_config.json`.
+
+## Development Guide
+
+### Adding a New Tool
+
+1. Create a new Python module in `backend/mcp/tools/` or add to an existing module
+2. Define the tool function with input/output schemas
+3. Add comprehensive docstrings
+4. Add the tool to `mcp_config.json`
+5. Write tests for the tool
+
+Example:
+
+```python
+# backend/mcp/tools/slack_tools.py
+
+from typing import Dict, List, Optional
+from pydantic import BaseModel, Field
+
+class SlackMessageInput(BaseModel):
+    channel: str = Field(..., description="The Slack channel to send the message to")
+    message: str = Field(..., description="The message content")
+    
+class SlackMessageOutput(BaseModel):
+    channel: str
+    message_id: str
+    timestamp: str
+    
+def slack_send_message(input_data: SlackMessageInput) -> SlackMessageOutput:
+    """
+    Send a message to a Slack channel.
+    
+    Args:
+        input_data: The input parameters for the message
+        
+    Returns:
+        Details of the sent message
+    """
+    # Implementation logic here
+    ...
+    
+    return SlackMessageOutput(
+        channel=input_data.channel,
+        message_id=message_id,
+        timestamp=timestamp
+    )
 ```
 
-## 🎯 Cursor AI Integration
+Then add to `mcp_config.json`:
 
-### .cursorrules Configuration
-The MCP server provides real-time context to Cursor AI through:
-- **Project Architecture:** Current system design and patterns
-- **Business Logic:** Pay Ready domain knowledge
-- **Integration Status:** Real-time API and service health
-- **Performance Metrics:** System optimization opportunities
-- **Development Patterns:** Standardized coding guidelines
+```json
+"tools": [
+  {
+    "name": "slack_tools",
+    "module": "backend.mcp.tools.slack_tools",
+    "enabled": true,
+    "functions": [
+      "slack_send_message"
+    ]
+  }
+]
+```
 
-### Usage in Development
-1. **Agent Development:** Get guidance on creating specialized agents
-2. **Integration Implementation:** Best practices for API integrations
-3. **Business Logic:** Domain-specific knowledge and requirements
-4. **Performance Optimization:** Real-time system health insights
-5. **Testing Strategies:** Comprehensive testing approaches
+### Adding a New Resource
 
-## 🔍 Troubleshooting
+1. Create a new Python module in `backend/mcp/resources/` or add to an existing module
+2. Define the resource class implementing the `Resource` interface
+3. Add comprehensive docstrings
+4. Add the resource to `mcp_config.json`
+5. Write tests for the resource
+
+Example:
+
+```python
+# backend/mcp/resources/slack_resources.py
+
+from typing import Dict, List, Optional
+from backend.mcp.resource import Resource, ResourceRequest
+
+class SlackChannelsResource(Resource):
+    """
+    Resource for accessing Slack channels.
+    """
+    
+    def __init__(self, config: Dict[str, any]):
+        super().__init__(config)
+        self.slack_client = self._create_slack_client()
+    
+    async def get(self, request: ResourceRequest) -> Dict[str, any]:
+        """
+        Get Slack channels based on the request parameters.
+        
+        Args:
+            request: The resource request
+            
+        Returns:
+            Channel data
+        """
+        # Implementation logic here
+        ...
+        
+        return channels_data
+```
+
+Then add to `mcp_config.json`:
+
+```json
+"resources": [
+  {
+    "name": "slack_resources",
+    "module": "backend.mcp.resources.slack_resources",
+    "enabled": true,
+    "resources": [
+      "slack_channels"
+    ]
+  }
+]
+```
+
+## Troubleshooting
 
 ### Common Issues
 
-#### Import Path Resolution
-**Issue:** `No module named 'mcp.sophia_mcp_server'`
-**Solution:** Ensure Python path includes backend directory
+#### Tool Not Found
+
+If a tool is not found, check:
+
+1. The tool name in the request matches the function name
+2. The tool is listed in `mcp_config.json`
+3. The module containing the tool is correctly specified
+4. The tool function is properly defined
+
+#### Resource Not Found
+
+If a resource is not found, check:
+
+1. The resource URI in the request matches the resource name
+2. The resource is listed in `mcp_config.json`
+3. The module containing the resource is correctly specified
+4. The resource class is properly defined
+
+#### Authentication Failures
+
+If authentication fails, check:
+
+1. The JWT token is included in the `Authorization` header
+2. The token is valid and not expired
+3. The JWT secret in the server matches the one used to generate the token
+
+#### Rate Limit Exceeded
+
+If rate limits are exceeded, check:
+
+1. The rate limit configuration in `mcp_config.json`
+2. The client is respecting rate limit headers
+3. Consider implementing backoff and retry logic in the client
+
+### Logs
+
+Check the server logs for detailed error information:
+
 ```bash
-export PYTHONPATH="/home/ubuntu/sophia-main/backend:$PYTHONPATH"
+docker-compose logs mcp-server
 ```
 
-#### Server Startup
-**Issue:** Server not responding on expected port
-**Solution:** Check port availability and firewall settings
+### Health Check
+
+Use the health check endpoint to verify the server is running correctly:
+
 ```bash
-netstat -tulpn | grep 8080
+curl http://localhost:8002/health
 ```
 
-#### Tool Execution Errors
-**Issue:** Business intelligence tools returning errors
-**Solution:** Verify environment variables and API keys
+### Metrics
+
+Check the metrics endpoint for performance and usage information:
+
 ```bash
-python -c "import os; print(os.environ.get('PINECONE_API_KEY', 'Not set'))"
+curl http://localhost:8002/metrics
 ```
 
-## 📊 Performance Metrics
+## Conclusion
 
-### Server Performance
-- **Startup Time:** < 2 seconds
-- **Tool Response Time:** < 100ms average
-- **Memory Usage:** < 50MB baseline
-- **CPU Usage:** < 5% idle
-
-### Tool Execution Times
-- **Business Intelligence:** < 50ms
-- **Call Analysis:** < 200ms
-- **CRM Sync:** < 100ms
-- **Vector Search:** < 150ms
-
-## 🚀 Deployment
-
-### Local Development
-```bash
-cd /home/ubuntu/sophia-main
-export PYTHONPATH="/home/ubuntu/sophia-main/backend:$PYTHONPATH"
-python backend/mcp/sophia_mcp_server.py
-```
-
-### Production Deployment
-```bash
-# Using systemd service
-sudo systemctl start sophia-mcp-server
-sudo systemctl enable sophia-mcp-server
-```
-
-### Docker Deployment
-```bash
-docker run -d \
-  --name sophia-mcp-server \
-  -p 8080:8080 \
-  -e SOPHIA_ENV=production \
-  sophia-ai:latest
-```
-
-## 🔐 Security
-
-### Authentication
-- **API Key Validation:** All tools validate API keys
-- **Rate Limiting:** Built-in request throttling
-- **Audit Logging:** Comprehensive request logging
-- **Error Handling:** Secure error responses
-
-### Best Practices
-- **Environment Variables:** Never hardcode API keys
-- **HTTPS Only:** Secure communication protocols
-- **Input Validation:** Sanitize all user inputs
-- **Access Control:** Role-based permissions
-
-## 📋 Maintenance
-
-### Regular Tasks
-- **Log Rotation:** Weekly log cleanup
-- **Performance Monitoring:** Daily metrics review
-- **Security Updates:** Monthly dependency updates
-- **Backup Verification:** Weekly backup testing
-
-### Health Checks
-```bash
-# Server health
-curl http://localhost:8080/health
-
-# Tool availability
-curl http://localhost:8080/tools
-
-# Performance metrics
-curl http://localhost:8080/metrics
-```
-
-## ✅ Status Summary
-
-**MCP Server Status:** ✅ OPERATIONAL AND READY
-- **Implementation:** Complete with 8 business intelligence tools
-- **Configuration:** Ready for Cursor AI integration
-- **Performance:** Optimized for development workflow
-- **Security:** Enterprise-grade security measures
-- **Documentation:** Comprehensive setup and usage guides
-
-**Next Steps:**
-1. **Start Server:** Launch MCP server for development use
-2. **Test Tools:** Validate all 8 business intelligence tools
-3. **Cursor Integration:** Configure Cursor AI workspace
-4. **Production Deployment:** Deploy to Lambda Labs infrastructure
-
-The Sophia AI MCP server is fully operational and ready to provide contextualized development assistance for the Pay Ready business intelligence platform.
-
+The MCP server is a powerful component of the SOPHIA AI System, enabling AI models to interact with business systems in a standardized, secure, and efficient way. By following the guidelines in this documentation, you can extend and customize the MCP server to meet your specific needs.

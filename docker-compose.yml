@@ -1,120 +1,230 @@
-# Docker Compose configuration for Sophia AI
+version: '3.8'
 
 services:
-  # Sophia AI Application
-  sophia-app:
-    build: .
-    container_name: sophia-payready
+  # SOPHIA API Service
+  sophia-api:
+    build:
+      context: .
+      target: development
     ports:
-      - "5001:5000"
+      - "8000:8000"
+    volumes:
+      - .:/app
     environment:
-      - DATABASE_URL=postgresql://sophia:sophia_pass@sophia-postgres:5432/sophia_payready
-      - REDIS_URL=redis://sophia-redis:6379
-      - SECRET_KEY=${SECRET_KEY:-sophia-secret-key-change-in-production}
-      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - ENVIRONMENT=development
+      - REDIS_URL=redis://redis:6379/0
+      - POSTGRES_URL=postgresql://postgres:postgres@postgres:5432/sophia
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - HUBSPOT_API_KEY=${HUBSPOT_API_KEY}
-      - GONG_API_KEY=${GONG_API_KEY}
-      - GONG_API_SECRET=${GONG_API_SECRET}
-      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
-      - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
-      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
       - PINECONE_API_KEY=${PINECONE_API_KEY}
-      - WEAVIATE_API_KEY=${WEAVIATE_API_KEY}
-      - WEAVIATE_URL=${WEAVIATE_URL}
+      - PINECONE_ENVIRONMENT=${PINECONE_ENVIRONMENT:-us-east1-gcp}
+      - WEAVIATE_URL=http://weaviate:8080
+      - MEM0_URL=http://mem0:8000
+      - ESTUARY_API_URL=${ESTUARY_API_URL:-https://api.estuary.dev}
     depends_on:
-      - sophia-postgres
-      - sophia-redis
-    restart: unless-stopped
+      - postgres
+      - redis
+      - weaviate
+      - mem0
     networks:
       - sophia-network
+    restart: unless-stopped
+
+  # SOPHIA Admin Frontend
+  sophia-admin:
+    build:
+      context: ./sophia_admin_frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./sophia_admin_frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - sophia-api
+    networks:
+      - sophia-network
+    restart: unless-stopped
 
   # PostgreSQL Database
-  sophia-postgres:
+  postgres:
     image: postgres:15-alpine
-    container_name: sophia-postgres
-    environment:
-      - POSTGRES_DB=sophia_payready
-      - POSTGRES_USER=sophia
-      - POSTGRES_PASSWORD=sophia_pass
+    ports:
+      - "5432:5432"
     volumes:
-      - sophia_postgres_data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d
-    ports:
-      - "5433:5432"
-    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=sophia
     networks:
       - sophia-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Redis Cache
-  sophia-redis:
+  # Redis Cache and Message Broker
+  redis:
     image: redis:7-alpine
-    container_name: sophia-redis
     ports:
-      - "6380:6379"
+      - "6379:6379"
     volumes:
-      - sophia_redis_data:/data
-    restart: unless-stopped
+      - redis-data:/data
+    command: redis-server --appendonly yes
     networks:
       - sophia-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Nginx Reverse Proxy
-  sophia-nginx:
-    image: nginx:alpine
-    container_name: sophia-nginx
+  # Weaviate Vector Database
+  weaviate:
+    image: semitechnologies/weaviate:1.19.6
     ports:
-      - "8080:80"
-      - "8443:443"
+      - "8080:8080"
     volumes:
-      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./infrastructure/nginx/ssl:/etc/nginx/ssl
+      - weaviate-data:/var/lib/weaviate
+    environment:
+      - QUERY_DEFAULTS_LIMIT=20
+      - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true
+      - PERSISTENCE_DATA_PATH=/var/lib/weaviate
+      - DEFAULT_VECTORIZER_MODULE=none
+      - ENABLE_MODULES=text2vec-openai
+      - OPENAI_APIKEY=${OPENAI_API_KEY}
+    networks:
+      - sophia-network
+    restart: unless-stopped
+
+  # mem0 Persistent Memory Service
+  mem0:
+    build:
+      context: ./mem0
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./mem0:/app
+      - mem0-data:/data
+    environment:
+      - REDIS_URL=redis://redis:6379/1
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DATA_PATH=/data
     depends_on:
-      - sophia-app
-    restart: unless-stopped
+      - redis
     networks:
       - sophia-network
+    restart: unless-stopped
 
-  # Prometheus Monitoring
-  sophia-prometheus:
-    image: prom/prometheus:latest
-    container_name: sophia-prometheus
+  # MCP Server
+  mcp-server:
+    build:
+      context: .
+      target: development
+    command: python -m backend.mcp.server
     ports:
-      - "9091:9090"
+      - "8002:8002"
+    volumes:
+      - .:/app
+    environment:
+      - ENVIRONMENT=development
+      - REDIS_URL=redis://redis:6379/0
+      - POSTGRES_URL=postgresql://postgres:postgres@postgres:5432/sophia
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MCP_SERVER_PORT=8002
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - sophia-network
+    restart: unless-stopped
+
+  # Estuary Flow Connector (if running locally)
+  estuary-connector:
+    image: ghcr.io/estuary/flow:latest
+    ports:
+      - "8003:8080"
+    volumes:
+      - estuary-data:/data
+    environment:
+      - ESTUARY_API_KEY=${ESTUARY_API_KEY}
+    networks:
+      - sophia-network
+    restart: unless-stopped
+    profiles:
+      - local-estuary
+
+  # Monitoring: Prometheus
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    ports:
+      - "9090:9090"
     volumes:
       - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - sophia_prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-    restart: unless-stopped
+      - prometheus-data:/prometheus
     networks:
       - sophia-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
 
-  # Grafana Dashboard
-  sophia-grafana:
-    image: grafana/grafana:latest
-    container_name: sophia-grafana
+  # Monitoring: Grafana
+  grafana:
+    image: grafana/grafana:10.0.3
     ports:
       - "3001:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
     volumes:
-      - sophia_grafana_data:/var/lib/grafana
-    restart: unless-stopped
+      - ./infrastructure/monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./infrastructure/monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=sophia_admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
     networks:
       - sophia-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
 
-volumes:
-  sophia_postgres_data:
-  sophia_redis_data:
-  sophia_prometheus_data:
-  sophia_grafana_data:
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./infrastructure/nginx/conf.d:/etc/nginx/conf.d
+      - ./infrastructure/nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - sophia-api
+      - sophia-admin
+    networks:
+      - sophia-network
+    restart: unless-stopped
+    profiles:
+      - production
 
 networks:
   sophia-network:
     driver: bridge
 
+volumes:
+  postgres-data:
+  redis-data:
+  weaviate-data:
+  mem0-data:
+  prometheus-data:
+  grafana-data:
+  estuary-data:

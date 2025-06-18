@@ -1,248 +1,343 @@
-# 🔐 Sophia AI Secret Management Guide
+# SOPHIA AI System - Secret Management Guide
 
-## 🎯 The Problem We're Solving
+## Overview
 
-Managing 50+ API keys across multiple services (GitHub, Vercel, Lambda Labs, local dev) is a fucking nightmare. This guide provides ONE unified approach.
+This guide outlines the secure management of secrets and sensitive configuration values in the SOPHIA AI System. Following these practices is critical for maintaining the security and integrity of the system.
 
-## ✅ The Solution: Pulumi ESC + GitHub Secrets
+## Table of Contents
 
-### Why This Approach?
-- **Single Source of Truth**: Pulumi ESC stores all secrets
-- **Automatic Sync**: Push to GitHub, Vercel, etc. with one command
-- **Version Control**: Track secret changes
-- **Environment Support**: Dev, staging, production
-- **No More Manual Updates**: Ever.
+1. [Introduction](#introduction)
+2. [Secret Management Principles](#secret-management-principles)
+3. [Pulumi ESC](#pulumi-esc)
+4. [Environment Variables](#environment-variables)
+5. [GitHub Secrets](#github-secrets)
+6. [Secret Rotation](#secret-rotation)
+7. [Development Workflow](#development-workflow)
+8. [Production Workflow](#production-workflow)
+9. [Emergency Procedures](#emergency-procedures)
+10. [Compliance and Auditing](#compliance-and-auditing)
 
-## 🚀 Quick Start
+## Introduction
 
-### 1. Initial Setup (One Time Only)
+The SOPHIA AI System integrates with multiple external services, each requiring authentication credentials and API keys. Proper management of these secrets is essential to:
 
-```bash
-# Install Pulumi CLI
-curl -fsSL https://get.pulumi.com | sh
+- Prevent unauthorized access to integrated systems
+- Maintain compliance with security policies
+- Enable secure CI/CD workflows
+- Support multiple deployment environments
+- Facilitate secret rotation and revocation
 
-# Login to Pulumi
-pulumi login
+## Secret Management Principles
 
-# Run the unified setup
-python scripts/setup_pulumi_secrets.py full-setup
+1. **Never hardcode secrets** in source code, configuration files, or documentation
+2. **Use environment variables** for runtime configuration
+3. **Store secrets securely** using Pulumi ESC (Encrypted Secrets Configuration)
+4. **Rotate secrets regularly** according to security policies
+5. **Limit access** to secrets based on the principle of least privilege
+6. **Audit secret usage** to detect and respond to potential security incidents
+7. **Separate secrets** by environment (development, staging, production)
+8. **Use consistent naming conventions** for all secrets
+
+## Pulumi ESC
+
+Pulumi ESC (Encrypted Secrets Configuration) is the primary secret management system for SOPHIA. It provides:
+
+- Secure storage of encrypted secrets
+- Environment-specific secret management
+- Integration with CI/CD pipelines
+- Access control and audit logging
+
+### Configuration
+
+The Pulumi ESC configuration is defined in `pulumi-esc-environment.yaml`:
+
+```yaml
+name: sophia-esc
+description: SOPHIA AI System Encrypted Secrets Configuration
+organization: payready
+
+environments:
+  - name: development
+  - name: staging
+  - name: production
+
+secretGroups:
+  - name: api-keys
+  - name: database-credentials
+  - name: security-tokens
+  - name: integration-credentials
+  - name: infrastructure-credentials
 ```
 
-### 2. Import Your Existing Secrets
+### Secret Groups
 
-```bash
-# From your .env file
-python scripts/setup_pulumi_secrets.py import-env --env-file .env
+Secrets are organized into logical groups:
 
-# Or from .env.backup
-python scripts/setup_pulumi_secrets.py import-env --env-file .env.backup
+1. **api-keys**: API keys for external services (OpenAI, Pinecone, etc.)
+2. **database-credentials**: Database passwords and connection strings
+3. **security-tokens**: JWT secrets, signing keys, etc.
+4. **integration-credentials**: Credentials for integrated services (HubSpot, Salesforce, etc.)
+5. **infrastructure-credentials**: Cloud provider credentials (AWS, etc.)
+
+### Access Control
+
+Access to secrets is controlled through access policies defined in `pulumi-esc-environment.yaml`:
+
+```yaml
+accessPolicies:
+  - name: admin-access
+    secretGroups:
+      - api-keys
+      - database-credentials
+      - security-tokens
+      - integration-credentials
+      - infrastructure-credentials
+    environments:
+      - development
+      - staging
+      - production
+    identities:
+      - type: user
+        name: admin@payready.com
 ```
 
-### 3. Sync to GitHub
+## Environment Variables
 
-```bash
-# This syncs ALL secrets to GitHub org secrets
-python scripts/setup_pulumi_secrets.py sync
+Environment variables are used to provide secrets to the application at runtime.
+
+### .env Files
+
+For local development, a `.env` file can be used to store environment variables. This file should **never** be committed to version control.
+
+A template file (`env.example`) is provided with placeholder values:
+
+```
+# API Keys
+OPENAI_API_KEY=your_openai_api_key_here
+PINECONE_API_KEY=your_pinecone_api_key_here
+
+# Database Credentials
+POSTGRES_PASSWORD=your_postgres_password_here
+REDIS_PASSWORD=your_redis_password_here
 ```
 
-## 📋 Secret Naming Convention
+### Docker Environment Variables
 
-### IMPORTANT: Use These EXACT Names
+For Docker deployments, environment variables are defined in `docker-compose.yml`:
 
-| Service | Secret Name in GitHub | Notes |
-|---------|---------------------|-------|
-| Vercel | `VERCEL_ACCESS_TOKEN` | NOT `VERCEL_TOKEN`! |
-| Lambda Labs | `LAMBDA_LABS_API_KEY` | For backend deployment |
-| Pulumi | `PULUMI_ACCESS_TOKEN` | For infrastructure |
-| OpenAI | `OPENAI_API_KEY` | Direct API access |
-| Portkey | `PORTKEY_API_KEY` | LLM gateway (recommended) |
-| Kong | `KONG_ACCESS_TOKEN` | API gateway |
-
-### Complete Secret List
-
-```bash
-# Core Security
-SECRET_KEY              # Django/FastAPI secret
-ADMIN_USERNAME          # Admin login
-ADMIN_PASSWORD          # Admin password
-SOPHIA_MASTER_KEY       # Master encryption key
-
-# Database
-POSTGRES_HOST           # Default: localhost
-POSTGRES_PORT           # Default: 5432
-POSTGRES_USER           # Database user
-POSTGRES_PASSWORD       # Database password
-POSTGRES_DB             # Database name
-REDIS_HOST              # Default: localhost
-REDIS_PORT              # Default: 6379
-REDIS_PASSWORD          # Redis password (optional)
-
-# LLM Services (Pick One Strategy)
-## Option 1: Gateway (Recommended)
-PORTKEY_API_KEY         # Unified LLM gateway
-OPENROUTER_API_KEY      # Alternative gateway
-
-## Option 2: Direct APIs
-OPENAI_API_KEY          # OpenAI direct
-ANTHROPIC_API_KEY       # Anthropic direct
-
-# Business APIs
-HUBSPOT_API_KEY         # CRM integration
-GONG_API_KEY            # Call analysis
-GONG_API_SECRET         # Gong secret
-
-# Communication
-SLACK_BOT_TOKEN         # Slack bot
-SLACK_APP_TOKEN         # Slack app
-SLACK_SIGNING_SECRET    # Slack security
-SLACK_WEBHOOK_URL       # Slack webhooks
-
-# Vector Databases
-PINECONE_API_KEY        # Vector search
-WEAVIATE_URL            # Weaviate endpoint
-WEAVIATE_API_KEY        # Weaviate auth
-
-# Deployment
-LAMBDA_LABS_API_KEY     # Backend hosting
-VERCEL_ACCESS_TOKEN     # Frontend hosting
-PULUMI_ACCESS_TOKEN     # Infrastructure
-
-# Monitoring
-GRAFANA_ADMIN_PASSWORD  # Grafana login
+```yaml
+services:
+  sophia-api:
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - POSTGRES_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/sophia
 ```
 
-## 🔧 Common Tasks
+## GitHub Secrets
 
-### Add a New Secret
+GitHub Actions workflows use secrets stored in the GitHub repository settings.
 
-```bash
-# Using Pulumi ESC
-pulumi env set ai-cherry/production sophia/new-category/secret-name "secret-value" --secret
+### Setting Up GitHub Secrets
 
-# Then sync to GitHub
-python scripts/setup_pulumi_secrets.py sync
-```
-
-### Update a Secret
+Use the `configure_github_secrets.py` script to set up GitHub secrets:
 
 ```bash
-# Same as adding - Pulumi handles versioning
-pulumi env set ai-cherry/production sophia/llm/openai-key "new-key-value" --secret
+# Install required packages
+pip install PyGithub pynacl
 
-# Sync to GitHub
-python scripts/setup_pulumi_secrets.py sync
+# Configure secrets from .env file
+python configure_github_secrets.py --env-file .env --repo payready/sophia
 ```
 
-### View All Secrets
+### GitHub Actions Usage
 
-```bash
-# List all secrets (values hidden)
-pulumi env get ai-cherry/production
+In GitHub Actions workflows, secrets are accessed using the `${{ secrets.SECRET_NAME }}` syntax:
 
-# Export to .env file
-python scripts/setup_pulumi_secrets.py export --output .env.production
+```yaml
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy to production
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+        run: ./deploy_production.sh
 ```
 
-### Validate Configuration
+## Secret Rotation
 
-```bash
-# Check all required secrets are set
-python scripts/setup_pulumi_secrets.py validate
-```
+Secrets should be rotated regularly according to the following schedule:
 
-## 🚨 Troubleshooting
+| Secret Type | Rotation Frequency | Responsible Team |
+|-------------|-------------------|------------------|
+| API Keys | 90 days | DevOps |
+| Database Credentials | 180 days | Database Admin |
+| JWT Secrets | 365 days | Security |
+| Integration Credentials | 90 days | Integration Team |
+| Infrastructure Credentials | 90 days | DevOps |
 
-### "Secret not found" in GitHub Actions
+### Rotation Procedure
 
-1. Check the EXACT secret name (e.g., `VERCEL_ACCESS_TOKEN` not `VERCEL_TOKEN`)
-2. Run sync: `python scripts/setup_pulumi_secrets.py sync`
-3. Verify in GitHub: Settings → Secrets → Organization secrets
-
-### Deployment Failing
-
-1. Check workflow logs for which secrets are missing
-2. The simplified workflow will show: "No Vercel token - skipping frontend deployment"
-3. Add the missing secret and re-run
-
-### Local Development
-
-```bash
-# Generate .env from Pulumi
-python scripts/setup_pulumi_secrets.py export --output .env
-
-# Or use minimal setup
-cp env.minimal.example .env
-# Add only the keys you need
-```
-
-## 🎯 Best Practices
-
-### 1. Use Gateways When Possible
-Instead of managing 5 LLM API keys, use Portkey or OpenRouter:
-```bash
-# Just need these two
-PORTKEY_API_KEY=...
-OPENROUTER_API_KEY=...
-```
-
-### 2. Environment-Specific Secrets
-```bash
-# Development
-pulumi env init ai-cherry/development
-
-# Production
-pulumi env init ai-cherry/production
-```
-
-### 3. Regular Rotation
-```bash
-# Rotate a secret
-pulumi env set ai-cherry/production sophia/core/secret-key "$(openssl rand -base64 32)" --secret
-python scripts/setup_pulumi_secrets.py sync
-```
-
-## 🚀 Migration Path
-
-### From Current Mess → Clean Setup
-
-1. **Export current secrets**:
+1. Generate new credentials in the external service
+2. Update the secret in Pulumi ESC:
    ```bash
-   # If you have them in .env
-   cp .env .env.backup.$(date +%s)
+   ./configure_pulumi_esc.sh import-env .env.new
+   ```
+3. Sync the secret to GitHub:
+   ```bash
+   ./configure_pulumi_esc.sh sync
+   ```
+4. Deploy the application with the new secrets
+5. Verify functionality with the new secrets
+6. Revoke the old credentials in the external service
+
+## Development Workflow
+
+### Setting Up Local Environment
+
+1. Copy the example environment file:
+   ```bash
+   cp env.example .env
    ```
 
-2. **Import to Pulumi**:
+2. Fill in your development credentials in `.env`
+
+3. Start the development environment:
    ```bash
-   python scripts/setup_pulumi_secrets.py import-env --env-file .env.backup
+   source .env
+   docker-compose up -d
    ```
 
-3. **Sync everywhere**:
-   ```bash
-   python scripts/setup_pulumi_secrets.py sync
+### Adding a New Secret
+
+1. Add the secret to your `.env` file:
+   ```
+   NEW_API_KEY=your_new_api_key_here
    ```
 
-4. **Update workflows**:
-   - Use `.github/workflows/deploy-simplified.yml`
-   - Or fix the main workflow with correct secret names
-
-5. **Test deployment**:
+2. Import the secret to Pulumi ESC:
    ```bash
-   git push origin main
-   # Watch GitHub Actions for any issues
+   ./configure_pulumi_esc.sh import-env .env --stack development
    ```
 
-## 📝 Summary
+3. Update `env.example` with a placeholder for the new secret:
+   ```
+   NEW_API_KEY=your_new_api_key_here
+   ```
 
-- **Pulumi ESC** = Single source of truth
-- **`setup_pulumi_secrets.py`** = Your secret management tool
-- **Correct secret names** = Critical (especially VERCEL_ACCESS_TOKEN)
-- **One command sync** = No more manual updates
+4. Update the application code to use the new secret
 
-Stop fucking around with manual secret management. Use this system and move on to building features!
+## Production Workflow
 
----
+### Deploying Secrets to Production
 
-**Questions?** The script has `--help` for all commands:
-```bash
-python scripts/setup_pulumi_secrets.py --help
-``` 
+1. Create a production-specific `.env` file:
+   ```bash
+   cp env.example .env.production
+   ```
+
+2. Fill in production credentials in `.env.production`
+
+3. Import the secrets to Pulumi ESC:
+   ```bash
+   ./configure_pulumi_esc.sh import-env .env.production --stack production
+   ```
+
+4. Sync the secrets to GitHub:
+   ```bash
+   ./configure_pulumi_esc.sh sync --stack production
+   ```
+
+5. Deploy the application:
+   ```bash
+   ./deploy_production.sh
+   ```
+
+### Updating Production Secrets
+
+1. Update the production `.env` file:
+   ```bash
+   nano .env.production
+   ```
+
+2. Import the updated secrets to Pulumi ESC:
+   ```bash
+   ./configure_pulumi_esc.sh import-env .env.production --stack production
+   ```
+
+3. Sync the secrets to GitHub:
+   ```bash
+   ./configure_pulumi_esc.sh sync --stack production
+   ```
+
+4. Redeploy the application:
+   ```bash
+   ./deploy_production.sh
+   ```
+
+## Emergency Procedures
+
+### Secret Compromise Response
+
+If a secret is compromised:
+
+1. Immediately revoke the compromised credentials in the external service
+2. Generate new credentials
+3. Update the secret in Pulumi ESC:
+   ```bash
+   ./configure_pulumi_esc.sh import-env .env.emergency --stack production
+   ```
+4. Sync the secret to GitHub:
+   ```bash
+   ./configure_pulumi_esc.sh sync --stack production
+   ```
+5. Deploy the application with the new secrets:
+   ```bash
+   ./deploy_production.sh
+   ```
+6. Document the incident and perform a post-mortem analysis
+
+### Emergency Access
+
+In case of emergency, authorized personnel can access secrets through:
+
+1. Pulumi ESC web console (requires Pulumi account with appropriate permissions)
+2. GitHub repository settings (requires GitHub admin access)
+3. Backup secrets stored in a secure location (requires physical access or multi-factor authentication)
+
+## Compliance and Auditing
+
+### Audit Logging
+
+All secret access and modifications are logged:
+
+1. Pulumi ESC maintains an audit log of all secret operations
+2. GitHub maintains an audit log of all secret access in Actions workflows
+3. Application logs record the use of secrets (without revealing the actual values)
+
+### Compliance Requirements
+
+The secret management practices in this guide are designed to comply with:
+
+1. SOC 2 Type II requirements
+2. GDPR data protection requirements
+3. HIPAA security requirements (where applicable)
+4. PCI DSS requirements (where applicable)
+
+### Regular Audits
+
+Conduct regular audits of secret management practices:
+
+1. Quarterly review of all secrets and their rotation status
+2. Annual review of access policies and permissions
+3. Regular testing of emergency procedures
+4. Verification of secret usage in application code
+
+## Conclusion
+
+Proper secret management is critical to the security of the SOPHIA AI System. By following the practices outlined in this guide, you can ensure that secrets are managed securely throughout the development and deployment lifecycle.
+
+For questions or concerns about secret management, contact the security team at security@payready.com.

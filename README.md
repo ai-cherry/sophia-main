@@ -1,195 +1,196 @@
-# Sophia AI - Business Intelligence Orchestrator
+# SOPHIA AI System
 
-## 🚀 Overview
+SOPHIA (Strategic Orchestration of PayReady's Hierarchical Intelligence Architecture) is an AI executive intelligence orchestration system for PayReady, designed to coordinate multiple specialized AI agents and integrate with business systems.
 
-Sophia AI is an advanced AI assistant orchestrator designed as the central "Pay Ready Brain" for business intelligence and automation. It orchestrates multiple AI agents and integrates with critical business systems including HubSpot CRM, Gong.io call analysis, Slack communication, and property management platforms.
+## 🌟 Features
 
-## 🏗️ Architecture
+- **Multi-Agent Orchestration**: Coordinate specialized AI agents for different business functions
+- **Real-Time Data Processing**: Stream data from multiple sources using Estuary Flow
+- **Vector Search**: Semantic search capabilities with Pinecone and Weaviate
+- **Business Intelligence**: Automated insights from HubSpot, Salesforce, Gong, and more
+- **Hierarchical Agent Structure**: CrewAI-based agent hierarchy for complex tasks
+- **Persistent Memory**: Long-term context retention with mem0 integration
+- **MCP Server Architecture**: Model Context Protocol server for extensible tools
+- **Docker Containerization**: Easy deployment and scaling
 
-### Core Infrastructure
-- **Type:** Multi-agent AI orchestrator with flat-to-hierarchical evolution
-- **Backend:** FastAPI/Python with async support
-- **Frontend:** React + Vite with modern dark-themed UI
-- **Databases:** PostgreSQL, Redis, Pinecone, Weaviate
-- **Infrastructure:** Lambda Labs servers, Vercel frontend deployment
-- **Monitoring:** Prometheus + Grafana
+## 🚀 Specialized Agents
 
-### Key Components
+- **Sales Coach Agent**: Analyze Gong calls and provide coaching insights
+- **Client Health Agent**: Monitor client health metrics and predict churn
+- **Research & Data Scraping Agents**: Gather market intelligence
+- **AI Recruiting & HR Agent**: Assist with hiring and HR processes
+- **Business Strategy Agents**: Provide strategic recommendations
 
-1. **Specialized AI Agents** (`backend/agents/`)
-   - Call Analysis Agent (Gong.io integration)
-   - CRM Sync Agent (HubSpot integration)
-   - Notification Agent (Slack integration)
-   - Business Intelligence Agent (Revenue/performance reports)
+## 🛠️ Tech Stack
 
-2. **Unified Gateway Orchestrator** (`backend/integrations/unified_gateway_orchestrator.py`)
-   - Intelligent routing across LLM providers
-   - Automatic failover and cost optimization
-   - Performance tracking and monitoring
+- **Data**: Snowflake, PostgreSQL, Redis
+- **Vector Databases**: Pinecone, Weaviate
+- **BI**: Looker integration
+- **Integrations**: HubSpot, Salesforce, Gong.io, NetSuite, Lattice, Apollo.io, UserGems
+- **Infrastructure**: Pulumi (IaC), Lambda Labs (GPU)
+- **Development**: Python 3.11+, FastAPI, React, TypeScript
+- **AI**: OpenAI, Claude, CrewAI, LangChain
+- **Streaming**: Estuary Flow for real-time data pipelines
 
-3. **Property Management MCP Server** (`backend/mcp/property_management_mcp_server.py`)
-   - Complete apartment industry integration
-   - Support for Yardi, RealPage, AppFolio, Entrata, CoStar
+## 📋 Requirements
 
-4. **Modern UI Dashboard** (`frontend/`)
-   - Dark theme with glassmorphism effects
-   - Real-time metrics and KPIs
-   - 4-tab interface: Overview, Strategy, Operations, AI Insights
+- Python 3.11+
+- Docker and Docker Compose
+- Node.js 18+ (for frontend)
+- PostgreSQL 15+
+- Redis 7+
+- API keys for OpenAI, Pinecone, and other integrated services
 
-## 🔐 Secret Management
+## 🔧 Installation
 
-### IMPORTANT: How Secrets Work in This Project
-
-All secrets are managed through a unified system. **For AI assistants and developers working on this project:**
-
-1. **Primary Documentation:** See `docs/SECRET_MANAGEMENT_GUIDE.md` for complete details
-2. **Secret Names:** Use EXACT names as specified (e.g., `VERCEL_ACCESS_TOKEN` not `VERCEL_TOKEN`)
-3. **Management Tool:** Use `scripts/setup_pulumi_secrets.py` for all secret operations
-
-### Quick Secret Reference
+### Quick Setup
 
 ```bash
-# Check what secrets are needed
-cat env.example
+# Clone the repository
+git clone https://github.com/payready/sophia.git
+cd sophia
 
-# Import secrets from .env file
-python scripts/setup_pulumi_secrets.py import-env --env-file .env
-
-# Sync secrets to GitHub
-python scripts/setup_pulumi_secrets.py sync
-
-# Validate all secrets are configured
-python scripts/setup_pulumi_secrets.py validate
+# Run the quick setup script
+chmod +x quick_setup.sh
+./quick_setup.sh
 ```
 
-### Critical Deployment Secrets
-- `VERCEL_ACCESS_TOKEN` - Frontend deployment (NOT VERCEL_TOKEN!)
-- `LAMBDA_LABS_API_KEY` - Backend deployment
-- `PORTKEY_API_KEY` - LLM gateway (recommended)
-- `OPENROUTER_API_KEY` - Alternative LLM gateway
+### Manual Setup
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- PostgreSQL 14+
-- Redis 6+
-- Docker (optional)
-
-### Local Development Setup
-
-1. **Clone and Setup**
+1. Create a virtual environment:
    ```bash
-   git clone https://github.com/ai-cherry/sophia-main.git
-   cd sophia-main
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-2. **Configure Environment**
+2. Install dependencies:
    ```bash
-   # Use minimal setup for development
-   cp env.minimal.example .env
-   # Edit .env with your API keys
+   pip install -r requirements-dev.txt
    ```
 
-3. **Backend Setup**
+3. Copy the environment variables example:
    ```bash
-   cd backend
-   pip install -r requirements.txt
-   python main.py
+   cp env.example .env
    ```
 
-4. **Frontend Setup**
+4. Edit the `.env` file with your API keys and configuration.
+
+5. Start the required services with Docker:
    ```bash
-   cd frontend
-   npm install
-   npm run dev
+   docker-compose up -d postgres redis weaviate mem0
    ```
 
-5. **Access the Application**
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:5001
-   - API Docs: http://localhost:5001/docs
+6. Run database migrations:
+   ```bash
+   alembic upgrade head
+   ```
 
-### Docker Setup (Recommended)
+7. Start the development server:
+   ```bash
+   uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+
+## 🏃‍♂️ Running the Application
+
+### Using Make Commands
+
+The project includes a Makefile with common commands:
+
+```bash
+# Show available commands
+make help
+
+# Start development server
+make dev
+
+# Start full development environment
+make dev-full
+
+# Run tests
+make test
+
+# Format code
+make format
+
+# Lint code
+make lint
+
+# Build Docker images
+make docker-build
+
+# Start Docker containers
+make docker-up
+
+# Stop Docker containers
+make docker-down
+```
+
+### Using Docker Compose
 
 ```bash
 # Start all services
 docker-compose up -d
 
-# Check status
-docker-compose ps
+# Start with monitoring
+docker-compose --profile monitoring up -d
 
 # View logs
 docker-compose logs -f
+
+# Stop all services
+docker-compose down
 ```
 
-## 📊 Key Features
+## 🧩 Architecture
+
+SOPHIA is built with a modular architecture:
+
+```
+backend/
+├── agents/                # AI agents
+│   ├── core/              # Base agent classes
+│   └── specialized/       # Domain-specific agents
+├── app/                   # FastAPI application
+├── config/                # Configuration
+├── core/                  # Core functionality
+├── database/              # Database models and migrations
+├── integrations/          # External service integrations
+├── mcp/                   # Model Context Protocol server
+├── pipelines/             # Data pipelines
+└── vector/                # Vector database utilities
+
+frontend/                  # React frontend
+infrastructure/            # Pulumi infrastructure code
+```
+
+## 🔄 Data Flow
+
+1. **Data Ingestion**: Data is ingested from various sources (HubSpot, Salesforce, Gong, etc.)
+2. **Real-Time Processing**: Estuary Flow processes data in real-time
+3. **Storage**: Data is stored in PostgreSQL (operational) and Snowflake (warehouse)
+4. **Vectorization**: Text data is vectorized and stored in Pinecone/Weaviate
+5. **Agent Processing**: Specialized agents process data and generate insights
+6. **Orchestration**: Central orchestrator coordinates agent activities
+7. **Delivery**: Insights are delivered via API, UI, and Slack notifications
+
+## 🔌 Integrations
+
+### CRM Systems
+- **HubSpot**: Contact and deal management
+- **Salesforce**: Enterprise CRM integration
+
+### Communication
+- **Gong.io**: Call analysis and sales coaching
+- **Slack**: Notifications and interactive commands
 
 ### Business Intelligence
-- Real-time revenue tracking and KPIs
-- Customer health monitoring
-- Sales performance analytics
-- AI-powered insights and predictions
+- **Snowflake**: Data warehousing
+- **Looker**: BI dashboards and reports
 
-### Integrations
-- **HubSpot CRM:** Contact and deal management
-- **Gong.io:** Call recording analysis
-- **Slack:** Team notifications
-- **Property Management:** Yardi, RealPage, AppFolio support
-
-### AI Capabilities
-- Natural language business queries
-- Automated report generation
-- Predictive analytics
-- Strategic recommendations
-
-## 🛠️ Configuration
-
-### Environment Variables
-
-See `env.example` for all available options. Key configurations:
-
-```bash
-# LLM Gateway (Recommended approach)
-LLM_GATEWAY=portkey
-PORTKEY_API_KEY=your_key
-OPENROUTER_API_KEY=your_key
-
-# Business Integrations
-HUBSPOT_API_KEY=your_key
-GONG_API_KEY=your_key
-SLACK_BOT_TOKEN=your_token
-
-# Vector Databases
-PINECONE_API_KEY=your_key
-WEAVIATE_URL=your_url
-```
-
-## 🚀 Deployment
-
-### GitHub Actions (Automated)
-
-1. Ensure secrets are set in GitHub (see Secret Management section)
-2. Push to main branch
-3. Actions will automatically deploy to Lambda Labs and Vercel
-
-### Manual Deployment
-
-See `docs/DEPLOYMENT_GUIDE.md` for detailed instructions.
-
-## 📚 Documentation
-
-### Core Documentation
-- **Secret Management:** `docs/SECRET_MANAGEMENT_GUIDE.md` 📌
-- **Infrastructure Report:** `docs/SOPHIA_AI_INFRASTRUCTURE_REPORT.md`
-- **Design System:** `docs/SOPHIA_DESIGN_SYSTEM_INTEGRATION.md`
-- **Deployment Guide:** `docs/DEPLOYMENT_GUIDE.md`
-
-### Technical Documentation
-- **Architecture:** `docs/implementation/sophia_technical_architecture.md`
-- **Implementation Plan:** `docs/implementation/sophia_implementation_plan.md`
-- **MCP Servers:** `docs/mcp_server_documentation.md`
+### HR and Recruiting
+- **Lattice**: Performance management
+- **Apollo.io**: Prospect data
+- **UserGems**: Customer intelligence
 
 ## 🧪 Testing
 
@@ -197,64 +198,83 @@ See `docs/DEPLOYMENT_GUIDE.md` for detailed instructions.
 # Run all tests
 pytest
 
-# Test infrastructure
-python test_infrastructure.py
+# Run with coverage
+pytest --cov=backend
 
-# Test specific components
-pytest tests/test_auth.py
+# Run specific test file
+pytest tests/test_agents.py
 ```
 
-## 🔧 Development
+## 🚢 Deployment
 
-### Project Structure
-```
-sophia-main/
-├── backend/           # Python backend
-│   ├── agents/       # AI agents
-│   ├── integrations/ # External services
-│   └── config/       # Configuration
-├── frontend/         # React frontend
-│   ├── src/         # Source code
-│   └── public/      # Static assets
-├── docs/            # Documentation
-├── scripts/         # Utility scripts
-└── tests/          # Test files
+### Production Deployment
+
+```bash
+# Deploy to production
+./deploy_production.sh
 ```
 
-### Adding New Features
+### Docker Deployment
 
-1. Follow the patterns in `.cursorrules`
-2. Use type hints and comprehensive error handling
-3. Include tests for new functionality
-4. Update relevant documentation
+The system is containerized with Docker and can be deployed using Docker Compose:
 
-## 🤝 Contributing
+```bash
+# Build and start production containers
+docker-compose --profile production up -d
+```
 
-1. Check existing issues and PRs
-2. Follow the code style in `.cursorrules`
-3. Include tests with your changes
-4. Update documentation as needed
+### Cloud Deployment
 
-## 📈 Monitoring
+Infrastructure is managed with Pulumi:
 
-- **Grafana Dashboard:** http://localhost:3000 (when running locally)
-- **Prometheus Metrics:** http://localhost:9090
-- **Health Check:** http://localhost:5001/health
-
-## 🆘 Support
-
-- GitHub Issues: [Create an issue](https://github.com/ai-cherry/sophia-main/issues)
-- Documentation: Check `docs/` directory
-- Logs: Check `logs/` directory for debugging
+```bash
+cd infrastructure
+pulumi up
+```
 
 ## 🔒 Security
 
-- All API keys must be kept secure
-- Use environment variables, never commit secrets
-- Follow the secret management guide
-- Enable audit logging in production
+### Secrets Management
 
----
+SOPHIA uses a comprehensive multi-layered approach to secrets management:
 
-**Sophia AI** - The intelligent business orchestrator for Pay Ready, powered by advanced AI and modern architecture.
+- **GitHub Organization Secrets**: Shared across all repositories in the organization
+- **GitHub Repository Secrets**: Specific to individual repositories
+- **Pulumi ESC**: For infrastructure and deployment secrets
 
+Secret management tools:
+
+- `configure_github_org_secrets.py`: Manage GitHub organization secrets
+- `import_secrets_to_github.py`: Import secrets to GitHub repository
+- `configure_pulumi_esc.sh`: Manage Pulumi ESC secrets
+
+For detailed information, see [Secrets Management Implementation](docs/SECRETS_MANAGEMENT_IMPLEMENTATION.md).
+
+### Security Features
+
+- Authentication using JWT tokens
+- Role-based access control
+- Encrypted storage for sensitive data
+- Regular security audits
+- Secret rotation policies
+
+## 📚 Documentation
+
+- API documentation is available at `/docs` when the server is running
+- Additional documentation is in the `docs/` directory
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Commit your changes: `git commit -am 'Add my feature'`
+4. Push to the branch: `git push origin feature/my-feature`
+5. Submit a pull request
+
+## 📄 License
+
+This project is proprietary and confidential. Unauthorized copying, distribution, or use is strictly prohibited.
+
+## 📞 Support
+
+For support, contact the PayReady development team.

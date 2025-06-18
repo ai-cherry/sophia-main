@@ -1,71 +1,128 @@
 #!/bin/bash
+# SOPHIA AI System - Quick Development Setup Script
 
-echo "🚀 Quick Setup for Sophia AI"
-echo "=========================="
+set -e  # Exit immediately if a command exits with a non-zero status
 
-# Generate SECRET_KEY
-SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
-echo "✅ Generated SECRET_KEY"
-
-# Create a temporary env file with the updates
-cat > .env.new << EOF
-# Sophia AI Local Environment Configuration
-# Updated with essential values
-
-# LLM Gateway (Recommended approach)
-LLM_GATEWAY=portkey
-PORTKEY_API_KEY=${PORTKEY_API_KEY:-your-portkey-api-key-here}
-OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-your-openrouter-api-key-here}
-
-# Database Configuration
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_USER=sophia
-POSTGRES_PASSWORD=sophia_pass
-POSTGRES_DB=sophia_payready
-
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-
-# Security
-SECRET_KEY=$SECRET_KEY
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=SophiaAdmin2025
-
-# Basic Settings
-SOPHIA_ENV=development
-HOST=0.0.0.0
-PORT=5000
-DEBUG=False
-FLASK_ENV=development
-
-# Direct LLM APIs (fallback if not using Portkey)
-OPENAI_API_KEY=${OPENAI_API_KEY:-}
-ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-
-# Optional integrations (add as needed)
-HUBSPOT_API_KEY=${HUBSPOT_API_KEY:-}
-GONG_API_KEY=${GONG_API_KEY:-}
-GONG_API_SECRET=${GONG_API_SECRET:-}
-SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN:-}
-SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET:-}
-EOF
-
-# Backup old .env
-cp .env .env.backup.$(date +%s)
-mv .env.new .env
-
-echo "✅ Updated .env file with:"
-echo "   - SECRET_KEY: $SECRET_KEY"
-echo "   - ADMIN_PASSWORD: SophiaAdmin2025"
+# Display banner
+echo "=================================================="
+echo "SOPHIA AI System - Quick Development Setup"
+echo "=================================================="
+echo "Starting setup at $(date)"
 echo ""
-echo "⚠️  IMPORTANT: You still need to add your API keys!"
+
+# Check for Python
+if ! command -v python3 &> /dev/null; then
+    echo "Error: Python 3 is required but not installed."
+    exit 1
+fi
+
+# Check Python version
+python_version=$(python3 --version | cut -d " " -f 2)
+python_major=$(echo $python_version | cut -d. -f1)
+python_minor=$(echo $python_version | cut -d. -f2)
+
+if [ "$python_major" -lt 3 ] || ([ "$python_major" -eq 3 ] && [ "$python_minor" -lt 11 ]); then
+    echo "Error: Python 3.11 or higher is required. Found Python $python_version."
+    exit 1
+fi
+
+# Check for Docker
+if ! command -v docker &> /dev/null; then
+    echo "Warning: Docker is not installed. Some features may not work."
+    read -p "Do you want to continue without Docker? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Setup aborted."
+        exit 1
+    fi
+fi
+
+# Check for Docker Compose
+if ! command -v docker-compose &> /dev/null; then
+    echo "Warning: Docker Compose is not installed. Some features may not work."
+    read -p "Do you want to continue without Docker Compose? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Setup aborted."
+        exit 1
+    fi
+fi
+
+# Create virtual environment
+echo "Creating Python virtual environment..."
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+echo "Installing dependencies..."
+pip install --upgrade pip
+pip install -r requirements-dev.txt
+
+# Create .env file if it doesn't exist
+if [ ! -f ".env" ]; then
+    echo "Creating .env file from template..."
+    cp env.example .env
+    echo "Please edit .env file with your API keys and configuration."
+fi
+
+# Initialize database
+echo "Initializing database..."
+if command -v docker-compose &> /dev/null; then
+    echo "Starting PostgreSQL and Redis with Docker..."
+    docker-compose up -d postgres redis
+    
+    # Wait for PostgreSQL to be ready
+    echo "Waiting for PostgreSQL to be ready..."
+    sleep 5
+    
+    # Run database migrations
+    echo "Running database migrations..."
+    alembic upgrade head
+else
+    echo "Skipping database initialization (Docker not available)."
+    echo "Please set up PostgreSQL manually and run 'alembic upgrade head'."
+fi
+
+# Set up pre-commit hooks
+echo "Setting up pre-commit hooks..."
+pre-commit install
+
+# Set up frontend
+if [ -d "sophia_admin_frontend" ]; then
+    echo "Setting up frontend..."
+    cd sophia_admin_frontend
+    
+    # Check for Node.js
+    if command -v npm &> /dev/null; then
+        npm install
+    else
+        echo "Warning: Node.js is not installed. Skipping frontend setup."
+    fi
+    
+    cd ..
+fi
+
+# Create necessary directories
+echo "Creating necessary directories..."
+mkdir -p logs
+mkdir -p data
+
+# Set permissions
+echo "Setting permissions..."
+chmod +x deploy_production.sh
+chmod +x configure_pulumi_esc.sh
+chmod +x quick_setup.sh
+
+# Setup complete
 echo ""
-echo "To complete setup, edit .env and add ONE of these:"
-echo "1. Portkey + OpenRouter keys (recommended)"
-echo "2. OpenAI API key"
-echo "3. Anthropic API key"
+echo "=================================================="
+echo "Setup completed successfully at $(date)"
+echo "=================================================="
 echo ""
-echo "Your organization secrets are at:"
-echo "https://github.com/organizations/ai-cherry/settings/secrets/actions" 
+echo "Next steps:"
+echo "1. Edit the .env file with your API keys and configuration"
+echo "2. Start the development server with: make dev"
+echo "3. Or start the full environment with: make dev-full"
+echo ""
+echo "For more commands, run: make help"
+echo ""

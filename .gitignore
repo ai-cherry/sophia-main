@@ -1,8 +1,4 @@
-# Environment variables
-.env
-.env.*
-.env.backup.*
-!env.example
+# SOPHIA AI System - .gitignore
 
 # Python
 __pycache__/
@@ -10,43 +6,147 @@ __pycache__/
 *$py.class
 *.so
 .Python
-*.log
-
-# Node.js
-node_modules/
-dist/
 build/
-frontend/dist/assets/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.env
+.venv
 
 # IDE
-.vscode/
 .idea/
+.vscode/
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
-Thumbs.db
 
-# Testing
-.coverage
-.pytest_cache/
-htmlcov/
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Project specific
+logs/
+data/
+.env
+.env.*
+!.env.example
+*.log
+*.sqlite
+*.db
+
+# Docker
+.docker/
+
+# Frontend
+node_modules/
+/frontend/dist/
+/frontend/node_modules/
+/frontend/.pnp
+/frontend/.pnp.js
+/frontend/coverage
+/frontend/.next/
+/frontend/out/
+/frontend/build
+/frontend/.DS_Store
+/frontend/npm-debug.log*
+/frontend/yarn-debug.log*
+/frontend/yarn-error.log*
+/frontend/.env.local
+/frontend/.env.development.local
+/frontend/.env.test.local
+/frontend/.env.production.local
+
+# Admin Frontend
+/sophia_admin_frontend/dist/
+/sophia_admin_frontend/node_modules/
+/sophia_admin_frontend/.pnp
+/sophia_admin_frontend/.pnp.js
+/sophia_admin_frontend/coverage
+/sophia_admin_frontend/.next/
+/sophia_admin_frontend/out/
+/sophia_admin_frontend/build
+/sophia_admin_frontend/.DS_Store
+/sophia_admin_frontend/npm-debug.log*
+/sophia_admin_frontend/yarn-debug.log*
+/sophia_admin_frontend/yarn-error.log*
+/sophia_admin_frontend/.env.local
+/sophia_admin_frontend/.env.development.local
+/sophia_admin_frontend/.env.test.local
+/sophia_admin_frontend/.env.production.local
+
+# Pulumi
+.pulumi/
+Pulumi.*.yaml
+!Pulumi.yaml
+
+# Secrets
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.truststore
 
 # Temporary files
-*.tmp
-*.bak
-*.backup
+tmp/
+temp/
+.tmp/
+.temp/
 
-# Database
-*.db
-*.sqlite3
+# Test files
+test-results/
+playwright-report/
+playwright/.cache/
 
-# Scripts with sensitive data
-scripts/
+# Monitoring
+prometheus_data/
+grafana_data/
+
+# Vector databases
+weaviate_data/
+pinecone_data/
+
+# Mem0
+mem0_data/
+
+# Estuary Flow
+estuary_data/
+
+# Snowflake
+snowflake_downloads/
+
+# Gong
+gong_downloads/
+
+# Misc
+.DS_Store
+Thumbs.db
