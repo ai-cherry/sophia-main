@@ -1,38 +1,130 @@
-# Sophia AI Pay Ready Infrastructure
+# Sophia AI Infrastructure as Code
 
-This document provides an overview of the infrastructure required to deploy the
-Sophia AI Pay Ready Platform on Lambda Labs. Due to repository constraints this
-is a condensed version of the full documentation.
+This directory contains the Infrastructure as Code (IaC) implementation for the Sophia AI platform using Pulumi.
 
-## System Architecture Overview
+## Overview
 
-Sophia AI consists of a Flask backend, a React frontend and supporting services
-(PostgreSQL, Redis, Pinecone and Weaviate). Docker Compose orchestrates local
-development while production runs on virtual machines at 150.136.94.139.
+The Sophia AI platform uses Pulumi to manage infrastructure resources across multiple environments (development, staging, production). This includes:
 
-## Deployment Procedures
+- **Snowflake**: Data warehouse for storing and analyzing data
+- **Gong**: Integration with Gong for call analysis
+- **Vercel**: Deployment platform for the frontend
+- **Estuary**: Data flow management for real-time data processing
 
-1. Clone the repository and install Docker.
-2. Configure environment variables in `.env`.
-3. Run `docker-compose up -d` to start services.
-4. Point your domain to the server and configure SSL via Nginx.
+## Prerequisites
 
-## Monitoring and Health Checks
+- [Pulumi CLI](https://www.pulumi.com/docs/get-started/install/)
+- [Python 3.11+](https://www.python.org/downloads/)
+- [pip](https://pip.pypa.io/en/stable/installation/)
+- [virtualenv](https://virtualenv.pypa.io/en/latest/installation.html)
 
-Prometheus and Grafana are included in the compose stack for basic monitoring.
-Health endpoints are exposed via `/api/health` on the Flask app.
+## Getting Started
 
-## Security Configuration
+### 1. Initialize Pulumi Stacks
 
-All external connections require TLS. API keys should be stored securely using
-environment variables or a secrets manager. Database access is restricted to the
-application network.
+Run the initialization script to create Pulumi stacks for different environments:
 
-## Backup and Recovery
+```bash
+./init_stacks.sh
+```
 
-Regular PostgreSQL backups should be scheduled using `pg_dump`. Redis snapshot
-files should be archived periodically. Vector indexes can be recreated from
-source data if necessary.
+This will create three stacks:
+- `development`
+- `staging`
+- `production`
 
-For detailed instructions on tuning, troubleshooting and maintenance, refer to
-the full infrastructure guide located in company documentation.
+### 2. Import Secrets
+
+Import secrets from a `.env` file to Pulumi ESC:
+
+```bash
+./import_secrets.sh ../.env development
+```
+
+Replace `development` with the appropriate stack name (`staging` or `production`).
+
+### 3. Deploy Infrastructure
+
+Deploy the infrastructure to the selected stack:
+
+```bash
+pulumi stack select development
+pulumi up
+```
+
+## Project Structure
+
+- `__main__.py`: Main Pulumi program that brings together all resources
+- `snowflake.py`: Snowflake resources definition
+- `gong.py`: Gong integration resources definition
+- `vercel.py`: Vercel deployment resources definition
+- `estuary.py`: Estuary data flow resources definition
+- `Pulumi.yaml`: Pulumi project configuration
+- `requirements.txt`: Python dependencies
+- `init_stacks.sh`: Script to initialize Pulumi stacks
+- `import_secrets.sh`: Script to import secrets from a `.env` file to Pulumi ESC
+
+## Environment-Specific Configuration
+
+Each environment (development, staging, production) has its own configuration values defined in the respective Pulumi stack. These values can be set using the Pulumi CLI:
+
+```bash
+pulumi stack select <stack-name>
+pulumi config set <key> <value>
+```
+
+For secrets, use the `--secret` flag:
+
+```bash
+pulumi config set --secret <key> <value>
+```
+
+## Secret Management
+
+Secrets are managed using Pulumi ESC (Environments, Secrets, and Configuration). This provides a secure way to manage sensitive information across different environments.
+
+To view the current configuration:
+
+```bash
+pulumi stack select <stack-name>
+pulumi config
+```
+
+## CI/CD Integration
+
+The infrastructure deployment can be integrated into a CI/CD pipeline using GitHub Actions. See the `.github/workflows/deploy.yml` file for an example.
+
+## Monitoring and Alerting
+
+Infrastructure monitoring and alerting are configured using Pulumi. This includes:
+
+- Resource health monitoring
+- Performance monitoring
+- Cost monitoring
+- Security monitoring
+
+## Troubleshooting
+
+If you encounter issues with the infrastructure deployment, check the Pulumi logs:
+
+```bash
+pulumi stack select <stack-name>
+pulumi logs
+```
+
+For more detailed information, use the `--verbose` flag:
+
+```bash
+pulumi up --verbose
+```
+
+## Contributing
+
+1. Create a new branch for your changes
+2. Make your changes
+3. Test your changes locally
+4. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

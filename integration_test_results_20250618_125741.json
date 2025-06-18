@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-06-18T12:57:40.112392",
+  "services": {
+    "gong": {
+      "status": "error",
+      "details": {},
+      "error": "Cannot connect to host api.gong.io:443 ssl:True [SSLCertVerificationError: (1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1006)')]"
+    },
+    "snowflake": {
+      "status": "error",
+      "details": {},
+      "error": "250001 (08001): None: Failed to connect to DB: MYJDJNU-FP71296.snowflakecomputing.com:443. Multi-factor authentication is required for this account. Log in to Snowsight to enroll."
+    },
+    "estuary": {
+      "status": "error",
+      "details": {},
+      "error": "Cannot connect to host api.estuary.dev:443 ssl:default [nodename nor servname provided, or not known]"
+    },
+    "vercel": {
+      "status": "error",
+      "details": {},
+      "error": "Cannot connect to host api.vercel.com:443 ssl:True [SSLCertVerificationError: (1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1006)')]"
+    }
+  },
+  "overall_status": "all_failed"
+}

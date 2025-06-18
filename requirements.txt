@@ -1,10 +1,10 @@
 # Core dependencies
-fastapi==0.104.1
-uvicorn==0.23.2
-pydantic==2.4.2
+fastapi==0.108.0
+uvicorn[standard]==0.25.0
+pydantic==2.5.3
 python-dotenv==1.0.0
 httpx==0.25.0
-aiohttp==3.8.6
+aiohttp==3.9.1
 asyncio==3.4.3
 websockets==11.0.3
 python-multipart==0.0.6
@@ -14,65 +14,90 @@ bcrypt==4.0.1
 passlib==1.7.4
 
 # Database and caching
-sqlalchemy==2.0.22
-alembic==1.12.0
-asyncpg==0.28.0
+sqlalchemy==2.0.25
+alembic==1.13.1
+asyncpg==0.29.0
 redis==5.0.1
 motor==3.3.1
 pymongo==4.5.0
+psycopg2-binary==2.9.9
 
 # Vector databases
-pinecone-client==2.2.4
+pinecone-client==3.0.0
 weaviate-client==3.24.1
 
 # AI and ML
-openai==1.3.5
-langchain==0.0.335
-langchain-openai==0.0.2.post1
-langchain-community==0.0.9
-crewai==0.28.5
-sentence-transformers==2.2.2
-numpy==1.26.0
-pandas==2.1.1
+openai==1.6.1
+anthropic==0.8.1
+langchain==0.1.0
+langchain-openai==0.0.2
+chromadb==0.4.22
+numpy==1.26.2
+pandas==2.1.4
 scikit-learn==1.3.1
-transformers==4.34.0
-torch==2.1.0
-tiktoken==0.5.1
+transformers==4.36.2
+torch==2.1.2
+tiktoken==0.5.2
+crewai==0.16.0
+sentence-transformers==2.2.2
 
 # Integrations
 hubspot-api-client==8.2.1
 simple-salesforce==1.12.4
 gong-client==0.1.0
-slack-sdk==3.23.0
-snowflake-connector-python==3.5.0
-airbyte-cdk==0.51.0
+slack-sdk==3.26.2
+snowflake-connector-python==3.6.0
+airbyte-cdk==0.57.0
+requests==2.31.0
+google-api-python-client==2.111.0
+google-auth==2.25.2
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
 
-# Infrastructure
-pulumi==3.91.1
-pulumi-aws==6.5.0
-pulumi-docker==4.4.1
-pulumi-kubernetes==4.5.4
-pulumi-random==4.14.0
-pulumi-command==0.9.1
+# Security
+cryptography==41.0.7
+python-jose[cryptography]==3.3.0
+secrets==1.0.0
+
+# Utilities
+httpx==0.25.2
+celery==5.3.4
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+
+# Development
+black==23.12.1
+isort==5.12.0
+mypy==1.7.1
+flake8==7.0.0
+pre-commit==3.5.0
+rich==13.7.0
+click==8.1.7
+pyyaml==6.0.1
+jinja2==3.1.2
 
 # Monitoring and logging
-prometheus-client==0.17.1
+prometheus-client==0.19.0
 opentelemetry-api==1.20.0
 opentelemetry-sdk==1.20.0
 opentelemetry-exporter-prometheus==1.20.0
 structlog==23.2.0
 python-json-logger==2.0.7
+grafana-api==1.0.3
+sentry-sdk[fastapi]==1.39.1
+streamlit==1.29.0
+plotly==5.18.0
 
-# Testing
-pytest==7.4.2
-pytest-asyncio==0.21.1
-pytest-cov==4.1.0
-httpx==0.25.0
-pytest-mock==3.12.0
+# Infrastructure
+pulumi>=3.0.0,<4.0.0
+pulumi-aws==6.5.0
+pulumi-docker>=4.0.0,<5.0.0
+pulumi-kubernetes>=4.0.0,<5.0.0
+pulumi-random==4.14.0
+pulumi-command==0.9.1
 
-# Development
-black==23.9.1
-isort==5.12.0
-mypy==1.6.1
-flake8==6.1.0
-pre-commit==3.5.0
+# MCP Dependencies
+backoff==2.2.1
+certifi==2023.11.17

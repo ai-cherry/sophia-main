@@ -1,0 +1,4 @@
+[
+  {"name": "snowflake", "url": "http://snowflake-mcp:8080"},
+  {"name": "pulumi", "url": "http://pulumi-mcp:8080"}
+] 

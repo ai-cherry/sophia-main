@@ -19,7 +19,7 @@ services:
       - PINECONE_ENVIRONMENT=${PINECONE_ENVIRONMENT:-us-east1-gcp}
       - WEAVIATE_URL=http://weaviate:8080
       - MEM0_URL=http://mem0:8000
-      - ESTUARY_API_URL=${ESTUARY_API_URL:-https://api.estuary.dev}
+      - ESTUARY_API_URL=${ESTUARY_API_URL:-https://api.estuary.tech}
     depends_on:
       - postgres
       - redis

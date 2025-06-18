@@ -1,0 +1,17 @@
+{
+  "status": "failure",
+  "timestamp": "2025-06-18T12:54:54.605477",
+  "tests": [
+    {
+      "name": "estuary",
+      "status": "failure",
+      "duration": 0.25417327880859375,
+      "details": {
+        "api_key": true,
+        "api_url": "https://api.estuary.dev",
+        "error": "HTTPSConnectionPool(host='api.estuary.dev', port=443): Max retries exceeded with url: /v1/collections (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x10499c490>: Failed to resolve 'api.estuary.dev' ([Errno 8] nodename nor servname provided, or not known)\"))"
+      },
+      "timestamp": "2025-06-18T12:54:54.605151"
+    }
+  ]
+}

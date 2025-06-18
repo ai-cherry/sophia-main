@@ -1,0 +1,47 @@
+{
+  "timestamp": "2025-06-18T11:52:39.540069",
+  "services": {
+    "gong": {
+      "status": "config_error",
+      "details": {},
+      "error": "Missing required environment variables: GONG_API_KEY and/or GONG_API_SECRET",
+      "recommendations": [
+        "Set GONG_API_KEY and GONG_API_SECRET environment variables"
+      ]
+    },
+    "snowflake": {
+      "status": "config_error",
+      "details": {},
+      "error": "Missing required environment variables for Snowflake connection",
+      "recommendations": [
+        "Set SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, and SNOWFLAKE_PASSWORD environment variables"
+      ]
+    },
+    "estuary": {
+      "status": "config_error",
+      "details": {},
+      "error": "Missing required environment variable: ESTUARY_API_KEY",
+      "recommendations": [
+        "Set ESTUARY_API_KEY environment variable"
+      ]
+    },
+    "vercel": {
+      "status": "config_error",
+      "details": {},
+      "error": "Missing required environment variable: VERCEL_ACCESS_TOKEN",
+      "recommendations": [
+        "Set VERCEL_ACCESS_TOKEN environment variable"
+      ]
+    }
+  },
+  "overall_status": "all_failed",
+  "recommendations": [
+    "[GONG] Set GONG_API_KEY and GONG_API_SECRET environment variables",
+    "[SNOWFLAKE] Set SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, and SNOWFLAKE_PASSWORD environment variables",
+    "[ESTUARY] Set ESTUARY_API_KEY environment variable",
+    "[VERCEL] Set VERCEL_ACCESS_TOKEN environment variable",
+    "[GENERAL] All integrations failed, check environment variables and network connectivity",
+    "[SECURITY] Regularly rotate API keys and credentials using sophia_secrets.py rotate",
+    "[SECURITY] Ensure all secrets are stored in Pulumi ESC and synced to GitHub using sophia_secrets.py"
+  ]
+}

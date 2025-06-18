@@ -1,0 +1,97 @@
+name: Integration Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at midnight UTC
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  test-integrations:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r integration_requirements.txt
+      
+      - name: Set up environment variables
+        run: |
+          echo "Setting up environment variables..."
+          cp integration.env.example .env
+          
+          # Snowflake
+          echo "SNOWFLAKE_ACCOUNT=${{ secrets.SNOWFLAKE_ACCOUNT }}" >> .env
+          echo "SNOWFLAKE_USER=${{ secrets.SNOWFLAKE_USER }}" >> .env
+          echo "SNOWFLAKE_PASSWORD=${{ secrets.SNOWFLAKE_PASSWORD }}" >> .env
+          echo "SNOWFLAKE_WAREHOUSE=${{ secrets.SNOWFLAKE_WAREHOUSE }}" >> .env
+          echo "SNOWFLAKE_DATABASE=${{ secrets.SNOWFLAKE_DATABASE }}" >> .env
+          echo "SNOWFLAKE_SCHEMA=${{ secrets.SNOWFLAKE_SCHEMA }}" >> .env
+          echo "SNOWFLAKE_ROLE=${{ secrets.SNOWFLAKE_ROLE }}" >> .env
+          
+          # Gong
+          echo "GONG_API_KEY=${{ secrets.GONG_API_KEY }}" >> .env
+          echo "GONG_API_SECRET=${{ secrets.GONG_API_SECRET }}" >> .env
+          
+          # Vercel
+          echo "VERCEL_API_TOKEN=${{ secrets.VERCEL_API_TOKEN }}" >> .env
+          echo "VERCEL_TEAM_ID=${{ secrets.VERCEL_TEAM_ID }}" >> .env
+          echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID }}" >> .env
+          
+          # Estuary
+          echo "ESTUARY_API_KEY=${{ secrets.ESTUARY_API_KEY }}" >> .env
+          echo "ESTUARY_API_URL=${{ secrets.ESTUARY_API_URL }}" >> .env
+          
+          # MCP
+          echo "MCP_CONFIG_PATH=mcp_config.json" >> .env
+      
+      - name: Run integration tests
+        run: |
+          echo "Running integration tests..."
+          python unified_integration_test.py --tests all --output test_results.json
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-results
+          path: test_results.json
+      
+      - name: Check test results
+        run: |
+          echo "Checking test results..."
+          if [ "$(jq -r '.status' test_results.json)" != "success" ]; then
+            echo "Integration tests failed!"
+            exit 1
+          fi
+          echo "All integration tests passed!"
+      
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const run_id = context.runId;
+            const run_url = `https://github.com/${owner}/${repo}/actions/runs/${run_id}`;
+            
+            github.rest.issues.create({
+              owner,
+              repo,
+              title: `⚠️ Integration Tests Failed - ${new Date().toISOString().split('T')[0]}`,
+              body: `Integration tests failed in workflow run: [${run_id}](${run_url}).\n\nPlease check the logs for more details.`,
+              labels: ['bug', 'integration-test-failure']
+            });

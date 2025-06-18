@@ -1,0 +1,138 @@
+version: '3.8'
+
+services:
+  # Real MCP Gateway
+  mcp-gateway:
+    build:
+      context: ./mcp-gateway
+      dockerfile: Dockerfile
+    container_name: sophia-mcp-gateway
+    ports:
+      - "8090:8080" # Expose gateway's port 8080 to host's 8090
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # Allow access to Docker for service discovery
+      - ./mcp-config/mcp_servers.json:/app/mcp_servers.json
+    networks:
+      - sophia-mcp
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Snowflake MCP Server
+  snowflake-mcp:
+    build:
+      context: ./mcp-servers/snowflake
+      dockerfile: Dockerfile
+    container_name: sophia-snowflake-mcp
+    labels:
+      - "sophia-mcp-server=true"
+      - "sophia-mcp-server.name=snowflake"
+    environment:
+      - SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT}
+      - SNOWFLAKE_USER=${SNOWFLAKE_USER}
+      - SNOWFLAKE_PASSWORD=${SNOWFLAKE_PASSWORD}
+      - SNOWFLAKE_WAREHOUSE=${SNOWFLAKE_WAREHOUSE}
+      - SNOWFLAKE_DATABASE=${SNOWFLAKE_DATABASE}
+      - SNOWFLAKE_SCHEMA=${SNOWFLAKE_SCHEMA}
+      - SNOWFLAKE_ROLE=${SNOWFLAKE_ROLE}
+      - SNOWFLAKE_AUTH_METHOD=${SNOWFLAKE_AUTH_METHOD:-password}
+      - SNOWFLAKE_PRIVATE_KEY_PATH=/keys/snowflake_rsa_key.p8
+      - SNOWFLAKE_PRIVATE_KEY_PASSPHRASE=${SNOWFLAKE_PRIVATE_KEY_PASSPHRASE}
+    volumes:
+      - ./keys:/keys:ro
+      - ./mcp-logs/snowflake:/logs
+    networks:
+      - sophia-mcp
+    restart: unless-stopped
+    depends_on:
+      - mcp-gateway
+
+  # Pinecone MCP Server (official image) - Uncomment when you have API key
+  # pinecone-mcp:
+  #   image: pinecone/assistant-mcp:latest
+  #   container_name: sophia-pinecone-mcp
+  #   environment:
+  #     - PINECONE_API_KEY=${PINECONE_API_KEY}
+  #     - PINECONE_ENVIRONMENT=${PINECONE_ENVIRONMENT}
+  #   networks:
+  #     - sophia-mcp
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - mcp-gateway
+
+  # Pulumi MCP Server - Uncomment when you have access token
+  pulumi-mcp:
+    build:
+      context: ./mcp-servers/pulumi
+      dockerfile: Dockerfile
+    container_name: sophia-pulumi-mcp
+    labels:
+      - "sophia-mcp-server=true"
+      - "sophia-mcp-server.name=pulumi"
+    environment:
+      - PULUMI_ACCESS_TOKEN=${PULUMI_ACCESS_TOKEN}
+    networks:
+      - sophia-mcp
+    restart: unless-stopped
+    depends_on:
+      - mcp-gateway
+
+  # HubSpot MCP Server - Uncomment when implementation is ready
+  # hubspot-mcp:
+  #   build:
+  #     context: ./mcp-servers/hubspot
+  #     dockerfile: Dockerfile
+  #   container_name: sophia-hubspot-mcp
+  #   environment:
+  #     - HUBSPOT_API_KEY=${HUBSPOT_API_KEY}
+  #     - HUBSPOT_APP_ID=${HUBSPOT_APP_ID}
+  #     - HUBSPOT_CLIENT_ID=${HUBSPOT_CLIENT_ID}
+  #     - HUBSPOT_CLIENT_SECRET=${HUBSPOT_CLIENT_SECRET}
+  #   networks:
+  #     - sophia-mcp
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - mcp-gateway
+
+  # Asana MCP Server - Uncomment when implementation is ready
+  # asana-mcp:
+  #   build:
+  #     context: ./mcp-servers/asana
+  #     dockerfile: Dockerfile
+  #   container_name: sophia-asana-mcp
+  #   environment:
+  #     - ASANA_ACCESS_TOKEN=${ASANA_ACCESS_TOKEN}
+  #     - ASANA_WORKSPACE_GID=${ASANA_WORKSPACE_GID}
+  #   networks:
+  #     - sophia-mcp
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - mcp-gateway
+
+  # Gong MCP Server - Uncomment when implementation is ready
+  # gong-mcp:
+  #   build:
+  #     context: ./mcp-servers/gong
+  #     dockerfile: Dockerfile
+  #   container_name: sophia-gong-mcp
+  #   environment:
+  #     - GONG_API_KEY=${GONG_API_KEY}
+  #     - GONG_API_SECRET=${GONG_API_SECRET}
+  #     - GONG_ACCESS_KEY=${GONG_ACCESS_KEY}
+  #   networks:
+  #     - sophia-mcp
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - mcp-gateway
+
+networks:
+  sophia-mcp:
+    driver: bridge
+    name: sophia-mcp-network
+
+volumes:
+  mcp-logs:
+    driver: local 

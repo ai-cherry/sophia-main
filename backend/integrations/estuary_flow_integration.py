@@ -29,7 +29,7 @@ class EstuaryFlowClient:
             self.api_key = await secret_manager.get_secret("api_key", "estuary")
             
             # Get base URL from environment or use default
-            self.base_url = os.environ.get("ESTUARY_API_URL", "https://api.estuary.dev")
+            self.base_url = os.environ.get("ESTUARY_API_URL", "https://api.estuary.tech")
             
             # Create HTTP session
             self.session = aiohttp.ClientSession(

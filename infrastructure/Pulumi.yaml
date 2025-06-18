@@ -1,28 +1,44 @@
 name: sophia-ai
-runtime: python
-description: Sophia AI conversation intelligence platform infrastructure
-main: __main__.py
-
-config:
-  project_name:
-    type: string
-    default: sophia-ai
-  environment:
-    type: string
-    default: production
-  app_domain:
-    type: string
-    default: sophia.payready.com
-  lambda_labs_instance_ip:
-    type: string
-    default: 104.171.203.227
-  lambda_labs_ssh_user:
-    type: string
-    default: ubuntu
-  git_repo_url:
-    type: string
-    default: https://github.com/ai-cherry/sophia-main.git
-  git_branch:
-    type: string
-    default: main
-
+runtime:
+  name: python
+  options:
+    virtualenv: venv
+description: Sophia AI Infrastructure as Code
+template:
+  description: A Python Pulumi program for managing Sophia AI infrastructure
+  config:
+    environment:
+      description: The environment to deploy to (development, staging, production)
+      default: development
+    snowflake:account:
+      description: The Snowflake account identifier
+    snowflake:user:
+      description: The Snowflake user
+    snowflake:password:
+      description: The Snowflake password
+      secret: true
+    snowflake:warehouse:
+      description: The Snowflake warehouse
+    snowflake:database:
+      description: The Snowflake database
+    snowflake:schema:
+      description: The Snowflake schema
+    snowflake:role:
+      description: The Snowflake role
+    gong:api_key:
+      description: The Gong API key
+      secret: true
+    gong:api_secret:
+      description: The Gong API secret
+      secret: true
+    vercel:token:
+      description: The Vercel access token
+      secret: true
+    vercel:team_id:
+      description: The Vercel team ID
+    estuary:api_key:
+      description: The Estuary API key
+      secret: true
+    estuary:api_url:
+      description: The Estuary API URL
+      default: https://api.estuary.tech

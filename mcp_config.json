@@ -1,197 +1,216 @@
 {
-  "server_name": "sophia-mcp-server",
-  "version": "1.0.0",
-  "description": "SOPHIA AI MCP Server for PayReady",
-  "host": "0.0.0.0",
-  "port": 8002,
-  "log_level": "INFO",
-  "cors_origins": ["*"],
-  "auth": {
-    "enabled": true,
-    "jwt_secret": "${JWT_SECRET}",
-    "jwt_algorithm": "HS256",
-    "token_expiration": 86400
-  },
-  "tools": [
+  "servers": [
     {
-      "name": "gong_tools",
-      "module": "backend.mcp.tools.gong_tools",
-      "enabled": true,
-      "functions": [
-        "gong_call_analysis",
-        "gong_transcript_extraction",
-        "gong_call_search",
-        "gong_user_stats"
+      "name": "snowflake-mcp",
+      "description": "MCP server for Snowflake integration",
+      "url": "http://localhost:8000/snowflake",
+      "tools": [
+        {
+          "name": "query",
+          "description": "Execute a SQL query on Snowflake",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string",
+                "description": "SQL query to execute"
+              },
+              "warehouse": {
+                "type": "string",
+                "description": "Snowflake warehouse to use",
+                "default": "${SNOWFLAKE_WAREHOUSE}"
+              }
+            },
+            "required": ["query"]
+          }
+        },
+        {
+          "name": "list_tables",
+          "description": "List tables in a schema",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "schema": {
+                "type": "string",
+                "description": "Schema name",
+                "default": "${SNOWFLAKE_SCHEMA}"
+              }
+            }
+          }
+        }
+      ],
+      "resources": [
+        {
+          "uri": "schemas",
+          "description": "List of available schemas"
+        },
+        {
+          "uri": "tables",
+          "description": "List of available tables"
+        }
       ]
     },
     {
-      "name": "vector_tools",
-      "module": "backend.mcp.tools.vector_tools",
-      "enabled": true,
-      "functions": [
-        "vector_search",
-        "vector_store",
-        "vector_delete",
-        "vector_update"
+      "name": "gong-mcp",
+      "description": "MCP server for Gong integration",
+      "url": "http://localhost:8001/gong",
+      "tools": [
+        {
+          "name": "list_calls",
+          "description": "List recent calls",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "from_date": {
+                "type": "string",
+                "description": "Start date (YYYY-MM-DD)",
+                "format": "date"
+              },
+              "to_date": {
+                "type": "string",
+                "description": "End date (YYYY-MM-DD)",
+                "format": "date"
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Maximum number of calls to return",
+                "default": 10
+              }
+            }
+          }
+        },
+        {
+          "name": "get_call_transcript",
+          "description": "Get transcript for a call",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "call_id": {
+                "type": "string",
+                "description": "Call ID"
+              }
+            },
+            "required": ["call_id"]
+          }
+        }
+      ],
+      "resources": [
+        {
+          "uri": "users",
+          "description": "List of Gong users"
+        },
+        {
+          "uri": "stats",
+          "description": "Gong usage statistics"
+        }
       ]
     },
     {
-      "name": "crm_tools",
-      "module": "backend.mcp.tools.crm_tools",
-      "enabled": true,
-      "functions": [
-        "crm_sync",
-        "crm_query"
+      "name": "vercel-mcp",
+      "description": "MCP server for Vercel integration",
+      "url": "http://localhost:8002/vercel",
+      "tools": [
+        {
+          "name": "list_deployments",
+          "description": "List recent deployments",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "type": "string",
+                "description": "Project ID",
+                "default": "${VERCEL_PROJECT_ID}"
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Maximum number of deployments to return",
+                "default": 10
+              }
+            }
+          }
+        },
+        {
+          "name": "create_deployment",
+          "description": "Create a new deployment",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "project_id": {
+                "type": "string",
+                "description": "Project ID",
+                "default": "${VERCEL_PROJECT_ID}"
+              },
+              "target": {
+                "type": "string",
+                "description": "Deployment target",
+                "enum": ["production", "preview"],
+                "default": "preview"
+              }
+            },
+            "required": ["project_id"]
+          }
+        }
+      ],
+      "resources": [
+        {
+          "uri": "projects",
+          "description": "List of Vercel projects"
+        },
+        {
+          "uri": "domains",
+          "description": "List of Vercel domains"
+        }
       ]
     },
     {
-      "name": "snowflake_tools",
-      "module": "backend.mcp.tools.snowflake_tools",
-      "enabled": true,
-      "functions": [
-        "snowflake_query",
-        "snowflake_execute"
-      ]
-    },
-    {
-      "name": "slack_tools",
-      "module": "backend.mcp.tools.slack_tools",
-      "enabled": true,
-      "functions": [
-        "slack_send_message",
-        "slack_create_channel",
-        "slack_search_messages"
-      ]
-    },
-    {
-      "name": "estuary_tools",
-      "module": "backend.mcp.tools.estuary_tools",
-      "enabled": true,
-      "functions": [
-        "estuary_create_pipeline",
-        "estuary_list_pipelines",
-        "estuary_delete_pipeline"
-      ]
-    },
-    {
-      "name": "agent_tools",
-      "module": "backend.mcp.tools.agent_tools",
-      "enabled": true,
-      "functions": [
-        "agent_create",
-        "agent_execute",
-        "agent_list"
-      ]
-    },
-    {
-      "name": "crew_tools",
-      "module": "backend.mcp.tools.crew_tools",
-      "enabled": true,
-      "functions": [
-        "crew_create",
-        "crew_execute",
-        "crew_list"
-      ]
-    },
-    {
-      "name": "memory_tools",
-      "module": "backend.mcp.tools.memory_tools",
-      "enabled": true,
-      "functions": [
-        "memory_store",
-        "memory_retrieve",
-        "memory_search"
-      ]
-    },
-    {
-      "name": "web_tools",
-      "module": "backend.mcp.tools.web_tools",
-      "enabled": true,
-      "functions": [
-        "web_search",
-        "web_scrape",
-        "web_download"
+      "name": "estuary-mcp",
+      "description": "MCP server for Estuary integration",
+      "url": "http://localhost:8003/estuary",
+      "tools": [
+        {
+          "name": "list_collections",
+          "description": "List collections",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "description": "Maximum number of collections to return",
+                "default": 10
+              }
+            }
+          }
+        },
+        {
+          "name": "upload_file",
+          "description": "Upload a file to Estuary",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "file_path": {
+                "type": "string",
+                "description": "Path to the file to upload"
+              },
+              "collection": {
+                "type": "string",
+                "description": "Collection to upload to",
+                "default": "default"
+              }
+            },
+            "required": ["file_path"]
+          }
+        }
+      ],
+      "resources": [
+        {
+          "uri": "stats",
+          "description": "Estuary usage statistics"
+        },
+        {
+          "uri": "pins",
+          "description": "List of pinned content"
+        }
       ]
     }
-  ],
-  "resources": [
-    {
-      "name": "gong_resources",
-      "module": "backend.mcp.resources.gong_resources",
-      "enabled": true,
-      "resources": [
-        "gong_calls",
-        "gong_transcripts",
-        "gong_users"
-      ]
-    },
-    {
-      "name": "crm_resources",
-      "module": "backend.mcp.resources.crm_resources",
-      "enabled": true,
-      "resources": [
-        "hubspot_contacts",
-        "hubspot_companies",
-        "hubspot_deals",
-        "salesforce_accounts",
-        "salesforce_opportunities"
-      ]
-    },
-    {
-      "name": "vector_resources",
-      "module": "backend.mcp.resources.vector_resources",
-      "enabled": true,
-      "resources": [
-        "pinecone_indexes",
-        "weaviate_collections"
-      ]
-    },
-    {
-      "name": "snowflake_resources",
-      "module": "backend.mcp.resources.snowflake_resources",
-      "enabled": true,
-      "resources": [
-        "snowflake_tables",
-        "snowflake_views"
-      ]
-    },
-    {
-      "name": "agent_resources",
-      "module": "backend.mcp.resources.agent_resources",
-      "enabled": true,
-      "resources": [
-        "agent_definitions",
-        "agent_instances"
-      ]
-    }
-  ],
-  "rate_limits": {
-    "enabled": true,
-    "default_rate": 100,
-    "default_period": 60,
-    "per_tool_limits": {
-      "web_search": {
-        "rate": 10,
-        "period": 60
-      },
-      "web_scrape": {
-        "rate": 5,
-        "period": 60
-      }
-    }
-  },
-  "monitoring": {
-    "enabled": true,
-    "prometheus": true,
-    "logging": {
-      "file": "logs/mcp_server.log",
-      "max_size_mb": 10,
-      "backup_count": 5
-    }
-  },
-  "caching": {
-    "enabled": true,
-    "ttl": 300,
-    "max_size": 1000
-  }
+  ]
 }

@@ -1,132 +1,115 @@
 #!/bin/bash
-# Sophia AI - Test All Integrations
-# This script tests connectivity to Snowflake, Gong, Vercel, and Estuary
+# Sophia AI Integration Test Script
+# This script runs integration tests for all configured services
 
-set -e  # Exit immediately if a command exits with a non-zero status
+set -e
 
-# Display banner
-echo "=================================================="
-echo "SOPHIA AI - Integration Connectivity Test"
-echo "=================================================="
-echo "Starting tests at $(date)"
+# Define colors for output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Print header
+echo -e "${BLUE}=======================================${NC}"
+echo -e "${BLUE}   Sophia AI Integration Test Suite    ${NC}"
+echo -e "${BLUE}=======================================${NC}"
 echo ""
 
-# Check for required environment variables
-echo "Checking environment variables..."
-MISSING_VARS=0
-
-# Snowflake variables
-if [ -z "$SNOWFLAKE_ACCOUNT" ] || [ -z "$SNOWFLAKE_USER" ] || [ -z "$SNOWFLAKE_PASSWORD" ]; then
-    echo "❌ Missing required Snowflake environment variables"
-    MISSING_VARS=1
-else
-    echo "✅ Snowflake environment variables found"
-fi
-
-# Gong variables
-if [ -z "$GONG_API_KEY" ] || [ -z "$GONG_API_SECRET" ]; then
-    echo "❌ Missing required Gong environment variables"
-    MISSING_VARS=1
-else
-    echo "✅ Gong environment variables found"
-fi
-
-# Vercel variables
-if [ -z "$VERCEL_ACCESS_TOKEN" ]; then
-    echo "❌ Missing required Vercel environment variables"
-    MISSING_VARS=1
-else
-    echo "✅ Vercel environment variables found"
-fi
-
-# Estuary variables
-if [ -z "$ESTUARY_API_KEY" ]; then
-    echo "❌ Missing required Estuary environment variables"
-    MISSING_VARS=1
-else
-    echo "✅ Estuary environment variables found"
-fi
-
-echo ""
-
-# Check if any variables are missing
-if [ $MISSING_VARS -eq 1 ]; then
-    echo "Warning: Some required environment variables are missing."
-    echo "You can load them from a .env file using:"
-    echo "  source <(grep -v '^#' .env | sed -E 's/(.*)=(.*)/export \\1=\\2/')"
-    echo ""
-    
-    # Ask if user wants to continue
-    read -p "Do you want to continue anyway? (y/n) " -n 1 -r
-    echo ""
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Test aborted."
-        exit 1
-    fi
-fi
-
-# Check for Python and required packages
-echo "Checking for required Python packages..."
-if ! command -v python3 &> /dev/null; then
-    echo "Error: Python 3 is required but not installed."
+# Check if .env file exists
+if [ ! -f ".env" ]; then
+  echo -e "${YELLOW}No .env file found. Creating from template...${NC}"
+  if [ -f "integration.env.example" ]; then
+    cp integration.env.example .env
+    echo -e "${GREEN}Created .env file from template.${NC}"
+    echo -e "${YELLOW}Please edit .env file to add your credentials before running tests.${NC}"
     exit 1
+  else
+    echo -e "${RED}Error: integration.env.example file not found.${NC}"
+    exit 1
+  fi
 fi
 
-# Check for required Python packages
-REQUIRED_PACKAGES=("aiohttp" "snowflake-connector-python")
-MISSING_PACKAGES=0
+# Check for required dependencies
+echo -e "${BLUE}Checking dependencies...${NC}"
 
-for package in "${REQUIRED_PACKAGES[@]}"; do
-    if ! python3 -c "import $package" &> /dev/null; then
-        echo "❌ Missing Python package: $package"
-        MISSING_PACKAGES=1
-    else
-        echo "✅ Python package found: $package"
-    fi
+# Check for Python
+if ! command -v python3 &> /dev/null; then
+  echo -e "${RED}Error: Python 3 is required but not installed.${NC}"
+  exit 1
+fi
+
+# Check for pip
+if ! command -v pip3 &> /dev/null; then
+  echo -e "${RED}Error: pip3 is required but not installed.${NC}"
+  exit 1
+fi
+
+# Install dependencies if needed
+if [ ! -f ".deps_installed" ] || [ integration_requirements.txt -nt ".deps_installed" ]; then
+  echo -e "${YELLOW}Installing dependencies...${NC}"
+  pip3 install -r integration_requirements.txt
+  touch .deps_installed
+  echo -e "${GREEN}Dependencies installed successfully.${NC}"
+fi
+
+# Parse command line arguments
+TESTS="all"
+OUTPUT_FILE="integration_test_results.json"
+VERBOSE=""
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --tests)
+      TESTS="$2"
+      shift 2
+      ;;
+    --output)
+      OUTPUT_FILE="$2"
+      shift 2
+      ;;
+    --verbose)
+      VERBOSE="--verbose"
+      shift
+      ;;
+    *)
+      echo -e "${RED}Unknown option: $1${NC}"
+      echo "Usage: $0 [--tests test1,test2,...] [--output results.json] [--verbose]"
+      exit 1
+      ;;
+  esac
 done
 
+# Run the tests
+echo -e "${BLUE}Running integration tests: ${TESTS}${NC}"
+echo -e "${BLUE}Results will be saved to: ${OUTPUT_FILE}${NC}"
 echo ""
 
-# Install missing packages if needed
-if [ $MISSING_PACKAGES -eq 1 ]; then
-    echo "Some required Python packages are missing."
-    read -p "Do you want to install them now? (y/n) " -n 1 -r
-    echo ""
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installing missing packages..."
-        pip install aiohttp snowflake-connector-python
-    else
-        echo "Test aborted. Please install the required packages manually."
-        exit 1
-    fi
-fi
+python3 unified_integration_test.py --tests "$TESTS" --output "$OUTPUT_FILE" $VERBOSE
 
-# Run the unified integration test
-echo "Running integration tests..."
-echo ""
-
-# Check if unified_integration_test.py exists and is executable
-if [ -f "./unified_integration_test.py" ] && [ -x "./unified_integration_test.py" ]; then
-    ./unified_integration_test.py
+# Check if tests were successful
+if [ $? -eq 0 ]; then
+  echo ""
+  echo -e "${GREEN}Integration tests completed successfully.${NC}"
+  
+  # Display a summary of the results
+  echo -e "${BLUE}Summary:${NC}"
+  cat "$OUTPUT_FILE" | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+print(f\"Overall status: {data['status'].upper()}\")
+print(f\"Tests run: {len(data['tests'])}\")
+success = sum(1 for test in data['tests'] if test['status'] == 'success')
+print(f\"Successful: {success}\")
+print(f\"Failed: {len(data['tests']) - success}\")
+  "
+  
+  echo ""
+  echo -e "${BLUE}See ${OUTPUT_FILE} for detailed results.${NC}"
 else
-    # Try running with python3
-    python3 unified_integration_test.py
+  echo ""
+  echo -e "${RED}Integration tests failed.${NC}"
+  echo -e "${BLUE}See ${OUTPUT_FILE} for detailed results.${NC}"
+  exit 1
 fi
-
-# Check the exit code
-TEST_RESULT=$?
-
-echo ""
-echo "=================================================="
-if [ $TEST_RESULT -eq 0 ]; then
-    echo "✅ All integration tests passed successfully!"
-elif [ $TEST_RESULT -eq 1 ]; then
-    echo "⚠️ Some integration tests failed. See above for details."
-else
-    echo "❌ Integration tests failed. See above for details."
-fi
-echo "Test completed at $(date)"
-echo "=================================================="
-
-# Return the test result
-exit $TEST_RESULT

@@ -1,0 +1,151 @@
+name: Deploy Infrastructure
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'infrastructure/**'
+      - '.github/workflows/deploy_infrastructure.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+jobs:
+  deploy-infrastructure:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r infrastructure/requirements.txt
+      
+      - name: Set up environment variables
+        run: |
+          ENVIRONMENT="${{ github.event.inputs.environment || 'development' }}"
+          echo "ENVIRONMENT=$ENVIRONMENT" >> $GITHUB_ENV
+          
+          # Set Pulumi backend URL based on environment
+          if [ "$ENVIRONMENT" = "production" ]; then
+            echo "PULUMI_BACKEND_URL=${{ secrets.PULUMI_BACKEND_URL_PROD }}" >> $GITHUB_ENV
+          elif [ "$ENVIRONMENT" = "staging" ]; then
+            echo "PULUMI_BACKEND_URL=${{ secrets.PULUMI_BACKEND_URL_STAGING }}" >> $GITHUB_ENV
+          else
+            echo "PULUMI_BACKEND_URL=${{ secrets.PULUMI_BACKEND_URL_DEV }}" >> $GITHUB_ENV
+          fi
+          
+          # Set Pulumi access token
+          echo "PULUMI_ACCESS_TOKEN=${{ secrets.PULUMI_ACCESS_TOKEN }}" >> $GITHUB_ENV
+          
+          # Set integration credentials
+          echo "SNOWFLAKE_ACCOUNT=${{ secrets.SNOWFLAKE_ACCOUNT }}" >> $GITHUB_ENV
+          echo "SNOWFLAKE_USER=${{ secrets.SNOWFLAKE_USER }}" >> $GITHUB_ENV
+          echo "SNOWFLAKE_PASSWORD=${{ secrets.SNOWFLAKE_PASSWORD }}" >> $GITHUB_ENV
+          echo "GONG_API_KEY=${{ secrets.GONG_API_KEY }}" >> $GITHUB_ENV
+          echo "GONG_API_SECRET=${{ secrets.GONG_API_SECRET }}" >> $GITHUB_ENV
+          echo "VERCEL_API_TOKEN=${{ secrets.VERCEL_API_TOKEN }}" >> $GITHUB_ENV
+          echo "ESTUARY_API_KEY=${{ secrets.ESTUARY_API_KEY }}" >> $GITHUB_ENV
+      
+      - name: Set up Pulumi
+        run: |
+          cd infrastructure
+          if [ ! -f "Pulumi.yaml" ]; then
+            echo "name: sophia-ai-infrastructure" > Pulumi.yaml
+            echo "runtime: python" >> Pulumi.yaml
+            echo "description: Sophia AI Infrastructure" >> Pulumi.yaml
+          fi
+          echo "config:" > "Pulumi.$ENVIRONMENT.yaml"
+          echo "  sophia-ai-infrastructure:environment: $ENVIRONMENT" >> "Pulumi.$ENVIRONMENT.yaml"
+      
+      - name: Preview infrastructure changes
+        run: |
+          cd infrastructure
+          pulumi stack select $ENVIRONMENT
+          pulumi preview --diff
+      
+      - name: Deploy infrastructure
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          cd infrastructure
+          pulumi stack select $ENVIRONMENT
+          pulumi up --yes
+      
+      - name: Test infrastructure
+        if: github.event_name == 'workflow_dispatch'
+        run: python unified_integration_test.py --tests all --output infrastructure_test_results.json
+      
+      - name: Upload test results
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v3
+        with:
+          name: infrastructure-test-results
+          path: infrastructure_test_results.json
+      
+      - name: Create deployment report
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "# Infrastructure Deployment Report - $(date +"%Y-%m-%d")" > deployment_report.md
+          echo "" >> deployment_report.md
+          echo "## Environment" >> deployment_report.md
+          echo "- $ENVIRONMENT" >> deployment_report.md
+          
+          cd infrastructure
+          pulumi stack output -j > stack_output.json
+          cd ..
+          
+          if [ -f infrastructure/stack_output.json ]; then
+            echo "" >> deployment_report.md
+            echo "## Deployed Resources" >> deployment_report.md
+            cat infrastructure/stack_output.json | jq -r 'keys[] as $k | "- \($k): \(.[$k])"' >> deployment_report.md
+          fi
+          
+          if [ -f infrastructure_test_results.json ]; then
+            echo "" >> deployment_report.md
+            echo "## Test Results" >> deployment_report.md
+            OVERALL_STATUS=$(jq -r '.status' infrastructure_test_results.json)
+            echo "Overall Status: $OVERALL_STATUS" >> deployment_report.md
+            
+            echo "" >> deployment_report.md
+            echo "### Details" >> deployment_report.md
+            jq -r '.tests[] | "- \(.name): \(.status)"' infrastructure_test_results.json >> deployment_report.md
+          fi
+      
+      - name: Upload deployment report
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v3
+        with:
+          name: deployment-report
+          path: deployment_report.md
+      
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const run_id = context.runId;
+            const run_url = `https://github.com/${owner}/${repo}/actions/runs/${run_id}`;
+            
+            github.rest.issues.create({
+              owner,
+              repo,
+              title: `⚠️ Infrastructure Deployment Failed - ${new Date().toISOString().split('T')[0]}`,
+              body: `Infrastructure deployment failed in workflow run: [${run_id}](${run_url}).\n\nPlease check the logs for more details.`,
+              labels: ['bug', 'infrastructure-failure']
+            });

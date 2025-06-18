@@ -1,0 +1,64 @@
+{
+  "timestamp": "2025-06-18T12:02:33.322895",
+  "overall_status": "ALL FAILED",
+  "success_count": 0,
+  "total_count": 4,
+  "results": [
+    {
+      "service": "SNOWFLAKE",
+      "status": "CONFIG_ERROR",
+      "message": "Missing required environment variables: SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, SNOWFLAKE_PASSWORD",
+      "details": {
+        "missing_vars": [
+          "SNOWFLAKE_ACCOUNT",
+          "SNOWFLAKE_USER",
+          "SNOWFLAKE_PASSWORD"
+        ]
+      },
+      "timestamp": "2025-06-18T12:02:33.322793"
+    },
+    {
+      "service": "GONG",
+      "status": "CONFIG_ERROR",
+      "message": "Missing required environment variables: GONG_API_KEY, GONG_API_SECRET",
+      "details": {
+        "missing_vars": [
+          "GONG_API_KEY",
+          "GONG_API_SECRET"
+        ]
+      },
+      "timestamp": "2025-06-18T12:02:33.322819"
+    },
+    {
+      "service": "VERCEL",
+      "status": "CONFIG_ERROR",
+      "message": "Missing required environment variable: VERCEL_ACCESS_TOKEN",
+      "details": {
+        "missing_vars": [
+          "VERCEL_ACCESS_TOKEN"
+        ]
+      },
+      "timestamp": "2025-06-18T12:02:33.322835"
+    },
+    {
+      "service": "ESTUARY",
+      "status": "CONFIG_ERROR",
+      "message": "Missing required environment variable: ESTUARY_API_KEY",
+      "details": {
+        "missing_vars": [
+          "ESTUARY_API_KEY"
+        ]
+      },
+      "timestamp": "2025-06-18T12:02:33.322850"
+    }
+  ],
+  "recommendations": [
+    "[SNOWFLAKE] Set SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, and SNOWFLAKE_PASSWORD environment variables",
+    "[GONG] Set GONG_API_KEY and GONG_API_SECRET environment variables",
+    "[VERCEL] Set VERCEL_ACCESS_TOKEN environment variable",
+    "[ESTUARY] Set ESTUARY_API_KEY environment variable",
+    "[GENERAL] All integrations failed, check environment variables and network connectivity",
+    "[SECURITY] Regularly rotate API keys and credentials using sophia_secrets.py rotate",
+    "[SECURITY] Ensure all secrets are stored in Pulumi ESC and synced to GitHub using sophia_secrets.py"
+  ]
+}
