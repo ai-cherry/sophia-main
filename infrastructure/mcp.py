@@ -137,32 +137,9 @@ for server_config in mcp_server_configs:
     )
     mcp_images.append(image)
 
-# Create MCP server containers
-mcp_containers = []
-for i, server_config in enumerate(mcp_server_configs):
-    container = docker.Container(f"{server_config['name']}-container",
-        name=f"{server_config['name']}-{env}",
-        image=mcp_images[i].image_name,
-        envs=server_config["envs"],
-        ports=[docker.ContainerPortArgs(
-            internal=server_config["port"],
-            external=server_config["port"]
-        )],
-        networks_advanced=[docker.ContainerNetworksAdvancedArgs(
-            name=server_config["network"],
-            aliases=[server_config["name"]]
-        )],
-        restart=server_config["restart"],
-        healthcheck=docker.ContainerHealthcheckArgs(
-            test=["CMD", "curl", "-f", f"http://localhost:{server_config['port']}/health"],
-            interval="30s",
-            timeout="10s",
-            retries=3,
-            start_period="30s"
-        ),
-        provider=docker_provider
-    )
-    mcp_containers.append(container)
+# MCP server containers are now defined in docker.py for docker-compose generation.
+# This file (mcp.py) is now primarily responsible for building MCP images
+# and generating the mcp_config.json.
 
 # Create MCP configuration file
 mcp_config = {
@@ -184,7 +161,8 @@ mcp_config_file = pulumi.asset.AssetArchive({
 })
 
 # Export outputs
-pulumi.export("mcp_servers", [server["name"] for server in mcp_server_configs])
+pulumi.export("mcp_server_names", [server["name"] for server in mcp_server_configs]) # Renamed for clarity
 pulumi.export("mcp_images", [image.image_name for image in mcp_images])
-pulumi.export("mcp_containers", [container.name for container in mcp_containers])
+# pulumi.export("mcp_containers", [container.name for container in mcp_containers]) # Removed as containers are in docker.py
 pulumi.export("mcp_environment", env)
+pulumi.export("mcp_config_file_content", mcp_config_file) # Exporting the config file content

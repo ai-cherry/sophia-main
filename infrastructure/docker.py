@@ -314,6 +314,87 @@ container_configs = [
     }
 ]
 
+# Define MCP server configurations to be merged (ensure these align with mcp.py image naming)
+mcp_services_to_add = [
+    {
+        "base_name": "claude-mcp",
+        "port": 8010,
+        "envs": [
+            "ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}",
+            "MCP_SERVER_NAME=claude",
+            "MCP_SERVER_VERSION=1.0.0"
+        ]
+    },
+    {
+        "base_name": "openai-mcp",
+        "port": 8011,
+        "envs": [
+            "OPENAI_API_KEY=${OPENAI_API_KEY}",
+            "MCP_SERVER_NAME=openai",
+            "MCP_SERVER_VERSION=1.0.0"
+        ]
+    },
+    {
+        "base_name": "salesforce-mcp",
+        "port": 8012,
+        "envs": [
+            "SALESFORCE_CLIENT_ID=${SALESFORCE_CLIENT_ID}",
+            "SALESFORCE_CLIENT_SECRET=${SALESFORCE_CLIENT_SECRET}",
+            "SALESFORCE_USERNAME=${SALESFORCE_USERNAME}",
+            "SALESFORCE_PASSWORD=${SALESFORCE_PASSWORD}",
+            "MCP_SERVER_NAME=salesforce",
+            "MCP_SERVER_VERSION=1.0.0"
+        ]
+    },
+    {
+        "base_name": "hubspot-mcp",
+        "port": 8013,
+        "envs": [
+            "HUBSPOT_API_KEY=${HUBSPOT_API_KEY}",
+            "MCP_SERVER_NAME=hubspot",
+            "MCP_SERVER_VERSION=1.0.0"
+        ]
+    },
+    {
+        "base_name": "slack-mcp",
+        "port": 8014,
+        "envs": [
+            "SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}",
+            "SLACK_APP_TOKEN=${SLACK_APP_TOKEN}",
+            "SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}",
+            "MCP_SERVER_NAME=slack",
+            "MCP_SERVER_VERSION=1.0.0"
+        ]
+    }
+]
+
+for mcp_service in mcp_services_to_add:
+    container_configs.append({
+        "name": f"{mcp_service['base_name']}-{env}",
+        "image": f"{registry_urls.get(env, registry_urls['development'])}/{mcp_service['base_name']}:{env}", # Assumes image is built by mcp.py
+        "ports": [
+            {
+                "internal": mcp_service["port"],
+                "external": mcp_service["port"]
+            }
+        ],
+        "envs": [f"ENVIRONMENT={env}"] + mcp_service["envs"],
+        "networks_advanced": [
+            {
+                "name": f"sophia-network-{env}",
+                "aliases": [mcp_service["base_name"]]
+            }
+        ],
+        "restart": "unless-stopped",
+        "healthcheck": {
+            "test": ["CMD", "curl", "-f", f"http://localhost:{mcp_service['port']}/health"],
+            "interval": "30s",
+            "timeout": "10s",
+            "retries": 3,
+            "start_period": "30s"
+        }
+    })
+
 # Create Docker containers
 containers = []
 for container_config in container_configs:

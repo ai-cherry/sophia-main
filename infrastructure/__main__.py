@@ -123,9 +123,10 @@ pulumi.export("docker", {
 
 # MCP outputs
 pulumi.export("mcp", {
-    "servers": mcp.mcp_servers,
+    "server_names": mcp.mcp_server_names, # Updated from mcp.mcp_servers
     "images": [image.image_name for image in mcp.mcp_images],
-    "containers": [container.name for container in mcp.mcp_containers],
+    # "containers": [container.name for container in mcp.mcp_containers], # Removed
+    "config_file_content": mcp.mcp_config_file_content, # Added
     "environment": env
 })
 
@@ -181,7 +182,8 @@ pulumi.export("sophia_config", {
         "network": docker.network.name
     },
     "mcp": {
-        "servers": [server["name"] for server in mcp.mcp_server_configs]
+        "server_names": [server["name"] for server in mcp.mcp_server_configs], # Updated
+        "config_file_url_placeholder": "Access mcp_config.json from stack outputs" # Placeholder, actual content in mcp.config_file_content
     }
 })
 
