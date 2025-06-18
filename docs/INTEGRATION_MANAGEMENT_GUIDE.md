@@ -1,251 +1,323 @@
 # Sophia AI Integration Management Guide
 
-This guide provides comprehensive instructions for managing integrations with external services (Snowflake, Gong, Vercel, and Estuary) in the Sophia AI platform.
+This guide provides comprehensive instructions for managing integrations with external services in the Sophia AI platform.
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Secret Management](#secret-management)
-   - [Unified Secret Management CLI](#unified-secret-management-cli)
-   - [Secret Storage Best Practices](#secret-storage-best-practices)
-   - [Secret Rotation](#secret-rotation)
-3. [Integration Testing](#integration-testing)
-   - [Unified Integration Test](#unified-integration-test)
-   - [Service-Specific Testing](#service-specific-testing)
-4. [Service-Specific Configuration](#service-specific-configuration)
-   - [Snowflake](#snowflake)
-   - [Gong](#gong)
-   - [Vercel](#vercel)
-   - [Estuary](#estuary)
-5. [Troubleshooting](#troubleshooting)
-6. [Security Best Practices](#security-best-practices)
+2. [Integration Architecture](#integration-architecture)
+3. [Snowflake Integration](#snowflake-integration)
+4. [Gong Integration](#gong-integration)
+5. [Vercel Integration](#vercel-integration)
+6. [Estuary Integration](#estuary-integration)
+7. [Secret Management](#secret-management)
+8. [Testing Integrations](#testing-integrations)
+9. [Monitoring and Alerting](#monitoring-and-alerting)
+10. [Troubleshooting](#troubleshooting)
 
 ## Overview
 
-Sophia AI integrates with several external services to provide comprehensive business intelligence and automation capabilities:
+Sophia AI integrates with several external services to provide a comprehensive business intelligence and automation platform for Pay Ready. These integrations are managed using Infrastructure as Code (IaC) with Pulumi, ensuring consistent and reliable deployments across environments.
 
-- **Snowflake**: Data warehouse for analytics and reporting
-- **Gong**: Call recording and analysis for sales intelligence
-- **Vercel**: Frontend deployment and hosting
-- **Estuary**: Real-time data streaming and ETL
+## Integration Architecture
 
-This guide covers how to manage credentials, test connectivity, and troubleshoot issues with these integrations.
+The integration architecture follows these principles:
+
+1. **Separation of Concerns**: Each integration is implemented as a separate module
+2. **Configuration Management**: All configuration is managed through Pulumi ESC
+3. **Secret Management**: Secrets are managed securely using Pulumi ESC
+4. **Testing**: All integrations have comprehensive tests
+5. **Monitoring**: All integrations are monitored for availability and performance
+
+The integration architecture is implemented as follows:
+
+```mermaid
+graph TD
+    A[Sophia AI] --> B[Integration Layer]
+    B --> C[Snowflake]
+    B --> D[Gong]
+    B --> E[Vercel]
+    B --> F[Estuary]
+    G[Pulumi IaC] --> C
+    G --> D
+    G --> E
+    G --> F
+    H[Monitoring] --> C
+    H --> D
+    H --> E
+    H --> F
+```
+
+## Snowflake Integration
+
+### Configuration
+
+Snowflake is configured using Pulumi IaC. The configuration includes:
+
+- **Warehouse**: Compute resources for queries
+- **Database**: Storage for data
+- **Schema**: Organization of tables
+- **Role**: Access control
+
+### Usage
+
+To use Snowflake in your code:
+
+```python
+import snowflake.connector
+
+def connect_to_snowflake():
+    """Connect to Snowflake"""
+    conn = snowflake.connector.connect(
+        account=os.environ.get("SNOWFLAKE_ACCOUNT"),
+        user=os.environ.get("SNOWFLAKE_USER"),
+        password=os.environ.get("SNOWFLAKE_PASSWORD"),
+        warehouse=os.environ.get("SNOWFLAKE_WAREHOUSE"),
+        database=os.environ.get("SNOWFLAKE_DATABASE"),
+        schema=os.environ.get("SNOWFLAKE_SCHEMA"),
+        role=os.environ.get("SNOWFLAKE_ROLE")
+    )
+    return conn
+```
+
+### Best Practices
+
+1. **Connection Pooling**: Use connection pooling for efficient resource usage
+2. **Query Optimization**: Optimize queries for performance
+3. **Error Handling**: Implement comprehensive error handling
+4. **Monitoring**: Monitor query performance and resource usage
+
+## Gong Integration
+
+### Configuration
+
+Gong is configured using Pulumi IaC. The configuration includes:
+
+- **API Key**: Authentication for API access
+- **API Secret**: Authentication for API access
+- **Webhook**: Configuration for event notifications
+
+### Usage
+
+To use Gong in your code:
+
+```python
+import requests
+
+def get_gong_workspaces():
+    """Get Gong workspaces"""
+    response = requests.get(
+        "https://us-70092.api.gong.io/v2/workspaces",
+        auth=(os.environ.get("GONG_API_KEY"), os.environ.get("GONG_API_SECRET"))
+    )
+    response.raise_for_status()
+    return response.json()
+```
+
+### Best Practices
+
+1. **Rate Limiting**: Respect API rate limits
+2. **Error Handling**: Implement comprehensive error handling
+3. **Webhook Validation**: Validate webhook requests
+4. **Monitoring**: Monitor API usage and errors
+
+## Vercel Integration
+
+### Configuration
+
+Vercel is configured using Pulumi IaC. The configuration includes:
+
+- **Project**: Configuration for the frontend project
+- **Domain**: Configuration for the domain
+- **Environment Variables**: Configuration for the frontend environment
+
+### Usage
+
+To use Vercel in your code:
+
+```python
+import requests
+
+def get_vercel_deployments():
+    """Get Vercel deployments"""
+    headers = {
+        "Authorization": f"Bearer {os.environ.get('VERCEL_ACCESS_TOKEN')}",
+        "Content-Type": "application/json"
+    }
+    params = {}
+    if os.environ.get("VERCEL_TEAM_ID"):
+        params["teamId"] = os.environ.get("VERCEL_TEAM_ID")
+    
+    response = requests.get(
+        "https://api.vercel.com/v6/deployments",
+        headers=headers,
+        params=params
+    )
+    response.raise_for_status()
+    return response.json()
+```
+
+### Best Practices
+
+1. **Deployment Strategy**: Use a consistent deployment strategy
+2. **Environment Variables**: Manage environment variables securely
+3. **Error Handling**: Implement comprehensive error handling
+4. **Monitoring**: Monitor deployments and performance
+
+## Estuary Integration
+
+### Configuration
+
+Estuary is configured using Pulumi IaC. The configuration includes:
+
+- **API Key**: Authentication for API access
+- **Collection**: Configuration for data collection
+- **Flow**: Configuration for data flow
+
+### Usage
+
+To use Estuary in your code:
+
+```python
+import requests
+
+def get_estuary_collections():
+    """Get Estuary collections"""
+    headers = {
+        "Authorization": f"Bearer {os.environ.get('ESTUARY_API_KEY')}",
+        "Content-Type": "application/json"
+    }
+    response = requests.get(
+        f"{os.environ.get('ESTUARY_API_URL', 'https://api.estuary.tech')}/collections",
+        headers=headers
+    )
+    response.raise_for_status()
+    return response.json()
+```
+
+### Best Practices
+
+1. **Data Validation**: Validate data before sending to Estuary
+2. **Error Handling**: Implement comprehensive error handling
+3. **Monitoring**: Monitor data flow and errors
+4. **Rate Limiting**: Respect API rate limits
 
 ## Secret Management
 
-### Unified Secret Management CLI
+Secrets are managed using Pulumi ESC. This provides a secure way to manage sensitive information across different environments.
 
-The `sophia_secrets.py` tool provides a unified interface for managing secrets across different environments:
+### Adding a New Secret
 
-```bash
-# Import secrets from .env file to Pulumi ESC
-./sophia_secrets.py import-env --env-file .env --stack development
+To add a new secret:
 
-# Export secrets from Pulumi ESC to .env file
-./sophia_secrets.py export-env --env-file .env.new --stack production
-
-# Sync secrets to GitHub repository
-./sophia_secrets.py sync-github --repo payready/sophia
-
-# Sync secrets to GitHub organization
-./sophia_secrets.py sync-github-org --org payready
-
-# Rotate secrets for a specific service
-./sophia_secrets.py rotate --service snowflake
-
-# Audit secret usage and rotation status
-./sophia_secrets.py audit
-```
-
-### Secret Storage Best Practices
-
-Sophia AI uses a multi-layered approach to secret management:
-
-1. **Pulumi ESC (Encrypted Secrets Configuration)**: The primary source of truth for all secrets
-2. **GitHub Secrets**: Used for CI/CD workflows
-3. **Local Development**: `.env` files for local development (never committed to version control)
-
-#### Recommended Workflow
-
-1. Store all secrets in Pulumi ESC
-2. Sync secrets to GitHub for CI/CD workflows
-3. Export secrets to `.env` files for local development
-4. Regularly audit and rotate secrets
-
-### Secret Rotation
-
-Regular rotation of secrets is essential for maintaining security. The `sophia_secrets.py rotate` command helps automate this process:
+1. Add the secret to the `.env` file
+2. Import the secret to Pulumi ESC:
 
 ```bash
-# Rotate all secrets
-./sophia_secrets.py rotate --service all
-
-# Rotate only Snowflake secrets
-./sophia_secrets.py rotate --service snowflake
+cd infrastructure
+./import_secrets.sh ../.env development
 ```
 
-The rotation process:
+### Rotating Secrets
 
-1. Generates new credentials for the service
-2. Updates the environment variables
-3. Updates Pulumi ESC
-4. Syncs to GitHub
-5. Updates the rotation timestamp in the configuration
+Secrets are rotated automatically every 90 days using GitHub Actions. To manually rotate a secret:
 
-## Integration Testing
-
-### Unified Integration Test
-
-The `unified_integration_test.py` script tests connectivity to all integrated services and provides a comprehensive report:
+1. Update the secret in the service (e.g., Snowflake, Gong, Vercel, Estuary)
+2. Update the secret in the `.env` file
+3. Import the secret to Pulumi ESC:
 
 ```bash
-# Run the unified integration test
-./unified_integration_test.py
+cd infrastructure
+./import_secrets.sh ../.env development
 ```
 
-The test:
+## Testing Integrations
 
-1. Checks for required environment variables
-2. Tests connectivity to each service
-3. Provides detailed error messages and recommendations
-4. Generates a JSON report with results
+Integrations are tested using the unified integration test framework. This ensures that all integrations are working correctly.
 
-### Service-Specific Testing
+### Running Tests
 
-For more detailed testing of specific services, you can use the service-specific test scripts:
+To run all integration tests:
 
 ```bash
-# Test Snowflake connectivity
-python test_snowflake.py
-
-# Test Gong API
-python test_gong.py
-
-# Test Vercel deployment
-python test_vercel.py
-
-# Test Estuary data flow
-python test_estuary.py
+./test_all_integrations.sh
 ```
 
-## Service-Specific Configuration
+To run specific integration tests:
 
-### Snowflake
-
-Required environment variables:
-
-- `SNOWFLAKE_ACCOUNT`: Your Snowflake account identifier
-- `SNOWFLAKE_USER`: Username for authentication
-- `SNOWFLAKE_PASSWORD`: Password for authentication
-- `SNOWFLAKE_WAREHOUSE`: Default warehouse to use
-- `SNOWFLAKE_DATABASE`: Default database to use
-- `SNOWFLAKE_SCHEMA`: Default schema to use
-- `SNOWFLAKE_ROLE`: Default role to use
-
-Example configuration:
-
-```
-SNOWFLAKE_ACCOUNT=payready
-SNOWFLAKE_USER=sophia_service
-SNOWFLAKE_PASSWORD=your-secure-password
-SNOWFLAKE_WAREHOUSE=SOPHIA_WH
-SNOWFLAKE_DATABASE=SOPHIA_DB
-SNOWFLAKE_SCHEMA=PUBLIC
-SNOWFLAKE_ROLE=SOPHIA_ROLE
+```bash
+./test_all_integrations.sh --snowflake  # Run only Snowflake tests
+./test_all_integrations.sh --gong       # Run only Gong tests
+./test_all_integrations.sh --vercel     # Run only Vercel tests
+./test_all_integrations.sh --estuary    # Run only Estuary tests
 ```
 
-### Gong
+### Adding Tests
 
-Required environment variables:
+To add a new integration test:
 
-- `GONG_API_KEY`: Your Gong API key
-- `GONG_API_SECRET`: Your Gong API secret
-- `GONG_ACCESS_KEY`: Access key for enhanced functionality
+1. Create a new class that inherits from `IntegrationTest` in `unified_integration_test.py`
+2. Implement the `_run_tests` method to test the integration
+3. Add the new test to the `main` function in `unified_integration_test.py`
+4. Update the command-line arguments in `parse_args` to include the new test
 
-Example configuration:
+## Monitoring and Alerting
 
-```
-GONG_API_KEY=your-gong-api-key
-GONG_API_SECRET=your-gong-api-secret
-GONG_ACCESS_KEY=your-gong-access-key
-```
+Integrations are monitored using a combination of:
 
-### Vercel
+- **API Health Checks**: Regular checks of API availability
+- **Performance Monitoring**: Monitoring of API performance
+- **Error Monitoring**: Monitoring of API errors
+- **Usage Monitoring**: Monitoring of API usage
 
-Required environment variables:
+Alerts are sent to Slack when issues are detected.
 
-- `VERCEL_ACCESS_TOKEN`: Your Vercel access token
-- `VERCEL_PROJECT_ID`: ID of your Vercel project
-- `VERCEL_ORG_ID`: ID of your Vercel organization
-- `VERCEL_TEAM_ID`: ID of your Vercel team
+### Setting Up Monitoring
 
-Example configuration:
+Monitoring is set up using Pulumi IaC. The configuration includes:
 
-```
-VERCEL_ACCESS_TOKEN=your-vercel-access-token
-VERCEL_PROJECT_ID=prj_123456789
-VERCEL_ORG_ID=team_123456789
-VERCEL_TEAM_ID=team_123456789
-```
+- **Health Checks**: Configuration for API health checks
+- **Performance Monitoring**: Configuration for performance monitoring
+- **Error Monitoring**: Configuration for error monitoring
+- **Usage Monitoring**: Configuration for usage monitoring
 
-### Estuary
+### Setting Up Alerting
 
-Required environment variables:
+Alerting is set up using Pulumi IaC. The configuration includes:
 
-- `ESTUARY_API_KEY`: Your Estuary API key
-- `ESTUARY_API_URL`: URL of the Estuary API (default: https://api.estuary.dev)
-
-Example configuration:
-
-```
-ESTUARY_API_KEY=your-estuary-api-key
-ESTUARY_API_URL=https://api.estuary.dev
-```
+- **Alert Thresholds**: Configuration for alert thresholds
+- **Alert Routing**: Configuration for alert routing
+- **Alert Aggregation**: Configuration for alert aggregation
+- **Alert Suppression**: Configuration for alert suppression
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### Authentication Failures
+#### Snowflake
 
-- Verify that the credentials are correct
-- Check that the environment variables are properly set
-- Ensure that the API keys have not expired
+- **Connection Issues**: Check network connectivity and credentials
+- **Query Performance**: Check query optimization and warehouse size
+- **Access Control**: Check role permissions
 
-#### Connection Issues
+#### Gong
 
-- Check network connectivity
-- Verify that the service is available
-- Check for IP restrictions or firewall rules
+- **API Rate Limits**: Check API usage and rate limits
+- **Authentication**: Check API key and secret
+- **Webhook Issues**: Check webhook configuration and validation
 
-#### Permission Issues
+#### Vercel
 
-- Verify that the credentials have the necessary permissions
-- Check role assignments for the service accounts
+- **Deployment Issues**: Check deployment logs and configuration
+- **Domain Issues**: Check domain configuration and DNS
+- **Environment Variables**: Check environment variable configuration
 
-### Diagnostic Tools
+#### Estuary
 
-- Use the `unified_integration_test.py` script to diagnose connectivity issues
-- Check the service-specific logs for detailed error messages
-- Use the `sophia_secrets.py audit` command to verify secret configuration
+- **API Issues**: Check API connectivity and credentials
+- **Data Flow Issues**: Check data flow configuration and validation
+- **Collection Issues**: Check collection configuration and permissions
 
-## Security Best Practices
+### Getting Help
 
-1. **Rotate Secrets Regularly**: Use the `sophia_secrets.py rotate` command to automate rotation
-2. **Use Least Privilege**: Assign only the necessary permissions to service accounts
-3. **Audit Access**: Regularly review who has access to secrets
-4. **Monitor Usage**: Set up alerts for unusual API usage patterns
-5. **Secure Storage**: Always use encrypted storage for secrets (Pulumi ESC)
-6. **CI/CD Security**: Use GitHub Secrets for CI/CD workflows
-7. **Local Development**: Use `.env` files for local development, never commit them to version control
-
-### Recommended Security Workflow
-
-1. Store all secrets in Pulumi ESC
-2. Sync secrets to GitHub for CI/CD workflows
-3. Export secrets to `.env` files for local development
-4. Regularly audit and rotate secrets
-5. Monitor API usage for unusual patterns
-6. Review access permissions quarterly
-
-By following these guidelines, you can ensure that your integrations are secure, reliable, and properly managed.
+If you encounter issues that you cannot resolve, contact the Sophia AI team for assistance.
