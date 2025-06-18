@@ -1,4 +1,10 @@
-# SOPHIA AI System - .gitignore
+# Sophia AI Pay Ready Platform - .gitignore
+
+# Environment variables and secrets
+.env
+*.env
+.env.*
+!.env.example
 
 # Python
 __pycache__/
@@ -21,132 +27,104 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-.nox/
-.hypothesis/
-.mypy_cache/
-.dmypy.json
-dmypy.json
-.pyre/
+
+# JavaScript/Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.pnpm-debug.log
+.npm
+.yarn-integrity
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
 
 # Virtual Environment
 venv/
 env/
 ENV/
-.env
-.venv
+.venv/
+.env/
+.ENV/
 
-# IDE
+# IDE and Editor files
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
 .DS_Store
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Project specific
+# Logs
 logs/
-data/
-.env
-.env.*
-!.env.example
 *.log
-*.sqlite
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database
+*.sqlite3
 *.db
+
+# Compiled files
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
 
 # Docker
 .docker/
-
-# Frontend
-node_modules/
-/frontend/dist/
-/frontend/node_modules/
-/frontend/.pnp
-/frontend/.pnp.js
-/frontend/coverage
-/frontend/.next/
-/frontend/out/
-/frontend/build
-/frontend/.DS_Store
-/frontend/npm-debug.log*
-/frontend/yarn-debug.log*
-/frontend/yarn-error.log*
-/frontend/.env.local
-/frontend/.env.development.local
-/frontend/.env.test.local
-/frontend/.env.production.local
-
-# Admin Frontend
-/sophia_admin_frontend/dist/
-/sophia_admin_frontend/node_modules/
-/sophia_admin_frontend/.pnp
-/sophia_admin_frontend/.pnp.js
-/sophia_admin_frontend/coverage
-/sophia_admin_frontend/.next/
-/sophia_admin_frontend/out/
-/sophia_admin_frontend/build
-/sophia_admin_frontend/.DS_Store
-/sophia_admin_frontend/npm-debug.log*
-/sophia_admin_frontend/yarn-debug.log*
-/sophia_admin_frontend/yarn-error.log*
-/sophia_admin_frontend/.env.local
-/sophia_admin_frontend/.env.development.local
-/sophia_admin_frontend/.env.test.local
-/sophia_admin_frontend/.env.production.local
-
-# Pulumi
-.pulumi/
-Pulumi.*.yaml
-!Pulumi.yaml
-
-# Secrets
-*.pem
-*.key
-*.crt
-*.p12
-*.pfx
-*.jks
-*.keystore
-*.truststore
+docker-compose.override.yml
 
 # Temporary files
+*.tmp
+*.temp
+.temp/
 tmp/
 temp/
-.tmp/
-.temp/
 
-# Test files
-test-results/
-playwright-report/
-playwright/.cache/
-
-# Monitoring
-prometheus_data/
-grafana_data/
-
-# Vector databases
-weaviate_data/
-pinecone_data/
-
-# Mem0
-mem0_data/
-
-# Estuary Flow
-estuary_data/
-
-# Snowflake
-snowflake_downloads/
-
-# Gong
-gong_downloads/
-
-# Misc
+# System Files
 .DS_Store
 Thumbs.db
