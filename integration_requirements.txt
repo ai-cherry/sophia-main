@@ -1,0 +1,39 @@
+# Sophia AI Integration Requirements
+# Required packages for integration testing and secret management
+
+# HTTP client for API requests
+aiohttp>=3.8.0
+
+# Snowflake connector
+snowflake-connector-python>=3.0.0
+
+# GitHub API client for secret management
+PyGithub>=1.55
+
+# Cryptography for secret encryption
+pynacl>=1.5.0
+
+# Pulumi for secret management
+pulumi>=3.0.0
+
+# Async support
+asyncio>=3.4.3
+
+# Type hints
+typing-extensions>=4.0.0
+
+# JSON handling
+ujson>=5.0.0
+
+# Environment variable management
+python-dotenv>=1.0.0
+
+# CLI utilities
+click>=8.0.0
+
+# Logging enhancements
+structlog>=22.0.0
+
+# Testing utilities
+pytest>=7.0.0
+pytest-asyncio>=0.18.0
