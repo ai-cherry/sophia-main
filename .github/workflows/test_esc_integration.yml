@@ -1,0 +1,355 @@
+name: Test Pulumi ESC Integration
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to test'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      service:
+        description: 'Service to test (leave empty for all)'
+        required: false
+        type: string
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  test-esc-setup:
+    runs-on: ubuntu-latest
+    outputs:
+      esc_initialized: ${{ steps.init-esc.outputs.initialized }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pulumi requests
+      
+      - name: Initialize Pulumi ESC
+        id: init-esc
+        run: |
+          # Login to Pulumi
+          pulumi login --token ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          
+          # Initialize Pulumi ESC
+          cd infrastructure/esc
+          
+          # Check if stack exists
+          if ! pulumi stack ls | grep -q "sophia-${{ github.event.inputs.environment }}"; then
+            pulumi stack init "sophia-${{ github.event.inputs.environment }}"
+          fi
+          
+          pulumi stack select "sophia-${{ github.event.inputs.environment }}"
+          
+          # Set config values
+          pulumi config set environment ${{ github.event.inputs.environment }}
+          
+          echo "initialized=true" >> $GITHUB_OUTPUT
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      
+      - name: Test setup script
+        run: |
+          bash ./infrastructure/esc/setup_esc.sh \
+            --organization ai-cherry \
+            --project sophia \
+            --environment ${{ github.event.inputs.environment }} \
+            --no-sync \
+            --output setup_results.json
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      
+      - name: Upload setup results
+        uses: actions/upload-artifact@v3
+        with:
+          name: setup-results
+          path: setup_results.json
+          retention-days: 1
+
+  test-secret-sync:
+    needs: test-esc-setup
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pulumi requests
+      
+      - name: Install GitHub CLI
+        run: |
+          type -p curl >/dev/null || apt install curl -y
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh -y
+      
+      - name: Login to GitHub CLI
+        run: |
+          echo "${{ secrets.GH_TOKEN }}" > gh_token.txt
+          gh auth login --with-token < gh_token.txt
+          rm gh_token.txt
+      
+      - name: Login to Pulumi
+        run: |
+          pulumi login --token ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      
+      - name: Test secret synchronization
+        run: |
+          bash ./infrastructure/esc/sync_secrets_ci.sh \
+            --github-org ai-cherry \
+            --pulumi-org ai-cherry \
+            --pulumi-env sophia-${{ github.event.inputs.environment }} \
+            --direction github-to-pulumi \
+            --output sync_results.json \
+            --dry-run
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      
+      - name: Upload sync results
+        uses: actions/upload-artifact@v3
+        with:
+          name: sync-results
+          path: sync_results.json
+          retention-days: 1
+
+  test-secret-retrieval:
+    needs: [test-esc-setup, test-secret-sync]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pulumi requests
+      
+      - name: Login to Pulumi
+        run: |
+          pulumi login --token ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      
+      - name: Test secret retrieval
+        id: get-secret
+        run: |
+          SERVICE="${{ github.event.inputs.service }}"
+          
+          if [ -z "$SERVICE" ]; then
+            # Test with a known service
+            SERVICE="vercel"
+          fi
+          
+          # Make the script executable
+          chmod +x ./infrastructure/esc/get_secret.py
+          
+          # Test retrieving a specific secret
+          echo "Testing retrieval of a specific secret..."
+          ./infrastructure/esc/get_secret.py \
+            --service "$SERVICE" \
+            --key "token" \
+            --organization ai-cherry \
+            --project sophia \
+            --environment ${{ github.event.inputs.environment }} \
+            --output specific_secret_result.json
+          
+          # Test retrieving all secrets for a service
+          echo "Testing retrieval of all secrets for a service..."
+          ./infrastructure/esc/get_secret.py \
+            --service "$SERVICE" \
+            --organization ai-cherry \
+            --project sophia \
+            --environment ${{ github.event.inputs.environment }} \
+            --output all_secrets_result.json
+          
+          # Test GitHub Actions output format
+          echo "Testing GitHub Actions output format..."
+          echo "service=$SERVICE" >> $GITHUB_OUTPUT
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      
+      - name: Upload retrieval results
+        uses: actions/upload-artifact@v3
+        with:
+          name: retrieval-results
+          path: |
+            specific_secret_result.json
+            all_secrets_result.json
+          retention-days: 1
+
+  test-secret-injection:
+    needs: [test-esc-setup, test-secret-sync, test-secret-retrieval]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pulumi requests
+      
+      - name: Login to Pulumi
+        run: |
+          pulumi login --token ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      
+      - name: Test secret injection
+        run: |
+          SERVICE="${{ github.event.inputs.service }}"
+          
+          if [ -z "$SERVICE" ]; then
+            # Test with a known service
+            SERVICE="vercel"
+          fi
+          
+          # Make the script executable
+          chmod +x ./infrastructure/esc/inject_secrets.sh
+          
+          # Create a test GitHub environment file
+          touch test_env_file
+          
+          # Test injecting secrets for a specific service
+          echo "Testing injection of secrets for a specific service..."
+          ./infrastructure/esc/inject_secrets.sh \
+            --service "$SERVICE" \
+            --organization ai-cherry \
+            --project sophia \
+            --environment ${{ github.event.inputs.environment }} \
+            --github-env test_env_file \
+            --output injection_results.json
+          
+          # Display the injected secrets (masked)
+          echo "Injected secrets (masked):"
+          cat injection_results.json
+          
+          # Count the number of injected secrets
+          INJECTED_COUNT=$(grep -c "=" test_env_file || true)
+          echo "Number of injected secrets: $INJECTED_COUNT"
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      
+      - name: Upload injection results
+        uses: actions/upload-artifact@v3
+        with:
+          name: injection-results
+          path: |
+            injection_results.json
+          retention-days: 1
+
+  generate-report:
+    needs: [test-esc-setup, test-secret-sync, test-secret-retrieval, test-secret-injection]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+      
+      - name: Generate test report
+        run: |
+          echo "# Pulumi ESC Integration Test Report" > test_report.md
+          echo "" >> test_report.md
+          echo "## Environment" >> test_report.md
+          echo "- ${{ github.event.inputs.environment }}" >> test_report.md
+          
+          if [ -n "${{ github.event.inputs.service }}" ]; then
+            echo "- Service: ${{ github.event.inputs.service }}" >> test_report.md
+          else
+            echo "- Service: All services" >> test_report.md
+          fi
+          
+          echo "" >> test_report.md
+          echo "## Test Results" >> test_report.md
+          
+          echo "### ESC Setup" >> test_report.md
+          if [ -f "setup-results/setup_results.json" ]; then
+            echo "- Status: Success" >> test_report.md
+          else
+            echo "- Status: Failure" >> test_report.md
+          fi
+          
+          echo "" >> test_report.md
+          echo "### Secret Synchronization" >> test_report.md
+          if [ -f "sync-results/sync_results.json" ]; then
+            echo "- Status: Success" >> test_report.md
+          else
+            echo "- Status: Failure" >> test_report.md
+          fi
+          
+          echo "" >> test_report.md
+          echo "### Secret Retrieval" >> test_report.md
+          if [ -f "retrieval-results/specific_secret_result.json" ] && [ -f "retrieval-results/all_secrets_result.json" ]; then
+            echo "- Status: Success" >> test_report.md
+            echo "- Specific Secret: Available" >> test_report.md
+            echo "- All Secrets: Available" >> test_report.md
+          else
+            echo "- Status: Failure" >> test_report.md
+          fi
+          
+          echo "" >> test_report.md
+          echo "### Secret Injection" >> test_report.md
+          if [ -f "injection-results/injection_results.json" ]; then
+            echo "- Status: Success" >> test_report.md
+            
+            # Count the number of injected secrets
+            INJECTED_COUNT=$(jq 'map(length) | add' injection-results/injection_results.json 2>/dev/null || echo "0")
+            echo "- Injected Secrets: $INJECTED_COUNT" >> test_report.md
+          else
+            echo "- Status: Failure" >> test_report.md
+          fi
+          
+          echo "" >> test_report.md
+          echo "## Summary" >> test_report.md
+          
+          if [ -f "setup-results/setup_results.json" ] && \
+             [ -f "sync-results/sync_results.json" ] && \
+             [ -f "retrieval-results/specific_secret_result.json" ] && \
+             [ -f "retrieval-results/all_secrets_result.json" ] && \
+             [ -f "injection-results/injection_results.json" ]; then
+            echo "All tests passed successfully. The Pulumi ESC integration is working correctly." >> test_report.md
+          else
+            echo "Some tests failed. Please check the individual test results for more information." >> test_report.md
+          fi
+      
+      - name: Upload test report
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-report
+          path: test_report.md
+          retention-days: 30
+

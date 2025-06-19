@@ -1,0 +1,84 @@
+{
+  "snowflake": {
+    "type": "database",
+    "description": "Snowflake data warehouse integration",
+    "config_keys": ["account", "warehouse", "database", "schema", "role"],
+    "secret_keys": ["user", "password"],
+    "rotation_schedule": "90d",
+    "owner": "data-team",
+    "dependencies": []
+  },
+  "pinecone": {
+    "type": "vector_database",
+    "description": "Pinecone vector database integration",
+    "config_keys": ["environment", "index_name"],
+    "secret_keys": ["api_key"],
+    "rotation_schedule": "90d",
+    "owner": "ai-team",
+    "dependencies": []
+  },
+  "openai": {
+    "type": "ai_provider",
+    "description": "OpenAI API integration",
+    "config_keys": ["organization"],
+    "secret_keys": ["api_key"],
+    "rotation_schedule": "90d",
+    "owner": "ai-team",
+    "dependencies": []
+  },
+  "anthropic": {
+    "type": "ai_provider",
+    "description": "Anthropic API integration",
+    "config_keys": [],
+    "secret_keys": ["api_key"],
+    "rotation_schedule": "90d",
+    "owner": "ai-team",
+    "dependencies": []
+  },
+  "estuary": {
+    "type": "data_pipeline",
+    "description": "Estuary Flow data pipeline integration",
+    "config_keys": ["api_url", "collection_name"],
+    "secret_keys": ["api_key"],
+    "rotation_schedule": "90d",
+    "owner": "data-team",
+    "dependencies": []
+  },
+  "airbyte": {
+    "type": "data_pipeline",
+    "description": "Airbyte Cloud data pipeline integration",
+    "config_keys": ["api_url", "workspace_id"],
+    "secret_keys": ["api_key", "bearer_token"],
+    "rotation_schedule": "90d",
+    "owner": "data-team",
+    "dependencies": []
+  },
+  "lambda_labs": {
+    "type": "compute",
+    "description": "Lambda Labs compute integration",
+    "config_keys": ["api_url", "region", "instance_type"],
+    "secret_keys": ["api_key", "jupyter_password", "ssh_public_key", "ssh_private_key"],
+    "rotation_schedule": "90d",
+    "owner": "infra-team",
+    "dependencies": []
+  },
+  "vercel": {
+    "type": "deployment",
+    "description": "Vercel deployment integration",
+    "config_keys": ["team_id", "project_id"],
+    "secret_keys": ["token"],
+    "rotation_schedule": "90d",
+    "owner": "infra-team",
+    "dependencies": []
+  },
+  "gong": {
+    "type": "api",
+    "description": "Gong API integration",
+    "config_keys": ["api_url"],
+    "secret_keys": ["access_key", "client_secret"],
+    "rotation_schedule": "90d",
+    "owner": "sales-team",
+    "dependencies": []
+  }
+}
+

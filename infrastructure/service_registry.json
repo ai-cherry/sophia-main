@@ -1,0 +1,111 @@
+{
+  "snowflake": {
+    "type": "database",
+    "description": "Snowflake data warehouse for business intelligence",
+    "config_keys": ["account", "warehouse", "database", "schema", "role"],
+    "secret_keys": ["user", "password"],
+    "rotation_schedule": "30d",
+    "owner": "data-team",
+    "dependencies": []
+  },
+  "gong": {
+    "type": "api",
+    "description": "Gong conversation intelligence platform",
+    "config_keys": ["base_url"],
+    "secret_keys": ["api_key", "api_secret", "client_secret"],
+    "rotation_schedule": "60d",
+    "owner": "sales-ops",
+    "dependencies": []
+  },
+  "vercel": {
+    "type": "api",
+    "description": "Vercel deployment platform for frontend applications",
+    "config_keys": ["team_id", "project_id", "org_id"],
+    "secret_keys": ["token"],
+    "rotation_schedule": "90d",
+    "owner": "frontend-team",
+    "dependencies": []
+  },
+  "estuary": {
+    "type": "api",
+    "description": "Estuary Flow real-time data streaming platform",
+    "config_keys": ["api_url"],
+    "secret_keys": ["api_key"],
+    "rotation_schedule": "60d",
+    "owner": "data-team",
+    "dependencies": []
+  },
+  "lambda_labs": {
+    "type": "infrastructure",
+    "description": "Lambda Labs GPU compute resources",
+    "config_keys": [],
+    "secret_keys": ["api_key", "jupyter_password", "ssh_public_key", "ssh_private_key"],
+    "rotation_schedule": "90d",
+    "owner": "ml-team",
+    "dependencies": []
+  },
+  "airbyte": {
+    "type": "api",
+    "description": "Airbyte data integration platform",
+    "config_keys": [],
+    "secret_keys": ["api_key", "password"],
+    "rotation_schedule": "60d",
+    "owner": "data-team",
+    "dependencies": []
+  },
+  "pinecone": {
+    "type": "api",
+    "description": "Pinecone vector database for semantic search",
+    "config_keys": ["environment"],
+    "secret_keys": ["api_key"],
+    "rotation_schedule": "90d",
+    "owner": "ml-team",
+    "dependencies": []
+  },
+  "weaviate": {
+    "type": "api",
+    "description": "Weaviate vector database for semantic search",
+    "config_keys": ["url"],
+    "secret_keys": ["api_key"],
+    "rotation_schedule": "90d",
+    "owner": "ml-team",
+    "dependencies": []
+  },
+  "openai": {
+    "type": "api",
+    "description": "OpenAI API for language models",
+    "config_keys": [],
+    "secret_keys": ["api_key"],
+    "rotation_schedule": "30d",
+    "owner": "ml-team",
+    "dependencies": []
+  },
+  "anthropic": {
+    "type": "api",
+    "description": "Anthropic API for Claude language models",
+    "config_keys": [],
+    "secret_keys": ["api_key"],
+    "rotation_schedule": "30d",
+    "owner": "ml-team",
+    "dependencies": []
+  },
+  "postgres": {
+    "type": "database",
+    "description": "PostgreSQL database for application data",
+    "config_keys": ["host", "port", "database"],
+    "secret_keys": ["user", "password"],
+    "rotation_schedule": "30d",
+    "owner": "backend-team",
+    "dependencies": []
+  },
+  "github": {
+    "type": "api",
+    "description": "GitHub API for repository management",
+    "config_keys": ["org"],
+    "secret_keys": ["token"],
+    "rotation_schedule": "90d",
+    "owner": "devops-team",
+    "dependencies": []
+  }
+}
+
