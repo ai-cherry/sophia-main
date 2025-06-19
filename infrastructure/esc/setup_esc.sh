@@ -39,7 +39,7 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
-    --output|-o)
+    --output|-f)
       OUTPUT_FILE="$2"
       shift
       shift
