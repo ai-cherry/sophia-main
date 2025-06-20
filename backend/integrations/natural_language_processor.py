@@ -16,6 +16,7 @@ from flask import Blueprint, Flask, jsonify, request
 # Optional spacy import
 try:
     import spacy
+
     SPACY_AVAILABLE = True
 except ImportError:
     SPACY_AVAILABLE = False
@@ -207,9 +208,9 @@ class NaturalLanguageProcessor:
         try:
             prompt = f"""
             Analyze the following text and determine the primary intent for an AI infrastructure management system.
-            
+
             Text: "{text}"
-            
+
             Available intents:
             - deploy_infrastructure: Deploy or create new infrastructure
             - scale_resources: Scale up or down existing resources
@@ -221,7 +222,7 @@ class NaturalLanguageProcessor:
             - troubleshoot_issue: Troubleshoot problems
             - optimize_costs: Optimize costs or resources
             - manage_agents: Manage AI agents
-            
+
             Return only the intent name.
             """
 
@@ -485,9 +486,9 @@ class NaturalLanguageProcessor:
                             "resource_type": parsed_intent.entities.get(
                                 "resource_type", "compute"
                             ),
-                            "scale_direction": "up"
-                            if "up" in parsed_intent.original_text
-                            else "down",
+                            "scale_direction": (
+                                "up" if "up" in parsed_intent.original_text else "down"
+                            ),
                             "target_count": parsed_intent.entities.get("target_count"),
                         },
                         context=parsed_intent.context,

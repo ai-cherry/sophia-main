@@ -128,4 +128,4 @@ export const sophiaAIDashboardSummary = pulumi.all([
         '4. Enable AI features and training',
         '5. Customize dashboard themes and layouts'
     ]
-})); 
+}));

@@ -21,7 +21,7 @@ Generated: 2025-06-20 15:59:29
 - ✅ Slack: Workspace: N/A
 - ✅ Pinecone: Index: N/A
 - ✅ Linear: Workspace: N/A
-- ✅ OpenAI: 
+- ✅ OpenAI:
 
 
 ## 📊 Dashboard URLs

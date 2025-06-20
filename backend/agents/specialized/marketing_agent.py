@@ -7,8 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class MarketingAgent(BaseAgent):
-    """Synthesizes market intelligence from internal conversations and external research.
-    """
+    """Synthesizes market intelligence from internal conversations and external research."""
 
     async def get_capabilities(self) -> List[AgentCapability]:
         return [
@@ -22,8 +21,7 @@ class MarketingAgent(BaseAgent):
         ]
 
     async def process_task(self, task: Task) -> Dict[str, Any]:
-        """Processes a task to generate marketing intelligence.
-        """
+        """Processes a task to generate marketing intelligence."""
         if task.task_type == "generate_competitive_analysis":
             competitor_name = task.task_data.get("competitor_name")
             if not competitor_name:

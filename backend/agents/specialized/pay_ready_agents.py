@@ -169,10 +169,10 @@ class BasePayReadyAgent:
         # Use NLP processor to generate contextual insights
         prompt = f"""
         Analyze the following {self.agent_type} agent results and generate 3-5 key business insights:
-        
+
         Task: {task.task_type}
         Results: {json.dumps(result_data, indent=2)}
-        
+
         Focus on actionable insights for Pay Ready's B2B apartment industry operations.
         """
 
@@ -188,10 +188,10 @@ class BasePayReadyAgent:
         """Generate recommendations from task results"""
         prompt = f"""
         Based on the following {self.agent_type} agent analysis, provide 3-5 specific recommendations:
-        
+
         Task: {task.task_type}
         Results: {json.dumps(result_data, indent=2)}
-        
+
         Provide actionable recommendations for Pay Ready's business operations and growth.
         """
 
@@ -252,8 +252,7 @@ class BasePayReadyAgent:
 
 
 class ClientHealthAgent(BasePayReadyAgent):
-    """Monitors Pay Ready's client portfolio health and identifies opportunities
-    """
+    """Monitors Pay Ready's client portfolio health and identifies opportunities"""
 
     async def _execute_task(self, task: AgentTask) -> Dict[str, Any]:
         """Execute client health monitoring tasks"""
@@ -278,7 +277,7 @@ class ClientHealthAgent(BasePayReadyAgent):
             # Get client usage metrics
             usage_query = text(
                 """
-                SELECT 
+                SELECT
                     client_id,
                     client_name,
                     monthly_revenue,
@@ -287,7 +286,7 @@ class ClientHealthAgent(BasePayReadyAgent):
                     last_login,
                     feature_adoption_rate,
                     payment_status
-                FROM client_metrics 
+                FROM client_metrics
                 WHERE active = true
                 ORDER BY monthly_revenue DESC
             """
@@ -320,9 +319,9 @@ class ClientHealthAgent(BasePayReadyAgent):
             # Advanced churn risk analysis
             churn_query = text(
                 """
-                SELECT 
+                SELECT
                     c.*,
-                    CASE 
+                    CASE
                         WHEN usage_score < 0.3 AND support_tickets > 5 THEN 'high'
                         WHEN usage_score < 0.5 AND last_login < NOW() - INTERVAL '30 days' THEN 'medium'
                         WHEN payment_status = 'overdue' THEN 'high'
@@ -330,11 +329,11 @@ class ClientHealthAgent(BasePayReadyAgent):
                     END as churn_risk_level
                 FROM client_metrics c
                 WHERE active = true
-                ORDER BY 
-                    CASE churn_risk_level 
-                        WHEN 'high' THEN 1 
-                        WHEN 'medium' THEN 2 
-                        ELSE 3 
+                ORDER BY
+                    CASE churn_risk_level
+                        WHEN 'high' THEN 1
+                        WHEN 'medium' THEN 2
+                        ELSE 3
                     END
             """
             )
@@ -378,7 +377,7 @@ class ClientHealthAgent(BasePayReadyAgent):
         try:
             expansion_query = text(
                 """
-                SELECT 
+                SELECT
                     c.*,
                     p.plan_name,
                     p.max_units,
@@ -388,7 +387,7 @@ class ClientHealthAgent(BasePayReadyAgent):
                 JOIN subscription_plans p ON c.plan_id = p.id
                 WHERE c.active = true
                 AND (
-                    c.usage_score > 0.8 
+                    c.usage_score > 0.8
                     OR (c.current_units::float / p.max_units) > 0.85
                     OR c.feature_adoption_rate > 0.9
                 )
@@ -470,8 +469,7 @@ class ClientHealthAgent(BasePayReadyAgent):
 
 
 class SalesIntelligenceAgent(BasePayReadyAgent):
-    """Optimizes Pay Ready's sales performance and competitive positioning
-    """
+    """Optimizes Pay Ready's sales performance and competitive positioning"""
 
     async def _execute_task(self, task: AgentTask) -> Dict[str, Any]:
         """Execute sales intelligence tasks"""
@@ -496,7 +494,7 @@ class SalesIntelligenceAgent(BasePayReadyAgent):
             # Sales performance query
             performance_query = text(
                 """
-                SELECT 
+                SELECT
                     s.sales_rep_id,
                     s.sales_rep_name,
                     COUNT(o.id) as total_opportunities,
@@ -519,14 +517,18 @@ class SalesIntelligenceAgent(BasePayReadyAgent):
                 "team_metrics": {
                     "total_revenue": performance_df["revenue"].sum(),
                     "total_deals": performance_df["won_deals"].sum(),
-                    "average_deal_size": performance_df["revenue"].sum()
-                    / performance_df["won_deals"].sum()
-                    if performance_df["won_deals"].sum() > 0
-                    else 0,
-                    "team_close_rate": performance_df["won_deals"].sum()
-                    / performance_df["total_opportunities"].sum()
-                    if performance_df["total_opportunities"].sum() > 0
-                    else 0,
+                    "average_deal_size": (
+                        performance_df["revenue"].sum()
+                        / performance_df["won_deals"].sum()
+                        if performance_df["won_deals"].sum() > 0
+                        else 0
+                    ),
+                    "team_close_rate": (
+                        performance_df["won_deals"].sum()
+                        / performance_df["total_opportunities"].sum()
+                        if performance_df["total_opportunities"].sum() > 0
+                        else 0
+                    ),
                 },
                 "individual_performance": performance_df.to_dict("records"),
                 "top_performers": performance_df.head(3).to_dict("records"),
@@ -582,7 +584,7 @@ class SalesIntelligenceAgent(BasePayReadyAgent):
         try:
             pipeline_query = text(
                 """
-                SELECT 
+                SELECT
                     o.*,
                     c.company_size,
                     c.industry_segment,
@@ -623,8 +625,7 @@ class SalesIntelligenceAgent(BasePayReadyAgent):
 
 
 class MarketResearchAgent(BasePayReadyAgent):
-    """Provides apartment industry intelligence and market research for Pay Ready
-    """
+    """Provides apartment industry intelligence and market research for Pay Ready"""
 
     async def _execute_task(self, task: AgentTask) -> Dict[str, Any]:
         """Execute market research tasks"""
@@ -728,8 +729,7 @@ class MarketResearchAgent(BasePayReadyAgent):
 
 
 class ComplianceMonitoringAgent(BasePayReadyAgent):
-    """Monitors regulatory compliance for Pay Ready's products and operations
-    """
+    """Monitors regulatory compliance for Pay Ready's products and operations"""
 
     async def _execute_task(self, task: AgentTask) -> Dict[str, Any]:
         """Execute compliance monitoring tasks"""
@@ -806,8 +806,7 @@ class ComplianceMonitoringAgent(BasePayReadyAgent):
 
 
 class WorkflowAutomationAgent(BasePayReadyAgent):
-    """Manages and optimizes CRM workflows and business process automation
-    """
+    """Manages and optimizes CRM workflows and business process automation"""
 
     async def _execute_task(self, task: AgentTask) -> Dict[str, Any]:
         """Execute workflow automation tasks"""
@@ -832,7 +831,7 @@ class WorkflowAutomationAgent(BasePayReadyAgent):
             # Get workflow performance data
             workflow_query = text(
                 """
-                SELECT 
+                SELECT
                     w.workflow_id,
                     w.workflow_name,
                     w.workflow_type,
@@ -871,8 +870,7 @@ class WorkflowAutomationAgent(BasePayReadyAgent):
 
 
 class PayReadyAgentOrchestrator:
-    """Orchestrates all Pay Ready specialized agents
-    """
+    """Orchestrates all Pay Ready specialized agents"""
 
     def __init__(self, config: Dict[str, Any]):
         self.config = config

@@ -50,7 +50,7 @@ EVERY significant conversation should follow this pattern:
 
 **Categories (use exactly these):**
 - `conversation` - General discussions
-- `code_decision` - Specific coding choices and rationale  
+- `code_decision` - Specific coding choices and rationale
 - `bug_solution` - Bug fixes and troubleshooting
 - `architecture` - System design and architecture
 - `workflow` - Development processes and workflows
@@ -73,8 +73,8 @@ User: "How should we structure the authentication system?"
 Cursor AI:
 1. [AUTO] Search memory: "authentication system structure patterns"
 2. [AUTO] Find previous discussions about auth patterns
-3. Respond: "Based on our previous discussion about MCP authentication, 
-   we decided to use environment variables for API keys and Pulumi ESC 
+3. Respond: "Based on our previous discussion about MCP authentication,
+   we decided to use environment variables for API keys and Pulumi ESC
    for secret management. For the main auth system, I'd recommend..."
 4. [AUTO] Store this conversation with:
    - Category: "architecture"
@@ -89,7 +89,7 @@ User: "The containers keep restarting"
 Cursor AI:
 1. [AUTO] Search memory: "container restart issues docker"
 2. [AUTO] Find: "Fixed container restart issue by setting missing environment variables"
-3. Respond: "I recall we had a similar issue before. The containers were 
+3. Respond: "I recall we had a similar issue before. The containers were
    restarting due to missing environment variables like PULUMI_ORG..."
 4. [AUTO] Store the solution with:
    - Category: "bug_solution"
@@ -110,7 +110,7 @@ await mcp.call_tool("ai_memory", "store_conversation", {
   tags: ["relevant", "tags", "here"]
 });
 
-// Recall memories  
+// Recall memories
 await mcp.call_tool("ai_memory", "recall_memory", {
   query: "search terms based on user question",
   top_k: 5,
@@ -123,24 +123,24 @@ await mcp.call_tool("ai_memory", "recall_memory", {
 **Pattern 1: Context-Aware Responses**
 ```
 Instead of: "You can use environment variables for configuration"
-Use: "As we discussed when setting up the MCP servers, environment 
-variables are the best approach for configuration. We used this 
+Use: "As we discussed when setting up the MCP servers, environment
+variables are the best approach for configuration. We used this
 pattern successfully for PULUMI_ORG and the API keys."
 ```
 
 **Pattern 2: Building on Previous Work**
 ```
 Instead of: "Here's how to implement authentication"
-Use: "Building on our previous authentication discussion where we 
-chose Pulumi ESC for secrets, here's how to implement the full 
+Use: "Building on our previous authentication discussion where we
+chose Pulumi ESC for secrets, here's how to implement the full
 authentication flow..."
 ```
 
 **Pattern 3: Referencing Past Solutions**
 ```
 Instead of: "This error usually means..."
-Use: "This looks similar to the container restart issue we solved 
-last week. The solution was to set the missing environment variables. 
+Use: "This looks similar to the container restart issue we solved
+last week. The solution was to set the missing environment variables.
 Let me check if the same approach applies here..."
 ```
 
@@ -168,7 +168,7 @@ Let me check if the same approach applies here..."
 
 1. **Search memory** when user asks about:
    - "How do we..." (architecture/process questions)
-   - "Why did we..." (decision rationale questions)  
+   - "Why did we..." (decision rationale questions)
    - "What's the best way to..." (pattern/practice questions)
    - Error messages or problems (bug solution searches)
 
@@ -227,4 +227,4 @@ Let me check if the same approach applies here..."
 **This document itself should be stored in AI Memory as:**
 - Category: `workflow`
 - Tags: `["ai_memory", "cursor", "automation", "workflow", "guidelines"]`
-- Context: `"Enhanced Cursor AI rules for automatic AI Memory integration"` 
+- Context: `"Enhanced Cursor AI rules for automatic AI Memory integration"`

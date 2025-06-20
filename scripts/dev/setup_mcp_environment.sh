@@ -44,7 +44,7 @@ if [ ${#missing_vars[@]} -gt 0 ]; then
     echo ""
     echo "Please set these variables in your environment or .env file:"
     echo "export PINECONE_API_KEY=your_pinecone_key"
-    echo "export OPENAI_API_KEY=your_openai_key" 
+    echo "export OPENAI_API_KEY=your_openai_key"
     echo "export ANTHROPIC_API_KEY=your_anthropic_key"
     exit 1
 fi
@@ -66,4 +66,4 @@ echo "  OPENAI_API_KEY: Set (${#OPENAI_API_KEY} chars)"
 echo "  ANTHROPIC_API_KEY: Set (${#ANTHROPIC_API_KEY} chars)"
 echo "  LINEAR_API_KEY: Set (${#LINEAR_API_KEY} chars)"
 echo ""
-echo "🚀 Ready to start MCP servers!" 
+echo "🚀 Ready to start MCP servers!"

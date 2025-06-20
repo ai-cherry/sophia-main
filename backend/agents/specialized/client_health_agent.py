@@ -19,8 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class ClientHealthAgent(BaseAgent):
-    """Monitors client health based on various data sources and predicts churn risk.
-    """
+    """Monitors client health based on various data sources and predicts churn risk."""
 
     def __init__(self, config: AgentConfig):
         super().__init__(config)
@@ -111,8 +110,7 @@ class ClientHealthAgent(BaseAgent):
         }
 
     async def process_task(self, task: Task) -> Dict[str, Any]:
-        """Processes a task to calculate a client's health score.
-        """
+        """Processes a task to calculate a client's health score."""
         if task.task_type == "calculate_health_score":
             client_id = task.task_data.get("client_id")
             if not client_id:
@@ -131,7 +129,7 @@ class ClientHealthAgent(BaseAgent):
                     # This query is a placeholder. A real implementation would be more complex,
                     # joining with an entities table to resolve client_id to conversation participants.
                     query = """
-                    SELECT c.conversation_datetime, t.tracker_name, t.tracker_sentiment 
+                    SELECT c.conversation_datetime, t.tracker_name, t.tracker_sentiment
                     FROM GONG_CONVERSATIONS c
                     JOIN GONG_CONVERSATION_CONTEXTS ctx ON c.conversation_key = ctx.conversation_key
                     LEFT JOIN GONG_CONVERSATION_TRACKERS t ON c.conversation_key = t.conversation_key

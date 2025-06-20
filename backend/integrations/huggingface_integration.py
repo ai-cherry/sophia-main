@@ -2,19 +2,18 @@
 Connects to the official Hugging Face MCP Server to provide access to models,
 datasets, Spaces, and papers.
 """
+
 import logging
 from typing import Any, Dict, List, Optional
 
 from backend.mcp.mcp_client import MCPClient
-
 from infrastructure.esc.huggingface_secrets import huggingface_secret_manager
 
 logger = logging.getLogger(__name__)
 
 
 class HuggingFaceIntegration:
-    """A client that connects to and interacts with the Hugging Face MCP server.
-    """
+    """A client that connects to and interacts with the Hugging Face MCP server."""
 
     HF_MCP_URL = "https://hf.co/mcp"
 
@@ -24,8 +23,7 @@ class HuggingFaceIntegration:
         self.initialized = False
 
     async def initialize(self):
-        """Initializes the connection to the Hugging Face MCP server.
-        """
+        """Initializes the connection to the Hugging Face MCP server."""
         if self.initialized:
             return
 

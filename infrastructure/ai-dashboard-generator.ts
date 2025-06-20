@@ -22,7 +22,7 @@ export class SophiaAIDashboard {
     public readonly url: pulumi.Output<string>;
     public readonly cluster: aws.ecs.Cluster;
     public readonly loadBalancer: aws.lb.LoadBalancer;
-    
+
     constructor(name: string, config: DashboardConfig) {
         // Create VPC for dashboard infrastructure
         const vpc = new aws.ec2.Vpc(`${name}-vpc`, {
@@ -362,8 +362,8 @@ export class SophiaAIDashboard {
     }
 
     private createDataSourceIntegrations(
-        name: string, 
-        dataSources: string[], 
+        name: string,
+        dataSources: string[],
         vpc: aws.ec2.Vpc,
         subnet1: aws.ec2.Subnet,
         subnet2: aws.ec2.Subnet
@@ -406,4 +406,4 @@ export class SophiaAIDashboard {
 }
 
 // Export the dashboard class for use in other modules
-export { SophiaAIDashboard as default }; 
+export { SophiaAIDashboard as default };

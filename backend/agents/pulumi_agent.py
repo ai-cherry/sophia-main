@@ -28,7 +28,7 @@ class PulumiAgent(BaseAgent):
         config = AgentConfig(
             agent_id="pulumi_agent",
             agent_type="infrastructure",
-            specialization="Pulumi Infrastructure as Code"
+            specialization="Pulumi Infrastructure as Code",
         )
         super().__init__(config)
         self.mcp_client = pulumi_mcp_client
@@ -49,8 +49,7 @@ class PulumiAgent(BaseAgent):
             logger.error(f"Failed to validate Pulumi environment: {e}")
 
     async def execute(self, command: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute Pulumi command based on natural language input
-        """
+        """Execute Pulumi command based on natural language input"""
         command_lower = command.lower()
         session_id = context.get("session_id", "default")
         user_context = {
@@ -516,7 +515,9 @@ pulumi.export("deployment_name", deployment.metadata.name)""",
     async def process_task(self, task) -> Dict[str, Any]:
         """Process task - required by BaseAgent"""
         # Delegate to execute method
-        return await self.execute(task.task_data.get("command", ""), task.task_data.get("context", {}))
+        return await self.execute(
+            task.task_data.get("command", ""), task.task_data.get("context", {})
+        )
 
     async def get_capabilities(self) -> List[str]:
         """Get list of capabilities"""

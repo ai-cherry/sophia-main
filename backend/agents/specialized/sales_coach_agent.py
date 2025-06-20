@@ -16,8 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class SalesCoachAgent(BaseAgent):
-    """Analyzes sales calls to provide coaching and performance insights.
-    """
+    """Analyzes sales calls to provide coaching and performance insights."""
 
     def __init__(self, config: AgentConfig):
         super().__init__(config)
@@ -58,8 +57,7 @@ class SalesCoachAgent(BaseAgent):
     async def _get_coaching_report_data(
         self, gong_call_id: str
     ) -> Optional[Dict[str, Any]]:
-        """Queries Snowflake for all data related to a Gong call to build a coaching report.
-        """
+        """Queries Snowflake for all data related to a Gong call to build a coaching report."""
         conn = await self._get_snowflake_connection()
         if not conn:
             return None
@@ -151,8 +149,7 @@ class SalesCoachAgent(BaseAgent):
         return analysis
 
     async def process_task(self, task: Task) -> Dict[str, Any]:
-        """Processes a task to analyze a Gong call.
-        """
+        """Processes a task to analyze a Gong call."""
         if task.task_type == "analyze_gong_call":
             gong_call_id = task.task_data.get("gong_call_id")
             if not gong_call_id:

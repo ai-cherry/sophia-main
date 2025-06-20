@@ -37,6 +37,7 @@ class AgentConfig:
 @dataclass
 class TaskResult:
     """Result of task execution"""
+
     status: str
     output: Any
     error: Optional[str] = None
@@ -191,12 +192,16 @@ class BaseAgent(ABC):
                 task_data=task_data["task_data"],
                 status=TaskStatus(task_data["status"]),
                 created_at=datetime.fromisoformat(task_data["created_at"]),
-                started_at=datetime.fromisoformat(task_data["started_at"])
-                if task_data["started_at"]
-                else None,
-                completed_at=datetime.fromisoformat(task_data["completed_at"])
-                if task_data["completed_at"]
-                else None,
+                started_at=(
+                    datetime.fromisoformat(task_data["started_at"])
+                    if task_data["started_at"]
+                    else None
+                ),
+                completed_at=(
+                    datetime.fromisoformat(task_data["completed_at"])
+                    if task_data["completed_at"]
+                    else None
+                ),
                 result=task_data["result"],
                 error_message=task_data["error_message"],
                 priority=task_data["priority"],

@@ -2,7 +2,6 @@
 Provides unified API management and routing for all AI agents across platforms
 """
 
-import asyncio
 import json
 import logging
 import os
@@ -81,7 +80,7 @@ class KongAIGateway:
 
         # Agent registry for tracking available agents
         self.agent_registry: Dict[AgentType, Dict[str, Any]] = {}
-        
+
         # Flag to track initialization
         self._initialized = False
 
@@ -697,12 +696,14 @@ pulumi.export("vpc_id", vpc.id)
 # Initialize Kong AI Gateway lazily
 kong_gateway = None
 
+
 def get_kong_gateway():
     """Get Kong AI Gateway instance (lazy initialization)"""
     global kong_gateway
     if kong_gateway is None:
         kong_gateway = KongAIGateway()
     return kong_gateway
+
 
 # Flask Blueprint for API endpoints
 kong_bp = Blueprint("kong_gateway", __name__, url_prefix="/api/kong")

@@ -51,7 +51,7 @@ export LINEAR_API_KEY=your_linear_api_key_here
 ```bash
 # Check logs for restarting containers
 docker logs sophia-linear-mcp --tail 50
-docker logs sophia-slack-mcp --tail 50  
+docker logs sophia-slack-mcp --tail 50
 docker logs sophia-claude-mcp --tail 50
 ```
 
@@ -81,4 +81,4 @@ After these fixes:
 3. **IMMEDIATE**: Fix restarting containers
 4. **IMMEDIATE**: Test AI Memory integration
 
-Let's execute these fixes now! 
+Let's execute these fixes now!

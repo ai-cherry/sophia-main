@@ -281,8 +281,8 @@ class AIMemoryMCPServer(BaseMCPServer):
 
             # Store in Pinecone if available
             if self.index:
-                await comprehensive_memory_manager.process_memory_request(MemoryRequest(operation=MemoryOperationType.STORE, content=[(memory_id, embedding, metadata))])
-                await comprehensive_memory_manager.process_memory_request(memory_request)                self.logger.info(f"Stored memory {memory_id} in Pinecone")
+                memory_request = MemoryRequest(operation=MemoryOperationType.STORE, content=[(memory_id, embedding, metadata)])
+                await comprehensive_memory_manager.process_memory_request(memory_request)
 
             return {
                 "success": True,

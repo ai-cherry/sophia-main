@@ -61,13 +61,13 @@ class PulumiMCPClient:
     def _setup_audit_logger(self) -> logging.Logger:
         """Setup separate audit logger for infrastructure operations"""
         audit_logger = logging.getLogger("pulumi-mcp-audit")
-        
+
         try:
             # Ensure logs directory exists
             log_dir = os.path.dirname(self.config.audit_log_path)
             if log_dir and not os.path.exists(log_dir):
                 os.makedirs(log_dir, exist_ok=True)
-                
+
             handler = logging.FileHandler(self.config.audit_log_path)
             formatter = logging.Formatter("%(asctime)s - %(message)s")
             handler.setFormatter(formatter)
@@ -75,13 +75,15 @@ class PulumiMCPClient:
             audit_logger.setLevel(logging.INFO)
         except Exception as e:
             # Fallback to console logging if file logging fails
-            logger.warning(f"Failed to setup file logging for audit: {e}, using console")
+            logger.warning(
+                f"Failed to setup file logging for audit: {e}, using console"
+            )
             handler = logging.StreamHandler()
             formatter = logging.Formatter("AUDIT: %(asctime)s - %(message)s")
             handler.setFormatter(formatter)
             audit_logger.addHandler(handler)
             audit_logger.setLevel(logging.INFO)
-            
+
         return audit_logger
 
     async def __aenter__(self):

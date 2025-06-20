@@ -7,8 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class HRAgent(BaseAgent):
-    """Analyzes team communication patterns to provide insights on engagement and organizational health.
-    """
+    """Analyzes team communication patterns to provide insights on engagement and organizational health."""
 
     async def get_capabilities(self) -> List[AgentCapability]:
         return [
@@ -22,8 +21,7 @@ class HRAgent(BaseAgent):
         ]
 
     async def process_task(self, task: Task) -> Dict[str, Any]:
-        """Processes a task to analyze team communication.
-        """
+        """Processes a task to analyze team communication."""
         if task.task_type == "analyze_team_communication":
             team_id = task.task_data.get("team_id")
             if not team_id:

@@ -80,17 +80,17 @@ export class EnhancedPulumiMCPServer {
                     inputSchema: {
                         type: 'object',
                         properties: {
-                            dashboardType: { 
-                                type: 'string', 
+                            dashboardType: {
+                                type: 'string',
                                 enum: ['ceo', 'knowledge', 'project'],
                                 description: 'Type of dashboard to create'
                             },
-                            dataSources: { 
-                                type: 'array', 
+                            dataSources: {
+                                type: 'array',
                                 items: { type: 'string' },
                                 description: 'Data sources to integrate (gong, snowflake, openai, pinecone, etc.)'
                             },
-                            scalingRequirements: { 
+                            scalingRequirements: {
                                 type: 'object',
                                 properties: {
                                     minInstances: { type: 'number', default: 2 },
@@ -113,13 +113,13 @@ export class EnhancedPulumiMCPServer {
                     inputSchema: {
                         type: 'object',
                         properties: {
-                            environment: { 
-                                type: 'string', 
+                            environment: {
+                                type: 'string',
                                 enum: ['dev', 'staging', 'production'],
                                 description: 'Target environment'
                             },
-                            features: { 
-                                type: 'array', 
+                            features: {
+                                type: 'array',
                                 items: { type: 'string' },
                                 description: 'Features to enable in the stack'
                             },
@@ -138,17 +138,17 @@ export class EnhancedPulumiMCPServer {
                     inputSchema: {
                         type: 'object',
                         properties: {
-                            description: { 
+                            description: {
                                 type: 'string',
                                 description: 'Natural language description of infrastructure needs'
                             },
-                            language: { 
-                                type: 'string', 
+                            language: {
+                                type: 'string',
                                 enum: ['typescript', 'python', 'go'],
                                 default: 'typescript'
                             },
-                            cloudProvider: { 
-                                type: 'string', 
+                            cloudProvider: {
+                                type: 'string',
                                 enum: ['aws', 'azure', 'gcp'],
                                 default: 'aws'
                             }
@@ -198,33 +198,33 @@ export class EnhancedPulumiMCPServer {
 
     private async createDashboardInfrastructure(args: any) {
         const { dashboardType, dataSources, scalingRequirements, features } = args;
-        
+
         console.log(`Creating ${dashboardType} dashboard infrastructure...`);
-        
+
         // Generate Pulumi code for dashboard infrastructure
         const pulumiCode = await this.generateDashboardPulumiCode(dashboardType, dataSources, features || []);
-        
+
         // Write the generated code to a file
         const fileName = `${dashboardType}-dashboard-infrastructure.ts`;
         const filePath = path.join(process.cwd(), 'infrastructure', 'generated', fileName);
-        
+
         // Ensure directory exists
         await fs.mkdir(path.dirname(filePath), { recursive: true });
         await fs.writeFile(filePath, pulumiCode);
-        
+
         // Execute Pulumi deployment
         try {
             const stackName = `${dashboardType}-dashboard-${process.env.NODE_ENV || 'dev'}`;
-            
+
             // Create or select stack
             await execAsync(`cd infrastructure && pulumi stack select ${stackName} || pulumi stack init ${stackName}`);
-            
+
             // Set configuration
             await execAsync(`cd infrastructure && pulumi config set aws:region us-east-1`);
-            
+
             // Deploy
             const deployResult = await execAsync(`cd infrastructure && pulumi up --yes --stack ${stackName}`);
-            
+
             return {
                 content: [{
                     type: 'text',
@@ -262,12 +262,12 @@ ${deployResult.stdout}
 
     private async deployAIDashboard(args: any) {
         const { name, description, dataSources = [], aiFeatures = [] } = args;
-        
+
         console.log(`Deploying AI dashboard: ${name}`);
-        
+
         // Use AI to interpret the description and generate appropriate configuration
         const dashboardConfig = await this.interpretDashboardDescription(description, dataSources, aiFeatures);
-        
+
         // Generate and deploy the infrastructure
         return await this.createDashboardInfrastructure({
             dashboardType: dashboardConfig.type,
@@ -280,13 +280,13 @@ ${deployResult.stdout}
     private async interpretDashboardDescription(description: string, dataSources: string[], aiFeatures: string[]): Promise<DashboardConfig> {
         // Simple AI interpretation logic (can be enhanced with actual AI models)
         let type: "ceo" | "knowledge" | "project" = "project";
-        
+
         if (description.toLowerCase().includes('executive') || description.toLowerCase().includes('ceo') || description.toLowerCase().includes('revenue')) {
             type = "ceo";
         } else if (description.toLowerCase().includes('knowledge') || description.toLowerCase().includes('admin') || description.toLowerCase().includes('content')) {
             type = "knowledge";
         }
-        
+
         // Infer data sources from description
         const inferredSources = [];
         if (description.toLowerCase().includes('sales') || description.toLowerCase().includes('calls')) {
@@ -298,7 +298,7 @@ ${deployResult.stdout}
         if (description.toLowerCase().includes('ai') || description.toLowerCase().includes('insights')) {
             inferredSources.push('openai');
         }
-        
+
         return {
             type,
             dataSources: [...new Set([...dataSources, ...inferredSources])],
@@ -318,7 +318,7 @@ ${deployResult.stdout}
 
     private async generatePulumiCode(args: any) {
         const { description, language = 'typescript', cloudProvider = 'aws' } = args;
-        
+
         // Generate Pulumi code based on description
         const code = `// Generated Pulumi code for: ${description}
 // Language: ${language}, Provider: ${cloudProvider}
@@ -337,7 +337,7 @@ export class GeneratedInfrastructure {
     constructor(name: string) {
         // Infrastructure components will be generated here based on description
         // This is a placeholder for AI-generated infrastructure code
-        
+
         console.log(\`Creating infrastructure for: \${description}\`);
     }
 }
@@ -547,19 +547,19 @@ export const dataSources = [${dataSources.map(s => `"${s}"`).join(', ')}];`;
 
     private async deploySophiaStack(args: any) {
         const { environment, features = [], region = 'us-east-1' } = args;
-        
+
         try {
             const stackName = `sophia-ai-${environment}`;
-            
+
             // Create or select stack
             await execAsync(`cd infrastructure && pulumi stack select ${stackName} || pulumi stack init ${stackName}`);
-            
+
             // Set configuration
             await execAsync(`cd infrastructure && pulumi config set aws:region ${region}`);
-            
+
             // Deploy the stack
             const result = await execAsync(`cd infrastructure && pulumi up --yes --stack ${stackName}`);
-            
+
             return {
                 content: [{
                     type: 'text',
@@ -589,7 +589,7 @@ ${result.stdout}
 
     private async scaleInfrastructure(args: any) {
         const { stack, instances, cpu } = args;
-        
+
         return {
             content: [{
                 type: 'text',
@@ -600,7 +600,7 @@ ${result.stdout}
 
     private async addDataSource(args: any) {
         const { dataSource, dashboard } = args;
-        
+
         return {
             content: [{
                 type: 'text',
@@ -611,7 +611,7 @@ ${result.stdout}
 
     private async optimizeCosts(args: any) {
         const { stack, targetSavings } = args;
-        
+
         return {
             content: [{
                 type: 'text',
@@ -622,7 +622,7 @@ ${result.stdout}
 
     private async setupMonitoring(args: any) {
         const { components, alertChannels } = args;
-        
+
         return {
             content: [{
                 type: 'text',
@@ -642,4 +642,4 @@ ${result.stdout}
 if (require.main === module) {
     const server = new EnhancedPulumiMCPServer();
     server.start().catch(console.error);
-} 
+}

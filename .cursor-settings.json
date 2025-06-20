@@ -33,4 +33,4 @@
       "postAction": "pulumi:analyze-costs"
     }
   }
-} 
+}

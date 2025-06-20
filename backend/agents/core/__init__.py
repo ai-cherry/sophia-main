@@ -106,8 +106,7 @@ async def initialize_agent_system():
 
 
 async def shutdown_agent_system():
-    """Gracefully shutdown the agent system
-    """
+    """Gracefully shutdown the agent system"""
     try:
         # Shutdown context manager
         await context_manager.shutdown()

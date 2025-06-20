@@ -29,7 +29,7 @@ class DockerAgent(BaseAgent):
         config = AgentConfig(
             agent_id="docker_agent",
             agent_type="infrastructure",
-            specialization="Docker Operations"
+            specialization="Docker Operations",
         )
         super().__init__(config)
         self.client = None
@@ -45,8 +45,7 @@ class DockerAgent(BaseAgent):
             self.client = None
 
     async def execute(self, command: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute Docker command based on natural language input
-        """
+        """Execute Docker command based on natural language input"""
         if not self.client:
             return {"status": "error", "message": "Docker client not initialized"}
 
@@ -110,9 +109,9 @@ class DockerAgent(BaseAgent):
                     "id": container.short_id,
                     "name": container.name,
                     "status": container.status,
-                    "image": container.image.tags[0]
-                    if container.image.tags
-                    else "unknown",
+                    "image": (
+                        container.image.tags[0] if container.image.tags else "unknown"
+                    ),
                     "created": container.attrs["Created"],
                 }
                 container_info.append(info)
@@ -427,7 +426,9 @@ class DockerAgent(BaseAgent):
     async def process_task(self, task) -> Dict[str, Any]:
         """Process task - required by BaseAgent"""
         # Delegate to execute method
-        return await self.execute(task.task_data.get("command", ""), task.task_data.get("context", {}))
+        return await self.execute(
+            task.task_data.get("command", ""), task.task_data.get("context", {})
+        )
 
     async def get_capabilities(self) -> List[OrchCapability]:
         """Get list of capabilities"""
@@ -437,29 +438,29 @@ class DockerAgent(BaseAgent):
                 description="List all Docker containers",
                 input_types=["text"],
                 output_types=["json"],
-                estimated_duration=5.0
+                estimated_duration=5.0,
             ),
             OrchCapability(
                 name="run_command",
                 description="Run command in Docker container",
                 input_types=["text", "command"],
                 output_types=["json", "output"],
-                estimated_duration=30.0
+                estimated_duration=30.0,
             ),
             OrchCapability(
                 name="build_image",
                 description="Build Docker image",
                 input_types=["text", "dockerfile"],
                 output_types=["json", "image"],
-                estimated_duration=120.0
+                estimated_duration=120.0,
             ),
             OrchCapability(
                 name="container_management",
                 description="Start/stop Docker containers",
                 input_types=["text", "container_name"],
                 output_types=["json", "status"],
-                estimated_duration=10.0
-            )
+                estimated_duration=10.0,
+            ),
         ]
 
 
