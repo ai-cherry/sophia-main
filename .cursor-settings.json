@@ -6,6 +6,12 @@
   "pulumi.ai.naturalLanguage": true,
   "typescript.preferences.includePackageJsonAutoImports": "on",
   "typescript.suggest.autoImports": true,
+  "mcpServers": {
+    "sophia_ai_intelligence": {"url": "http://localhost:8101"},
+    "sophia_data_intelligence": {"url": "http://localhost:8102"},
+    "sophia_infrastructure": {"url": "http://localhost:8103"},
+    "sophia_business_intelligence": {"url": "http://localhost:8104"}
+  },
   "pulumi.ai.customPrompts": {
     "dashboard": "Generate Pulumi infrastructure for Sophia AI dashboard with Gong, Snowflake, and OpenAI integrations",
     "security": "Apply enterprise security policies for financial services compliance",
@@ -31,6 +37,27 @@
       "prompt": "Optimize Sophia AI infrastructure for cost and performance:",
       "context": ["infrastructure/", "monitoring/"],
       "postAction": "pulumi:analyze-costs"
+    },
+    "scale-infrastructure": {
+      "prompt": "Scale Sophia AI infrastructure to handle increased demand:",
+      "context": ["infrastructure/"],
+      "postAction": "pulumi:scale-infra"
+    },
+    "cost-optimization": {
+      "prompt": "Identify cost saving opportunities across Sophia AI platform:",
+      "context": ["infrastructure/", "monitoring/"]
+    },
+    "lead-generation": {
+      "prompt": "Generate new sales leads from Sophia data sources:",
+      "context": ["backend/integrations/", "mcp-servers/"]
+    },
+    "performance-analysis": {
+      "prompt": "Analyze performance metrics for Sophia AI services:",
+      "context": ["monitoring/", "backend/"]
+    },
+    "deploy-pinecone-index": {
+      "prompt": "Deploy a Pinecone index for vector search:",
+      "context": ["infrastructure/", "backend/vector/"]
     }
   }
 }

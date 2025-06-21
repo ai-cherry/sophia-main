@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "sophia_ai_intelligence": {"url": "http://localhost:8101"},
+    "sophia_data_intelligence": {"url": "http://localhost:8102"},
+    "sophia_infrastructure": {"url": "http://localhost:8103"},
+    "sophia_business_intelligence": {"url": "http://localhost:8104"}
+  }
+}
