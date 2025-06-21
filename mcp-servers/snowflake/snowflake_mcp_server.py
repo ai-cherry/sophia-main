@@ -6,6 +6,8 @@ import asyncio
 import os
 from typing import Any, Dict, List, Optional
 
+from backend.integrations.pulumi_esc import SophiaESCManager
+
 import pandas as pd
 import snowflake.connector
 from cryptography.hazmat.backends import default_backend
@@ -19,16 +21,21 @@ class SnowflakeMCPServer(MCPServer):
 
     def __init__(self):
         super().__init__("snowflake-mcp")
+        self.esc_manager = SophiaESCManager()
         self.connection = None
         self.auth_method = os.getenv("SNOWFLAKE_AUTH_METHOD", "password")
         self.config = {
-            "account": os.getenv("SNOWFLAKE_ACCOUNT"),
-            "user": os.getenv("SNOWFLAKE_USER"),
-            "warehouse": os.getenv("SNOWFLAKE_WAREHOUSE"),
-            "database": os.getenv("SNOWFLAKE_DATABASE"),
-            "schema": os.getenv("SNOWFLAKE_SCHEMA"),
-            "role": os.getenv("SNOWFLAKE_ROLE"),
+            "account": self._get_config("business_intelligence.snowflake.account", "SNOWFLAKE_ACCOUNT"),
+            "user": self._get_config("business_intelligence.snowflake.user", "SNOWFLAKE_USER"),
+            "warehouse": self._get_config("business_intelligence.snowflake.warehouse", "SNOWFLAKE_WAREHOUSE"),
+            "database": self._get_config("business_intelligence.snowflake.database", "SNOWFLAKE_DATABASE"),
+            "schema": self._get_config("business_intelligence.snowflake.schema", "SNOWFLAKE_SCHEMA"),
+            "role": self._get_config("business_intelligence.snowflake.role", "SNOWFLAKE_ROLE"),
         }
+
+    def _get_config(self, esc_key: str, env_var: str) -> Optional[str]:
+        value = self.esc_manager.get_secret(esc_key)
+        return value or os.getenv(env_var)
 
     async def setup(self):
         """Setup Snowflake connection and register tools"""

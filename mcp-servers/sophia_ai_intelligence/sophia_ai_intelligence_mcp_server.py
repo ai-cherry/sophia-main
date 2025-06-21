@@ -1,12 +1,12 @@
 from mcp_base import MCPServer, Tool
-import os
+from backend.integrations.pulumi_esc import SophiaESCManager
 
 class SophiaAIIntelligenceMCPServer(MCPServer):
     """Comprehensive AI intelligence MCP server for Sophia AI"""
 
     def __init__(self):
         super().__init__("sophia_ai_intelligence")
-        # Initialize service clients using ESC values
+        self.esc_manager = SophiaESCManager()
         self.arize_client = self._init_arize_client()
         self.openrouter_client = self._init_openrouter_client()
         self.portkey_client = self._init_portkey_client()
@@ -57,19 +57,56 @@ class SophiaAIIntelligenceMCPServer(MCPServer):
         pass
 
     def _init_arize_client(self):
-        return None
+        try:
+            api_key = self.esc_manager.get_secret("observability.arize_api_key")
+            space_id = self.esc_manager.get_secret("observability.arize_space_id")
+            if not api_key or not space_id:
+                raise ValueError("Missing Arize credentials")
+            return {"api_key": api_key, "space_id": space_id}
+        except Exception as e:
+            self.logger.error(f"Failed to authenticate Arize client: {e}")
+            return None
 
     def _init_openrouter_client(self):
-        return None
+        try:
+            api_key = self.esc_manager.get_secret("ai_services.openrouter_api_key")
+            if not api_key:
+                raise ValueError("Missing OpenRouter API key")
+            return {"api_key": api_key}
+        except Exception as e:
+            self.logger.error(f"Failed to authenticate OpenRouter client: {e}")
+            return None
 
     def _init_portkey_client(self):
-        return None
+        try:
+            api_key = self.esc_manager.get_secret("ai_services.portkey_api_key")
+            config_id = self.esc_manager.get_secret("ai_services.portkey_config_id")
+            if not api_key:
+                raise ValueError("Missing Portkey API key")
+            return {"api_key": api_key, "config_id": config_id}
+        except Exception as e:
+            self.logger.error(f"Failed to authenticate Portkey client: {e}")
+            return None
 
     def _init_huggingface_client(self):
-        return None
+        try:
+            token = self.esc_manager.get_secret("ai_services.huggingface_api_token")
+            if not token:
+                raise ValueError("Missing HuggingFace token")
+            return {"api_token": token}
+        except Exception as e:
+            self.logger.error(f"Failed to authenticate HuggingFace client: {e}")
+            return None
 
     def _init_together_client(self):
-        return None
+        try:
+            api_key = self.esc_manager.get_secret("ai_services.togetherai_api_key")
+            if not api_key:
+                raise ValueError("Missing Together AI key")
+            return {"api_key": api_key}
+        except Exception as e:
+            self.logger.error(f"Failed to authenticate TogetherAI client: {e}")
+            return None
 
 
 if __name__ == "__main__":
