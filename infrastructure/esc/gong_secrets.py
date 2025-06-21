@@ -1,9 +1,9 @@
 """Pulumi ESC Secret Manager for Gong.
 """
-from backend.core.enhanced_pulumi_esc import EnhancedPulumiESC
+from infrastructure.pulumi_esc import PulumiESCManager
 
 
-class GongSecretManager(EnhancedPulumiESC):
+class GongSecretManager(PulumiESCManager):
     def __init__(self):
         super().__init__()
 

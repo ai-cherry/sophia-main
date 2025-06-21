@@ -6,7 +6,7 @@ import os
 
 import pulumi_pulumiservice as pulumiservice
 
-from backend.core.enhanced_pulumi_esc import EnhancedPulumiESC
+from infrastructure.pulumi_esc import PulumiESCManager
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ if PULUMI_ORG == "your-pulumi-org":
     raise ValueError("Please set the PULUMI_ORG environment variable.")
 
 
-class HuggingFaceSecretManager(EnhancedPulumiESC):
+class HuggingFaceSecretManager(PulumiESCManager):
     """Manages Hugging Face secrets using Pulumi ESC."""
 
     def __init__(self):

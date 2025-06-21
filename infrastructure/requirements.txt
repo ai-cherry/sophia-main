@@ -32,3 +32,4 @@ passlib[bcrypt]
 prometheus-client
 tenacity
 jinja2
+pulumi_esc

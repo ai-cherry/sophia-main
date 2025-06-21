@@ -1,9 +1,9 @@
 """Pulumi ESC Secret Manager for Pulumi itself.
 """
-from backend.core.enhanced_pulumi_esc import EnhancedPulumiESC
+from infrastructure.pulumi_esc import PulumiESCManager
 
 
-class PulumiSecretManager(EnhancedPulumiESC):
+class PulumiSecretManager(PulumiESCManager):
     def __init__(self):
         super().__init__()
 

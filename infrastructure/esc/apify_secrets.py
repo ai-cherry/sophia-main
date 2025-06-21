@@ -1,9 +1,9 @@
 """Pulumi ESC Secret Manager for Apify.
 """
-from backend.core.enhanced_pulumi_esc import EnhancedPulumiESC
+from infrastructure.pulumi_esc import PulumiESCManager
 
 
-class ApifySecretManager(EnhancedPulumiESC):
+class ApifySecretManager(PulumiESCManager):
     def __init__(self):
         super().__init__()
 
