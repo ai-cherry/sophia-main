@@ -8,7 +8,7 @@ import os
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from backend.core.pulumi_esc import pulumi_esc_client
+from infrastructure.pulumi_esc import PulumiESCManager
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ class ClaudeSecretManager:
 
     def __init__(self):
         self.service_name = "claude"
+        self.esc = PulumiESCManager()
         self.required_fields = ["api_key", "model", "max_tokens", "organization_id"]
 
         # Get Anthropic API key from environment variable for security
@@ -55,7 +56,7 @@ class ClaudeSecretManager:
             # Set each configuration value
             for key, value in claude_config.items():
                 config_key = f"claude_{key}"
-                success = await pulumi_esc_client.set_configuration(config_key, value)
+                success = await self.esc.set_configuration(config_key, value)
                 if success:
                     logger.info(f"Set Claude configuration: {key}")
                 else:
@@ -63,7 +64,7 @@ class ClaudeSecretManager:
                     return False
 
             # Set the API key as a secret
-            secret_success = await pulumi_esc_client.set_secret(
+            secret_success = await self.esc.set_secret(
                 "claude_api_key", self.anthropic_api_key
             )
             if secret_success:
@@ -95,7 +96,7 @@ class ClaudeSecretManager:
             for field in self.required_fields:
                 config_key = f"claude_{field}"
                 try:
-                    value = await pulumi_esc_client.get_configuration(config_key)
+                    value = await self.esc.get_configuration(config_key)
                     if value is not None:
                         validation_result["config_found"][field] = "✓"
                         logger.info(f"Claude {field}: Found")
@@ -111,7 +112,7 @@ class ClaudeSecretManager:
 
             # Check API key secret
             try:
-                api_key = await pulumi_esc_client.get_secret("claude_api_key")
+                api_key = await self.esc.get_secret("claude_api_key")
                 if api_key:
                     validation_result["config_found"]["api_key_secret"] = "✓"
                     logger.info("Claude API key secret: Found")
@@ -161,10 +162,10 @@ class ClaudeSecretManager:
                 try:
                     if env_var == "ANTHROPIC_API_KEY":
                         # Get from secrets
-                        value = await pulumi_esc_client.get_secret("claude_api_key")
+                        value = await self.esc.get_secret("claude_api_key")
                     else:
                         # Get from configuration
-                        value = await pulumi_esc_client.get_configuration(config_key)
+                        value = await self.esc.get_configuration(config_key)
 
                     if value is not None:
                         env_vars[env_var] = str(value)
@@ -187,10 +188,10 @@ class ClaudeSecretManager:
             logger.info("Rotating Claude API key...")
 
             # Update the API key secret
-            success = await pulumi_esc_client.set_secret("claude_api_key", new_api_key)
+            success = await self.esc.set_secret("claude_api_key", new_api_key)
             if success:
                 # Update the configuration as well
-                config_success = await pulumi_esc_client.set_configuration(
+                config_success = await self.esc.set_configuration(
                     "claude_api_key", new_api_key
                 )
                 if config_success:
@@ -229,10 +230,10 @@ class ClaudeSecretManager:
                 try:
                     if key == "api_key":
                         # Get from secrets
-                        value = await pulumi_esc_client.get_secret("claude_api_key")
+                        value = await self.esc.get_secret("claude_api_key")
                     else:
                         # Get from configuration
-                        value = await pulumi_esc_client.get_configuration(config_key)
+                        value = await self.esc.get_configuration(config_key)
 
                     if value is not None:
                         config[key] = value

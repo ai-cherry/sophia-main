@@ -20,6 +20,7 @@ weaviate-client = "^4.6.1"
 snowflake-connector-python = "^3.9.0"
 anthropic = "^0.25.0"
 requests = "^2.31.0"
+pulumi_esc = "*"
 
 [tool.bandit]
 exclude_dirs = ["tests", "venv", "sophia_venv", "infrastructure/esc"]
