@@ -5,13 +5,13 @@
       "args": ["-m", "mcp-servers.sophia_ai_intelligence.sophia_ai_intelligence_mcp_server"],
       "cwd": "/home/ubuntu/sophia-main",
       "env": {
-        "ARIZE_SPACE_ID": "${ESC_ARIZE_SPACE_ID}",
-        "ARIZE_API_KEY": "${ESC_ARIZE_API_KEY}",
-        "OPENROUTER_API_KEY": "${ESC_OPENROUTER_API_KEY}",
-        "PORTKEY_API_KEY": "${ESC_PORTKEY_API_KEY}",
-        "PORTKEY_CONFIG": "${ESC_PORTKEY_CONFIG}",
-        "HUGGINGFACE_API_TOKEN": "${ESC_HUGGINGFACE_API_TOKEN}",
-        "TOGETHER_AI_API_KEY": "${ESC_TOGETHER_AI_API_KEY}"
+        "ARIZE_SPACE_ID": "${config:ARIZE_SPACE_ID}",
+        "ARIZE_API_KEY": "${config:ARIZE_API_KEY}",
+        "OPENROUTER_API_KEY": "${config:OPENROUTER_API_KEY}",
+        "PORTKEY_API_KEY": "${config:PORTKEY_API_KEY}",
+        "PORTKEY_CONFIG": "${config:PORTKEY_CONFIG}",
+        "HUGGINGFACE_API_TOKEN": "${config:HUGGINGFACE_API_TOKEN}",
+        "TOGETHER_AI_API_KEY": "${config:TOGETHER_AI_API_KEY}"
       }
     },
     "sophia_data_intelligence": {
@@ -19,11 +19,11 @@
       "args": ["-m", "mcp-servers.sophia_data_intelligence.sophia_data_intelligence_mcp_server"],
       "cwd": "/home/ubuntu/sophia-main",
       "env": {
-        "APIFY_API_TOKEN": "${ESC_APIFY_API_TOKEN}",
-        "PHANTOM_BUSTER_API_KEY": "${ESC_PHANTOM_BUSTER_API_KEY}",
-        "TWINGLY_API_KEY": "${ESC_TWINGLY_API_KEY}",
-        "TAVILY_API_KEY": "${ESC_TAVILY_API_KEY}",
-        "ZENROWS_API_KEY": "${ESC_ZENROWS_API_KEY}"
+        "APIFY_API_TOKEN": "${config:APIFY_API_TOKEN}",
+        "PHANTOM_BUSTER_API_KEY": "${config:PHANTOM_BUSTER_API_KEY}",
+        "TWINGLY_API_KEY": "${config:TWINGLY_API_KEY}",
+        "TAVILY_API_KEY": "${config:TAVILY_API_KEY}",
+        "ZENROWS_API_KEY": "${config:ZENROWS_API_KEY}"
       }
     },
     "sophia_infrastructure": {
@@ -31,10 +31,10 @@
       "args": ["-m", "mcp-servers.sophia_infrastructure.sophia_infrastructure_mcp_server"],
       "cwd": "/home/ubuntu/sophia-main",
       "env": {
-        "LAMBDA_LABS_API_KEY": "${ESC_LAMBDA_LABS_API_KEY}",
-        "PULUMI_ACCESS_TOKEN": "${ESC_PULUMI_ACCESS_TOKEN}",
-        "DOCKER_USERNAME": "${ESC_DOCKER_USER_NAME}",
-        "DOCKER_TOKEN": "${ESC_DOCKER_TOKEN}"
+        "LAMBDA_LABS_API_KEY": "${config:LAMBDA_LABS_API_KEY}",
+        "PULUMI_ACCESS_TOKEN": "${config:PULUMI_ACCESS_TOKEN}",
+        "DOCKER_USERNAME": "${config:DOCKER_USER_NAME}",
+        "DOCKER_TOKEN": "${config:DOCKER_TOKEN}"
       }
     },
     "sophia_business_intelligence": {
@@ -42,13 +42,13 @@
       "args": ["-m", "mcp-servers.snowflake.snowflake_mcp_server"],
       "cwd": "/home/ubuntu/sophia-main",
       "env": {
-        "SNOWFLAKE_ACCOUNT": "${ESC_SNOWFLAKE_ACCOUNT}",
-        "SNOWFLAKE_USER": "${ESC_SNOWFLAKE_USER}",
-        "SNOWFLAKE_PASSWORD": "${ESC_SNOWFLAKE_PASSWORD}",
-        "SNOWFLAKE_WAREHOUSE": "${ESC_SNOWFLAKE_WAREHOUSE}",
-        "SNOWFLAKE_DATABASE": "${ESC_SNOWFLAKE_DATABASE}",
-        "SNOWFLAKE_SCHEMA": "${ESC_SNOWFLAKE_SCHEMA}",
-        "PINECONE_API_KEY": "${ESC_PINECONE_API_KEY}"
+        "SNOWFLAKE_ACCOUNT": "${config:SNOWFLAKE_ACCOUNT}",
+        "SNOWFLAKE_USER": "${config:SNOWFLAKE_USER}",
+        "SNOWFLAKE_PASSWORD": "${config:SNOWFLAKE_PASSWORD}",
+        "SNOWFLAKE_WAREHOUSE": "${config:SNOWFLAKE_WAREHOUSE}",
+        "SNOWFLAKE_DATABASE": "${config:SNOWFLAKE_DATABASE}",
+        "SNOWFLAKE_SCHEMA": "${config:SNOWFLAKE_SCHEMA}",
+        "PINECONE_API_KEY": "${config:PINECONE_API_KEY}"
       }
     }
   }
