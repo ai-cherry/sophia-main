@@ -217,8 +217,8 @@ Use the `configure_github_secrets.py` script to set up GitHub secrets:
 # Install required packages
 pip install PyGithub pynacl
 
-# Configure secrets from .env file
-python configure_github_secrets.py --env-file .env --repo payready/sophia
+# Configure secrets directly
+python configure_github_secrets.py --repo payready/sophia
 ```
 
 ### GitHub Actions Usage
@@ -254,14 +254,8 @@ Secrets should be rotated regularly according to the following schedule:
 ### Rotation Procedure
 
 1. Generate new credentials in the external service
-2. Update the secret in Pulumi ESC:
-   ```bash
-   ./configure_pulumi_esc.sh import-env .env.new
-   ```
-3. Sync the secret to GitHub:
-   ```bash
-   ./configure_pulumi_esc.sh sync
-   ```
+2. Update the secret in GitHub organization settings
+3. Run `./scripts/sync_github_to_pulumi.sh` to update ESC
 4. Deploy the application with the new secrets
 5. Verify functionality with the new secrets
 6. Revoke the old credentials in the external service
@@ -275,11 +269,9 @@ The secrets management system includes the following tools:
 A comprehensive script for managing secrets and environment variables. It can:
 
 - Detect missing environment variables
-- Import secrets from various sources (.env files, Pulumi ESC, GitHub)
-- Export secrets to various destinations (.env files, Pulumi ESC, GitHub)
+- Sync secrets between GitHub and Pulumi ESC
 - Validate secret configurations
-- Generate template .env files
-- Sync secrets across different environments
+- Generate template files when needed
 
 ### 2. `setup_new_repo.py`
 
@@ -288,7 +280,7 @@ A script to automate the setup of a new Sophia AI repository with all the necess
 - Creates a new directory for the repository
 - Initializes a Git repository
 - Copies the secrets_manager.py script
-- Imports secrets from a master .env file or Pulumi ESC
+- Pulls secrets from Pulumi ESC
 - Sets up the necessary configuration files
 - Creates a README.md file with setup instructions
 
@@ -409,10 +401,7 @@ To set up a new repository with all the necessary secrets and configurations:
 # Create a new repository with a specific name
 ./setup_new_repo.py --name sophia-new-repo
 
-# Create a new repository and import secrets from a master .env file
-./setup_new_repo.py --name sophia-new-repo --source-env /path/to/master.env
-
-# Create a new repository and import secrets from Pulumi ESC
+# Create a new repository and pull secrets from Pulumi ESC
 ./setup_new_repo.py --name sophia-new-repo --from-pulumi
 ```
 
@@ -426,21 +415,10 @@ To set up a new repository with all the necessary secrets and configurations:
 
 This command will check for missing required environment variables and display them with their descriptions.
 
-#### Importing Secrets from a .env File
+#### Importing and Exporting Secrets
 
-```bash
-./secrets_manager.py import-from-env --env-file .env
-```
-
-This command will import environment variables from a .env file and add them to the current environment.
-
-#### Exporting Secrets to a .env File
-
-```bash
-./secrets_manager.py export-to-env --env-file .env.new
-```
-
-This command will export the current environment variables to a .env file, organized by category.
+The `secrets_manager.py` utility can import or export secrets between GitHub and
+Pulumi ESC. Local `.env` files are no longer required.
 
 #### Syncing Secrets to Pulumi ESC
 
@@ -480,7 +458,7 @@ This command will generate a template .env file with all required and optional v
 ./secrets_manager.py sync-all
 ```
 
-This command will sync all secrets to all destinations: .env file, Pulumi ESC, and GitHub Secrets.
+This command will sync all secrets between GitHub and Pulumi ESC.
 
 ## Best Practices
 

@@ -33,15 +33,15 @@ This will create three stacks:
 - `staging`
 - `production`
 
-### 2. Import Secrets
+### 2. Sync Secrets from GitHub
 
-Import secrets from a `.env` file to Pulumi ESC:
+All secrets are stored as GitHub organization secrets and automatically
+synchronized to Pulumi ESC via GitHub Actions. If you need to trigger a manual
+sync run:
 
 ```bash
-./import_secrets.sh ../.env development
+../scripts/sync_github_to_pulumi.sh
 ```
-
-Replace `development` with the appropriate stack name (`staging` or `production`).
 
 ### 3. Deploy Infrastructure
 
@@ -62,7 +62,7 @@ pulumi up
 - `Pulumi.yaml`: Pulumi project configuration
 - `requirements.txt`: Python dependencies
 - `init_stacks.sh`: Script to initialize Pulumi stacks
-- `import_secrets.sh`: Script to import secrets from a `.env` file to Pulumi ESC
+- `sync_github_to_pulumi.sh`: Manually triggers a GitHub → ESC secret sync
 
 ## Environment-Specific Configuration
 
@@ -82,6 +82,13 @@ pulumi config set --secret <key> <value>
 ## Secret Management
 
 Secrets are managed using Pulumi ESC (Environments, Secrets, and Configuration). This provides a secure way to manage sensitive information across different environments.
+
+### GitHub → Pulumi ESC Workflow
+
+GitHub organization secrets are the source of truth for all infrastructure
+credentials. A GitHub Actions workflow automatically synchronizes these secrets
+to the ESC environment referenced by this project. Manual syncs can be run with
+`../scripts/sync_github_to_pulumi.sh` if needed.
 
 To view the current configuration:
 
@@ -117,6 +124,20 @@ For more detailed information, use the `--verbose` flag:
 ```bash
 pulumi up --verbose
 ```
+
+### ESC Sync Failures
+
+If secrets fail to appear in Pulumi ESC:
+
+1. Verify `GH_TOKEN` and `PULUMI_ACCESS_TOKEN` are configured in GitHub
+   organization secrets.
+2. Re-run the sync script:
+
+   ```bash
+   ../scripts/sync_github_to_pulumi.sh
+   ```
+3. Check the "unified-secret-sync" workflow logs in GitHub Actions for errors.
+4. Ensure the target ESC environment exists with `pulumi env ls`.
 
 ## Contributing
 

@@ -210,12 +210,11 @@ Secrets are managed using Pulumi ESC. This provides a secure way to manage sensi
 
 To add a new secret:
 
-1. Add the secret to the `.env` file
-2. Import the secret to Pulumi ESC:
+1. Add the secret to the **GitHub organization**.
+2. Synchronize secrets to Pulumi ESC:
 
 ```bash
-cd infrastructure
-./import_secrets.sh ../.env development
+./scripts/sync_github_to_pulumi.sh
 ```
 
 ### Rotating Secrets
@@ -223,13 +222,8 @@ cd infrastructure
 Secrets are rotated automatically every 90 days using GitHub Actions. To manually rotate a secret:
 
 1. Update the secret in the service (e.g., Snowflake, Gong, Vercel, Estuary)
-2. Update the secret in the `.env` file
-3. Import the secret to Pulumi ESC:
-
-```bash
-cd infrastructure
-./import_secrets.sh ../.env development
-```
+2. Update the secret in GitHub organization settings
+3. Run `./scripts/sync_github_to_pulumi.sh` to push the change to ESC
 
 ## Testing Integrations
 
