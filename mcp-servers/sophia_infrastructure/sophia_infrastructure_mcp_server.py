@@ -1,10 +1,12 @@
 from mcp_base import MCPServer, Tool
+from backend.integrations.pulumi_esc import SophiaESCManager
 
 class SophiaInfrastructureMCPServer(MCPServer):
     """Comprehensive infrastructure management MCP server for Sophia AI"""
 
     def __init__(self):
         super().__init__("sophia_infrastructure")
+        self.esc_manager = SophiaESCManager()
         self.lambda_client = self._init_lambda_labs_client()
         self.pulumi_client = self._init_pulumi_client()
         self.docker_client = self._init_docker_client()
@@ -47,13 +49,35 @@ class SophiaInfrastructureMCPServer(MCPServer):
         pass
 
     def _init_lambda_labs_client(self):
-        return None
+        try:
+            api_key = self.esc_manager.get_secret("infrastructure.lambda_labs.api_key")
+            if not api_key:
+                raise ValueError("Missing Lambda Labs API key")
+            return {"api_key": api_key}
+        except Exception as e:
+            self.logger.error(f"Failed to authenticate Lambda Labs client: {e}")
+            return None
 
     def _init_pulumi_client(self):
-        return None
+        try:
+            token = self.esc_manager.get_secret("infrastructure.pulumi.access_token")
+            if not token:
+                raise ValueError("Missing Pulumi access token")
+            return {"access_token": token}
+        except Exception as e:
+            self.logger.error(f"Failed to authenticate Pulumi client: {e}")
+            return None
 
     def _init_docker_client(self):
-        return None
+        try:
+            username = self.esc_manager.get_secret("infrastructure.docker.username")
+            token = self.esc_manager.get_secret("infrastructure.docker.token")
+            if not username or not token:
+                raise ValueError("Missing Docker credentials")
+            return {"username": username, "token": token}
+        except Exception as e:
+            self.logger.error(f"Failed to authenticate Docker client: {e}")
+            return None
 
 
 if __name__ == "__main__":

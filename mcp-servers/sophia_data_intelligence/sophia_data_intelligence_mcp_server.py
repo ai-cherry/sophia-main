@@ -1,11 +1,12 @@
 from mcp_base import MCPServer, Tool
+from backend.integrations.pulumi_esc import SophiaESCManager
 
 class SophiaDataIntelligenceMCPServer(MCPServer):
     """Comprehensive data intelligence MCP server for Sophia AI business intelligence"""
 
     def __init__(self):
         super().__init__("sophia_data_intelligence")
-        # Initialize data collection services for business intelligence
+        self.esc_manager = SophiaESCManager()
         self.apify_client = self._init_apify_client()
         self.tavily_client = self._init_tavily_client()
         self.zenrows_client = self._init_zenrows_client()
@@ -52,19 +53,54 @@ class SophiaDataIntelligenceMCPServer(MCPServer):
         pass
 
     def _init_apify_client(self):
-        return None
+        try:
+            token = self.esc_manager.get_secret("research_tools.apify_api_token")
+            if not token:
+                raise ValueError("Missing Apify token")
+            return {"api_token": token}
+        except Exception as e:
+            self.logger.error(f"Failed to authenticate Apify client: {e}")
+            return None
 
     def _init_tavily_client(self):
-        return None
+        try:
+            api_key = self.esc_manager.get_secret("research_tools.tavily_api_key")
+            if not api_key:
+                raise ValueError("Missing Tavily API key")
+            return {"api_key": api_key}
+        except Exception as e:
+            self.logger.error(f"Failed to authenticate Tavily client: {e}")
+            return None
 
     def _init_zenrows_client(self):
-        return None
+        try:
+            api_key = self.esc_manager.get_secret("research_tools.zenrows_api_key")
+            if not api_key:
+                raise ValueError("Missing ZenRows API key")
+            return {"api_key": api_key}
+        except Exception as e:
+            self.logger.error(f"Failed to authenticate ZenRows client: {e}")
+            return None
 
     def _init_twingly_client(self):
-        return None
+        try:
+            api_key = self.esc_manager.get_secret("research_tools.twingly_api_key")
+            if not api_key:
+                raise ValueError("Missing Twingly API key")
+            return {"api_key": api_key}
+        except Exception as e:
+            self.logger.error(f"Failed to authenticate Twingly client: {e}")
+            return None
 
     def _init_phantombuster_client(self):
-        return None
+        try:
+            api_key = self.esc_manager.get_secret("research_tools.phantombuster_api_key")
+            if not api_key:
+                raise ValueError("Missing PhantomBuster API key")
+            return {"api_key": api_key}
+        except Exception as e:
+            self.logger.error(f"Failed to authenticate PhantomBuster client: {e}")
+            return None
 
 
 if __name__ == "__main__":
