@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Corrected Sophia Admin API - Using Actual Database Schema"""
+"""Corrected Sophia Admin API - Using Actual Database Schema."""
+# ruff: noqa: D415
 
 import asyncio
 import logging
+import os
 from datetime import datetime, timedelta
 from typing import Any, Dict
 
@@ -18,7 +20,11 @@ app = Flask(__name__)
 CORS(app, origins="*")
 
 # Database configuration
-DATABASE_URL = "postgresql://ubuntu:password@localhost:5432/sophia_enhanced"
+# Use an environment variable so credentials are not stored in source control.
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://localhost:5432/sophia_enhanced",
+)
 
 
 class SophiaDatabase:
