@@ -1,9 +1,9 @@
 """Pulumi ESC Secret Manager for Pinecone.
 """
-from backend.core.enhanced_pulumi_esc import EnhancedPulumiESC
+from infrastructure.pulumi_esc import PulumiESCManager
 
 
-class PineconeSecretManager(EnhancedPulumiESC):
+class PineconeSecretManager(PulumiESCManager):
     """Handles getting and setting Pinecone secrets via Pulumi ESC."""
 
     def __init__(self):
