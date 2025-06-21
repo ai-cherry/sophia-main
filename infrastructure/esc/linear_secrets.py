@@ -7,7 +7,7 @@ import logging
 import os
 from typing import Any, Dict, Optional
 
-from backend.core.pulumi_esc import pulumi_esc_client
+from infrastructure.pulumi_esc import PulumiESCManager
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +17,7 @@ class LinearSecretManager:
 
     def __init__(self):
         self.environment_name = "linear"
+        self.esc = PulumiESCManager()
 
     async def setup_linear_secrets(self) -> bool:
         """Setup Linear secrets in Pulumi ESC"""
@@ -50,7 +51,7 @@ class LinearSecretManager:
             # Store each secret
             for key, value in secrets.items():
                 if value:
-                    await pulumi_esc_client.set_secret(f"linear.{key}", value)
+                    await self.esc.set_secret(f"linear.{key}", value)
                     logger.info(f"Stored Linear secret: {key}")
 
             logger.info("Linear secrets setup completed successfully")
@@ -63,7 +64,7 @@ class LinearSecretManager:
     async def get_linear_config(self) -> Optional[Dict[str, Any]]:
         """Get Linear configuration from Pulumi ESC"""
         try:
-            config = await pulumi_esc_client.get_configuration("linear")
+            config = await self.esc.get_configuration("linear")
 
             if not config:
                 logger.warning("Linear configuration not found in Pulumi ESC")
@@ -87,7 +88,7 @@ class LinearSecretManager:
     async def update_linear_secret(self, key: str, value: str) -> bool:
         """Update a specific Linear secret"""
         try:
-            await pulumi_esc_client.set_secret(f"linear.{key}", value)
+            await self.esc.set_secret(f"linear.{key}", value)
             logger.info(f"Updated Linear secret: {key}")
             return True
 
