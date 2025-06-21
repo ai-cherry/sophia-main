@@ -123,6 +123,10 @@ If you encounter issues with the workflow, check the following:
 4. **Logs**: Check the workflow logs for error messages:
    - Look for errors in the "setup-pulumi-esc" job
    - Look for errors in the secret retrieval and injection steps
+5. **ESC Sync Failures**:
+   - Run `./scripts/sync_github_to_pulumi.sh` locally to force a sync
+   - Verify the "unified-secret-sync" workflow completed successfully
+   - Ensure the ESC environment exists with `pulumi env ls`
 
 ## Adding a New Service
 

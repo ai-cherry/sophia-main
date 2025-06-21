@@ -14,7 +14,6 @@ The SOPHIA AI System uses a multi-layered approach to secrets management:
 
 Organization secrets are managed using the `configure_github_org_secrets.py` script, which allows for:
 
-- Reading secrets from a `.env` file
 - Setting organization-level secrets with visibility controls
 - Listing existing secrets
 - Deleting specific or all secrets
@@ -22,8 +21,8 @@ Organization secrets are managed using the `configure_github_org_secrets.py` scr
 ### Usage
 
 ```bash
-# Set organization secrets from a .env file
-python configure_github_org_secrets.py --env-file .env.secure --org ai-cherry
+# Set organization secrets using the provided script
+python configure_github_org_secrets.py --org ai-cherry
 
 # List existing secrets
 python configure_github_org_secrets.py --org ai-cherry --list
@@ -45,20 +44,16 @@ Organization secrets can have different visibility settings:
 
 ## GitHub Repository Secrets
 
-Repository secrets are managed using the `import_secrets_to_github.py` script, which allows for:
-
-- Reading secrets from a `.env` file
-- Setting repository-level secrets
-- Dry-run mode for testing
+Repository secrets are managed using the `import_secrets_to_github.py` script, which allows for setting repository-level secrets and supports a dry-run mode for testing.
 
 ### Usage
 
 ```bash
-# Set repository secrets from a .env file
-python import_secrets_to_github.py --env-file .env.secure --repo ai-cherry/sophia
+# Set repository secrets
+python import_secrets_to_github.py --repo ai-cherry/sophia
 
 # Test without making changes
-python import_secrets_to_github.py --env-file .env.secure --repo ai-cherry/sophia --dry-run
+python import_secrets_to_github.py --repo ai-cherry/sophia --dry-run
 ```
 
 ## Pulumi ESC Integration
@@ -86,11 +81,8 @@ Access policies define who can access which secrets in which environments:
 ### Usage
 
 ```bash
-# Import secrets from a .env file
-./configure_pulumi_esc.sh import-env .env.secure
-
-# Sync secrets to GitHub Actions
-./configure_pulumi_esc.sh sync
+# Sync secrets from GitHub to ESC
+./scripts/sync_github_to_pulumi.sh
 
 # List all secrets (values are masked)
 ./configure_pulumi_esc.sh list
@@ -112,11 +104,11 @@ The `configure_github_org_secrets.py` script uses the GitHub API through the PyG
 
 ### GitHub Repository Secrets
 
-The `import_secrets_to_github.py` script uses the GitHub CLI to set repository secrets. It reads secrets from a `.env` file and sets them one by one.
+The `import_secrets_to_github.py` script uses the GitHub CLI to set repository secrets based on key/value pairs provided at runtime or via environment variables.
 
 ### Pulumi ESC
 
-The `configure_pulumi_esc.sh` script uses the Pulumi CLI to manage secrets in Pulumi ESC. It can import secrets from a `.env` file, sync them to GitHub Actions, and list all secrets.
+The `configure_pulumi_esc.sh` script uses the Pulumi CLI to manage secrets in Pulumi ESC. It can synchronize secrets with GitHub Actions and list existing values.
 
 ## Next Steps
 
