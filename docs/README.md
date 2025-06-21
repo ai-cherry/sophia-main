@@ -15,14 +15,18 @@ This directory contains all technical and operational documentation for the Soph
 - **[SOPHIA_AI_INFRASTRUCTURE_REPORT.md](SOPHIA_AI_INFRASTRUCTURE_REPORT.md)** - Infrastructure overview and capabilities
 - **[SOPHIA_DESIGN_SYSTEM_INTEGRATION.md](SOPHIA_DESIGN_SYSTEM_INTEGRATION.md)** - UI/UX design system guide
 - **[implementation/sophia_technical_architecture.md](implementation/sophia_technical_architecture.md)** - Detailed technical architecture
+- **[CONTAINER_ARCHITECTURE_DIAGRAMS.md](CONTAINER_ARCHITECTURE_DIAGRAMS.md)** - Containerized architecture diagrams
 
 ## 💻 Development
 - **[implementation/sophia_implementation_plan.md](implementation/sophia_implementation_plan.md)** - Implementation roadmap
 - **[implementation/sophia_development_timeline.md](implementation/sophia_development_timeline.md)** - Development milestones
 - **[cursor_ai_integration.md](cursor_ai_integration.md)** - Cursor AI development setup
+- **[COPILOT_INTEGRATION_USAGE.md](COPILOT_INTEGRATION_USAGE.md)** - Using Pulumi Copilot
+- **[AUTOMATION_API_WORKFLOW.md](AUTOMATION_API_WORKFLOW.md)** - Automation API workflow
 
 ## 🔌 Integrations
 - **[mcp_server_documentation.md](mcp_server_documentation.md)** - MCP server configuration
+- **[MCP_SERVER_API_REFERENCE.md](MCP_SERVER_API_REFERENCE.md)** - MCP server API reference
 - **[NATURAL_LANGUAGE_CONTROL_GUIDE.md](NATURAL_LANGUAGE_CONTROL_GUIDE.md)** - Natural language interface guide
 
 ## 🔍 Quick Links
@@ -54,4 +58,4 @@ When adding new documentation:
 ---
 
 **Last Updated:** December 2024
-**Maintained By:** Sophia AI Development Team 
+**Maintained By:** Sophia AI Development Team
