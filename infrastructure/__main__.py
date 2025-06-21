@@ -17,6 +17,12 @@ import pulumi_kubernetes as k8s
 from pulumi_kubernetes.helm.v3 import Release, ReleaseArgs, RepositoryOptsArgs
 import pulumi_esc as esc
 import json
+import hashlib
+import os
+import datetime
+import logging
+from prometheus_client import CollectorRegistry, Counter, push_to_gateway
+import boto3
 
 # --- 1. Get Required Configuration from Pulumi ESC ---
 # This ensures all necessary secrets and configs are available.
@@ -34,6 +40,92 @@ ssh_private_key = config.require_secret("LAMBDA_SSH_PRIVATE_KEY")
 ssh_key_name = lambda_config["ssh_key_name"]
 pulumi_org = esc_env.values["infrastructure"]["pulumi"]["org"]
 control_plane_ip = lambda_config["control_plane_ip"]
+
+# --- Secret Rotation Tracking -------------------------------------------------
+logger = logging.getLogger("esc-rotation")
+logging.basicConfig(level=logging.INFO)
+
+ROTATION_HISTORY_PATH = os.path.join(os.path.dirname(__file__), "esc", "rotation_history.json")
+PUSHGATEWAY = os.getenv("PROMETHEUS_PUSHGATEWAY_URL")
+registry = CollectorRegistry()
+rotation_events = Counter(
+    "esc_rotation_events_total",
+    "Total ESC secret rotation events",
+    registry=registry,
+)
+rotation_failures = Counter(
+    "esc_rotation_failures_total",
+    "Total ESC rotation processing failures",
+    registry=registry,
+)
+
+def _load_rotation_history():
+    if os.path.exists(ROTATION_HISTORY_PATH):
+        try:
+            with open(ROTATION_HISTORY_PATH, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error("Failed to load rotation history: %s", e)
+    return {}
+
+
+def _save_rotation_history(data):
+    try:
+        with open(ROTATION_HISTORY_PATH, "w") as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        logger.error("Failed to save rotation history: %s", e)
+        rotation_failures.inc()
+        if PUSHGATEWAY:
+            try:
+                push_to_gateway(PUSHGATEWAY, job="esc_rotation", registry=registry)
+            except Exception as push_err:
+                logger.error("Failed to push metrics: %s", push_err)
+
+
+def _send_alert(message: str):
+    alert_topic = config.get("rotation_alert_topic_arn")
+    if not alert_topic:
+        return
+    try:
+        boto3.client("sns").publish(TopicArn=alert_topic, Message=message, Subject="ESC Rotation Failure")
+    except Exception as e:
+        logger.error("Failed to send alert: %s", e)
+
+
+def track_rotation():
+    history = _load_rotation_history()
+    prev_hash = history.get("current_hash")
+    current_hash = hashlib.sha256(
+        json.dumps(esc_env.values, sort_keys=True).encode()
+    ).hexdigest()
+    if current_hash != prev_hash:
+        event = {"timestamp": datetime.datetime.utcnow().isoformat(), "hash": current_hash}
+        history.setdefault("history", []).append(event)
+        history["current_hash"] = current_hash
+        logger.info("ESC secret rotation detected")
+        rotation_events.inc()
+        _save_rotation_history(history)
+        if PUSHGATEWAY:
+            try:
+                push_to_gateway(PUSHGATEWAY, job="esc_rotation", registry=registry)
+            except Exception as push_err:
+                logger.error("Failed to push metrics: %s", push_err)
+                rotation_failures.inc()
+                _send_alert(f"Failed to push rotation metrics: {push_err}")
+    else:
+        logger.info("No secret rotation detected")
+
+    if PUSHGATEWAY:
+        try:
+            push_to_gateway(PUSHGATEWAY, job="esc_rotation", registry=registry)
+        except Exception as push_err:
+            logger.error("Failed to push metrics: %s", push_err)
+            rotation_failures.inc()
+            _send_alert(f"Failed to push rotation metrics: {push_err}")
+
+
+track_rotation()
 
 # --- 2. Install Kubernetes on the Existing Lambda Labs Instance ---
 connection = command.remote.ConnectionArgs(
