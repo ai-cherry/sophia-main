@@ -39,7 +39,7 @@
     },
     "sophia_business_intelligence": {
       "command": "python",
-      "args": ["-m", "mcp-servers.snowflake.snowflake_mcp_server"],
+      "args": ["-m", "mcp-servers.sophia_business_intelligence.sophia_business_intelligence_mcp_server"],
       "cwd": "/home/ubuntu/sophia-main",
       "env": {
         "SNOWFLAKE_ACCOUNT": "${ESC_SNOWFLAKE_ACCOUNT}",
@@ -48,7 +48,9 @@
         "SNOWFLAKE_WAREHOUSE": "${ESC_SNOWFLAKE_WAREHOUSE}",
         "SNOWFLAKE_DATABASE": "${ESC_SNOWFLAKE_DATABASE}",
         "SNOWFLAKE_SCHEMA": "${ESC_SNOWFLAKE_SCHEMA}",
-        "PINECONE_API_KEY": "${ESC_PINECONE_API_KEY}"
+        "PINECONE_API_KEY": "${ESC_PINECONE_API_KEY}",
+        "LOOKER_API_KEY": "${ESC_LOOKER_API_KEY}",
+        "MIXPANEL_API_KEY": "${ESC_MIXPANEL_API_KEY}"
       }
     }
   }
