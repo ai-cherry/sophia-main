@@ -17,22 +17,53 @@ import pulumi_kubernetes as k8s
 from pulumi_kubernetes.helm.v3 import Release, ReleaseArgs, RepositoryOptsArgs
 import pulumi_esc as esc
 import json
+from typing import Any, Iterable
+
+
+def _require_esc_value(env: dict, path: Iterable[str]) -> Any:
+    """Retrieve a value from a nested ESC dictionary.
+
+    Logs an error and raises ``KeyError`` if any part of the path is missing
+    or if the final value is empty.
+    """
+    try:
+        cur = env
+        for key in path:
+            cur = cur[key]
+        if cur is None or (isinstance(cur, str) and cur.strip() == ""):
+            raise KeyError("".join(path))
+        return cur
+    except KeyError:
+        pulumi.log.error(f"Missing required secret: {'/'.join(path)}")
+        raise
 
 # --- 1. Get Required Configuration from Pulumi ESC ---
 # This ensures all necessary secrets and configs are available.
 config = pulumi.Config()
 esc_env = esc.Environment.get("sophia-ai-production")
 
+# Validate required secrets before continuing
+required_paths = [
+    ("infrastructure", "lambda_labs", "api_key"),
+    ("infrastructure", "lambda_labs", "control_plane_ip"),
+    ("infrastructure", "lambda_labs", "ssh_key_name"),
+    ("infrastructure", "pulumi", "org"),
+]
+for p in required_paths:
+    _require_esc_value(esc_env.values, p)
+
+pulumi.log.info("All required secrets validated")
+
 lambda_config = {
-    "api_key": esc_env.values["infrastructure"]["lambda_labs"]["api_key"],
-    "control_plane_ip": esc_env.values["infrastructure"]["lambda_labs"]["control_plane_ip"],
-    "ssh_key_name": esc_env.values["infrastructure"]["lambda_labs"]["ssh_key_name"]
+    "api_key": _require_esc_value(esc_env.values, ("infrastructure", "lambda_labs", "api_key")),
+    "control_plane_ip": _require_esc_value(esc_env.values, ("infrastructure", "lambda_labs", "control_plane_ip")),
+    "ssh_key_name": _require_esc_value(esc_env.values, ("infrastructure", "lambda_labs", "ssh_key_name")),
 }
 
 lambda_api_key = lambda_config["api_key"]
 ssh_private_key = config.require_secret("LAMBDA_SSH_PRIVATE_KEY")
 ssh_key_name = lambda_config["ssh_key_name"]
-pulumi_org = esc_env.values["infrastructure"]["pulumi"]["org"]
+pulumi_org = _require_esc_value(esc_env.values, ("infrastructure", "pulumi", "org"))
 control_plane_ip = lambda_config["control_plane_ip"]
 
 # --- 2. Install Kubernetes on the Existing Lambda Labs Instance ---

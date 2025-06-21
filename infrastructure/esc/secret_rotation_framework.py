@@ -12,6 +12,7 @@ import random
 import string
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Tuple
+import pulumi
 
 # Configure logging
 logging.basicConfig(
@@ -112,10 +113,16 @@ class SecretRotator(ABC):
 
                             # Update Pulumi ESC and GitHub with new value
                             self.update_secret_stores(key, new_value)
+                            pulumi.log.info(
+                                f"secret_rotation_success service={self.service_name} key={key}"
+                            )
                         else:
                             results["failed"].append(key)
                             results["errors"].append(
                                 f"Failed to rotate {key} for {self.service_name}"
+                            )
+                            pulumi.log.info(
+                                f"secret_rotation_failure service={self.service_name} key={key}"
                             )
                     else:
                         logger.info(
