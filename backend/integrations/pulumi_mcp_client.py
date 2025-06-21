@@ -37,6 +37,8 @@ class PulumiMCPClient:
 
     def __init__(self, config_path: str = "config/pulumi-mcp.json"):
         self.config = self._load_config(config_path)
+        if not self.config.api_token:
+            raise ValueError("PULUMI_ACCESS_TOKEN environment variable is required")
         self.session = None
         self.audit_logger = self._setup_audit_logger()
 
@@ -44,7 +46,7 @@ class PulumiMCPClient:
         """Load configuration from file or environment"""
         config_data = {
             "base_url": os.getenv("PULUMI_MCP_URL", "http://pulumi-mcp-server:9001"),
-            "api_token": os.getenv("PULUMI_ACCESS_TOKEN", ""),
+            "api_token": os.getenv("PULUMI_ACCESS_TOKEN"),
             "organization": os.getenv("PULUMI_ORG", "sophia-ai"),
             "project": os.getenv("PULUMI_PROJECT", "sophia"),
             "allowed_stacks": ["dev", "staging", "prod"],

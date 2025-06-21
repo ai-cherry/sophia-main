@@ -10,9 +10,16 @@ logger = logging.getLogger(__name__)
 
 
 class PulumiESCManager:
-    """Simple placeholder for Pulumi ESC Manager."""
+    """Simple placeholder for Pulumi ESC Manager.
+
+    This manager now enforces that ``PULUMI_ACCESS_TOKEN`` is set so that any
+    consumer has authenticated access to Pulumi ESC.
+    """
 
     def __init__(self):
+        self.access_token = os.getenv("PULUMI_ACCESS_TOKEN")
+        if not self.access_token:
+            raise ValueError("PULUMI_ACCESS_TOKEN environment variable is required")
         self.initialized = False
 
     async def initialize(self):

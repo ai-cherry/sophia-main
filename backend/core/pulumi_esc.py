@@ -76,7 +76,7 @@ class ESCClient:
         self.initialized = False
 
         if not self.access_token:
-            logger.warning("PULUMI_ACCESS_TOKEN not found in environment variables")
+            raise ValueError("PULUMI_ACCESS_TOKEN environment variable is required")
 
     async def _ensure_session(self) -> None:
         """Ensure aiohttp session is created with proper error handling"""

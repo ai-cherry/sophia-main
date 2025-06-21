@@ -15,6 +15,8 @@ A comprehensive AI platform with MCP (Model Context Protocol) integration, deplo
 # Clone the repository
 git clone https://github.com/ai-cherry/sophia-main.git
 cd sophia-main
+# Set Pulumi token (required for all setup scripts)
+export PULUMI_ACCESS_TOKEN=your_token_here
 
 # Deploy the platform
 ./deploy_sophia_platform.sh

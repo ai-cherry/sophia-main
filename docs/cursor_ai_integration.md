@@ -50,8 +50,11 @@ cd sophia-main
 # Set Pulumi organization
 export PULUMI_ORG=scoobyjava-org
 
-# Run permanent solution setup
-python scripts/setup_permanent_secrets_solution.py
+# Set Pulumi access token
+export PULUMI_ACCESS_TOKEN=your_token_here
+
+# Sync secrets from Pulumi ESC
+python scripts/setup_all_secrets_once.py
 
 # Test everything works
 python scripts/test_permanent_solution.py

@@ -183,7 +183,7 @@ class SecureEnvironmentValidator:
             ),
             "PULUMI_ACCESS_TOKEN": ValidationRule(
                 name="PULUMI_ACCESS_TOKEN",
-                required=False,
+                required=True,
                 secret_type=SecretType.TOKEN,
                 description="Pulumi access token",
             ),

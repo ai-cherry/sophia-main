@@ -177,6 +177,7 @@ cleanup_backup_*/
 **/*key*
 pulumi-access-token*
 PULUMI_ACCESS_TOKEN*
+!scripts/setup_all_secrets_once.py
 
 # Pulumi state and config (may contain secrets)
 Pulumi.*.yaml
